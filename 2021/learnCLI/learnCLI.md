@@ -98,41 +98,33 @@ ARM Template:
 Azure Resource Manager templates are JavaScript Object Notation (JSON) files that define the infrastructure and configuration for your project.  
 https://docs.microsoft.com/en-us/azure/azure-resource-manager/templates/
 
-ARM example: Support user_data for VM and VM Scale Sets  
+PR example: 
+Support user_data for VM and VM Scale Sets  
 https://github.com/Azure/azure-cli/pull/18432  
-File changes:  
+My Issue: 
+https://github.com/Azure/azure-cli/issues/19622
+My change Files:  
 ```
 src/azure-cli/azure/cli/command_modules/vm/_params.py
-c.argument('user_data', help='UserData for the VM. It can be passed in as file or string.', completer=FilesCompleter(), type=file_type, min_api='2021-03-01')
-c.argument('user_data', help='UserData for the virtual machines in the scale set. It can be passed in as file or string.', completer=FilesCompleter(), type=file_type, min_api='2021-03-01')
-c.argument('user_data', help='UserData for the virtual machines in the scale set. It can be passed in as file or string. If empty string is passed in, the existing value will be deleted.', completer=FilesCompleter(), type=file_type, min_api='2021-03-01')
-c.argument('user_data', help='UserData for the VM. It can be passed in as file or string. If empty string is passed in, the existing value will be deleted.', completer=FilesCompleter(), type=file_type, min_api='2021-03-01')
++    with self.argument_context('vm update', arg_group='Dedicated Host', min_api='2019-03-01') as c:
++        c.argument('dedicated_host_group', options_list=['--host-group'], is_preview=True, help="Name or ID of the dedicated host group that the VM will reside in. --host and --host-group can't be used together.")
++        c.argument('dedicated_host', options_list=['--host'], is_preview=True, help="ID of the dedicated host that the VM will reside in. --host and --host-group can't be used together.")
 
-src/azure-cli/azure/cli/command_modules/vm/_template_builder.py
-def build_vm_resource(user_data=None):
-    if user_data:
-        vm_properties['userData'] = b64encode(user_data)
-    if user_data:
-        vmss_properties['virtualMachineProfile']['userData'] = b64encode(user_data)
-
+# src/azure-cli/azure/cli/command_modules/vm/_template_builder.py
 src/azure-cli/azure/cli/command_modules/vm/_validators.py
-            namespace.vnet_name,
-            namespace.user_data
+    def process_vm_update_namespace(cmd, namespace):
++       _validate_vm_create_dedicated_host(cmd, namespace)
 
 src/azure-cli/azure/cli/command_modules/vm/custom.py
-            data_disk_delete_option=None, user_data=None):
-    if user_data:
-        user_data = read_content_if_is_file(user_data)
-    user_data=user_data)
-
-def update_vm(user_data=None):
-    if user_data is not None:
-        from azure.cli.core.util import b64encode
-        vm.user_data = b64encode(user_data)
-
-src/azure-cli/azure/cli/command_modules/vm/tests/latest/recordings/test_vm_create_user_data.yaml
-src/azure-cli/azure/cli/command_modules/vm/tests/latest/recordings/test_vmss_create_user_data.yaml
-
+def update_vm():
+    +    # if dedicated_host is not None:
+    +    #     vm.dedicated_host = dedicated_host
+    +    #
+    +    # if dedicated_host_group is not None:
+    +    #     vm.dedicated_host_group = dedicated_host_group
 src/azure-cli/azure/cli/command_modules/vm/tests/latest/test_vm_commands.py
-src/azure-cli/azure/cli/command_modules/vm/tests/latest/user_data.json
++    def test_update_dedicated_host_e2e(self, resource_group, resource_group_location):
+# src/azure-cli/azure/cli/command_modules/vm/tests/latest/user_data.json
+# src/azure-cli/azure/cli/command_modules/vm/tests/latest/recordings/test_vm_create_user_data.yaml
+# src/azure-cli/azure/cli/command_modules/vm/tests/latest/recordings/test_vmss_create_user_data.yaml
 ```
