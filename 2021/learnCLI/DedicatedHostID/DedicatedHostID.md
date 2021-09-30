@@ -469,3 +469,49 @@ az vmss create \
   --generate-ssh-keys
 ```
 It takes a few minutes to create and configure all the scale set resources and VMs.
+
+### Test Record
+`azdev test test_update_dedicated_host_e2e --live --discover`
+`azdev test test_update_dedicated_host_e2e --live`
+
+### Get All Location
+location="test_location"
+location="test_mc_location"
+location="eastus"
+location="westus"
+location="westus2"
+location="centralus"
+location="centraluseuap"
+
+### check quota
+quota: Standard DSv3 Family vCPUs
+[increase quota](https://aka.ms/ProdportalCRP/#blade/Microsoft_Azure_Capacity/CapacityExperienceBlade/Parameters/%7B%22subscriptionId%22:%220b1f6471-1bf0-4dda-aec3-cb9272f09590%22,%22command%22:%22openQuotaApprovalBlade%22,%22quotas%22:[%7B%22location%22:%22westus2%22,%22providerId%22:%22Microsoft.Compute%22,%22resourceName%22:%22standardDSv3Family%22,%22quotaRequest%22:%7B%22properties%22:%7B%22limit%22:128,%22unit%22:%22Count%22,%22name%22:%7B%22value%22:%22standardDSv3Family%22%7D%7D%7D%7D]%7D)  
+[increase quota portal](https://docs.microsoft.com/en-us/azure/azure-portal/supportability/per-vm-quota-requests)
+
+### All Commands
+az group create --location {} --name {} --tag
+vm host group create -n {host-group} -c 3 -g {rg} --tags "foo=bar"
+vm host group create -n {host2-group} -c 3 -g {rg} --tags "foo=bar"
+vm host create -n {host-name} --host-group {host-group} -d 2 -g {rg} --sku DSv3-Type1 --auto-replace false --tags "bar=baz"
+vm host create -n {host2-name} --host-group {host2-group} -d 2 -g {rg} --sku DSv3-Type1 --auto-replace false --tags "bar=baz"
+vm host get-instance-view --host-group {host-group} --name {host-name} -g {rg}
+vm host get-instance-view --host-group {host2-group} --name {host2-name} -g {rg}
+vm host group get-instance-view -g {rg} -n {host-group}
+vm host group get-instance-view -g {rg} -n {host2-group}
+vm host show -g {rg} -n {host-name} --host-group {host-group}
+vm host show -g {rg} -n {host2-name} --host-group {host2-group}
+vm create -n {vm-name} --image debian -g {rg} --size Standard_D4s_v3 --host {host_id} --generate-ssh-keys --admin-username azureuser --nsg-rule NONE
+vm show -n {vm-name} -g {rg}
+vm host show --name {host-name} --host-group {host-group} -g {rg}
+vm host group show --name {host-group} -g {rg}
+vm update -n {vm-name} -g {rg} --host {host2_id}
+vm show -n {vm-name} -g {rg}
+vm host show --name {host2-name} --host-group {host2-group} -g {rg}
+vm host group show --name {host2-group} -g {rg}
+
+vm delete --name {vm-name} -g {rg} --yes
+vm host delete --name {host-name} --host-group {host-group} -g {rg} --yes
+vm host delete --name {host2-name} --host-group {host2-group} -g {rg} --yes
+vm host group delete --name {host-group} -g {rg} --yes
+vm host group delete --name {host2-group} -g {rg} --yes
+az group delete --name {} --yes --no-wait
