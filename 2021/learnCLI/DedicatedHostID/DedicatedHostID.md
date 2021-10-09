@@ -34,7 +34,7 @@ Availability zones -> one or more datacenters
 **创建vm不需要任何指定**  
 **不同容错域的物理机会放置到数据中心的不同的物理机架上。**  
 Use Fault Domains for fault isolation  
-A host can be created in a specific fault domain.   
+A host can be created in a specific fault domain.  
 Just like VM in a scale set or availability set, hosts in different fault domains will be placed on different physical racks in the data center.   
 When you create a host group, you are required to specify the fault domain count.   
 When creating hosts within the host group, you assign fault domain for each host.   
@@ -490,28 +490,40 @@ quota: Standard DSv3 Family vCPUs
 
 ### All Commands
 az group create --location {} --name {} --tag
-vm host group create -n {host-group} -c 3 -g {rg} --tags "foo=bar"
-vm host group create -n {host2-group} -c 3 -g {rg} --tags "foo=bar"
-vm host create -n {host-name} --host-group {host-group} -d 2 -g {rg} --sku DSv3-Type1 --auto-replace false --tags "bar=baz"
-vm host create -n {host2-name} --host-group {host2-group} -d 2 -g {rg} --sku DSv3-Type1 --auto-replace false --tags "bar=baz"
-vm host get-instance-view --host-group {host-group} --name {host-name} -g {rg}
-vm host get-instance-view --host-group {host2-group} --name {host2-name} -g {rg}
-vm host group get-instance-view -g {rg} -n {host-group}
-vm host group get-instance-view -g {rg} -n {host2-group}
-vm host show -g {rg} -n {host-name} --host-group {host-group}
-vm host show -g {rg} -n {host2-name} --host-group {host2-group}
-vm create -n {vm-name} --image debian -g {rg} --size Standard_D4s_v3 --host {host_id} --generate-ssh-keys --admin-username azureuser --nsg-rule NONE
-vm show -n {vm-name} -g {rg}
-vm host show --name {host-name} --host-group {host-group} -g {rg}
-vm host group show --name {host-group} -g {rg}
-vm update -n {vm-name} -g {rg} --host {host2_id}
-vm show -n {vm-name} -g {rg}
-vm host show --name {host2-name} --host-group {host2-group} -g {rg}
-vm host group show --name {host2-group} -g {rg}
+az vm host group create -n {host-group} -c 3 -g {rg} --tags "foo=bar"
+az vm host group create -n {host2-group} -c 3 -g {rg} --tags "foo=bar"
+az vm host create -n {host-name} --host-group {host-group} -d 2 -g {rg} --sku DSv3-Type1 --auto-replace false --tags "bar=baz"
+az vm host create -n {host2-name} --host-group {host2-group} -d 2 -g {rg} --sku DSv3-Type1 --auto-replace false --tags "bar=baz"
+az vm host get-instance-view --host-group {host-group} --name {host-name} -g {rg}
+az vm host get-instance-view --host-group {host2-group} --name {host2-name} -g {rg}
+az vm host group get-instance-view -g {rg} -n {host-group}
+az vm host group get-instance-view -g {rg} -n {host2-group}
+az vm host show -g {rg} -n {host-name} --host-group {host-group}
+az vm host show -g {rg} -n {host2-name} --host-group {host2-group}
+az vm create -n {vm-name} --image debian -g {rg} --size Standard_D4s_v3 --host {host_id} --generate-ssh-keys --admin-username azureuser --nsg-rule NONE
+az vm show -n {vm-name} -g {rg}
+az vm host show --name {host-name} --host-group {host-group} -g {rg}
+az vm host group show --name {host-group} -g {rg}
+az vm update -n {vm-name} -g {rg} --host {host2_id}
+az vm show -n {vm-name} -g {rg}
+az vm host show --name {host2-name} --host-group {host2-group} -g {rg}
+az vm host group show --name {host2-group} -g {rg}
 
-vm delete --name {vm-name} -g {rg} --yes
-vm host delete --name {host-name} --host-group {host-group} -g {rg} --yes
-vm host delete --name {host2-name} --host-group {host2-group} -g {rg} --yes
-vm host group delete --name {host-group} -g {rg} --yes
-vm host group delete --name {host2-group} -g {rg} --yes
+az vm delete --name {vm-name} -g {rg} --yes
+az vm host delete --name {host-name} --host-group {host-group} -g {rg} --yes
+az vm host delete --name {host2-name} --host-group {host2-group} -g {rg} --yes
+az vm host group delete --name {host-group} -g {rg} --yes
+az vm host group delete --name {host2-group} -g {rg} --yes
 az group delete --name {} --yes --no-wait
+
+az vm deallocate -n ded-host-vm --no-wait -g cli_test_dedicated_host_zm2hiz7dkfz56ppsb65qdqtfc5yxsdgercsdm3whcrmnc7torvs
+az vm update -n ded-host-vm -g cli_test_dedicated_host_zm2hiz7dkfz56ppsb65qdqtfc5yxsdgercsdm3whcrmnc7torvs --host /subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/resourceGroups/cli_test_dedicated_host_zm2hiz7dkfz56ppsb65qdqtfc5yxsdgercsdm3whcrmnc7torvs/providers/Microsoft.Compute/hostGroups/my-host2-group/hosts/my-host2 --debug
+(PropertyChangeNotAllowed) Updating Host of VM 'ded-host-vm' is not allowed as the VM is currently allocated. Please Deallocate the VM and retry the operation.
+az vm start -n ded-host-vm --no-wait -g cli_test_dedicated_host_zm2hiz7dkfz56ppsb65qdqtfc5yxsdgercsdm3whcrmnc7torvs
+
+# todo 测试其他参数影响
+# todo Dynamic/Static 应该使用Static 就不会有影响。
+# --host 和 --host-group 基础测试 done
+# ip 会改变 pub 20.112.81.247 pvt 10.0.0.4 -> pub 20.112.87.77 pvt 10.0.0.4 
+# 描述 done
+# 加例子: 三个命令。done

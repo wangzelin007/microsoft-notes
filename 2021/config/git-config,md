@@ -1,0 +1,46 @@
+```
+D:\Users\wangzelin007\.gitconfig
+[alias]
+    st = status
+    ci = commit
+    co = checkout
+    br = branch
+    df = diff
+    dft = difftool
+    dfs = diff --staged
+    dfts = difftool --staged
+    mr = merge
+    mrt = mergetool
+    last = log -1 HEAD
+    ls = log --oneline --graph --all --decorate
+    lg = log --oneline --graph --all --decorate --pretty=format:"%h%x20%Cgreen%d%x20%Cred%an%x20%C(yellow)%ad%x20%Creset%s" --full-history --date=short
+    rb = rebase -i
+    cp = cherry-pick
+[filter "lfs"]
+    clean = git-lfs clean -- %f
+    smudge = git-lfs smudge -- %f
+    process = git-lfs filter-process
+    required = true
+[user]
+    name = 王泽霖
+    email = zelinwang@microsoft.com
+[push]
+    default = current
+[diff]
+    tool = bc4
+[difftool]
+    prompt = true
+[difftool "bc4"]
+    cmd = \"D:/software install/Beyond Compare/BCompare.exe\" "$(cygpath -w $LOCAL)" "$REMOTE"
+[merge]
+    tool = bc4
+[mergetool]
+    prompt = true
+[mergetool "bc4"]
+    cmd = \"D:/software install/Beyond Compare/BCompare.exe\" "$LOCAL" "$REMOTE" "$BASE" "$MERGED”
+[core]
+    autocrlf = input
+    safecrlf = true
+    editor = vim
+    excludesfile = d:/Users/wangzelin007/.gitignore
+```
