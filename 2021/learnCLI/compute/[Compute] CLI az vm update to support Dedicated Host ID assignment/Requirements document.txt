@@ -44,15 +44,14 @@ API 拆解
 VM DOCS 补充
 -------------------------------------------------
 az vm update -h
-1. 没有前置条件比如网络：VPC Network subnet IP 等等。 -- 
+1. 没有前置条件比如网络：VPC Network subnet IP 等等。 -- VirtualNetworkPreparer
 2. 我们需要和 powershell 一样stop update start 嘛 -- 不用
 3. self.check('length(value)', 4)  检查资源数量
 4. vm 和 vmss 虚拟机集合 scale sets
 5. PreviewItem 已有新增不稳定功能
    ExperimentalItem 全新
 6. @StorageAccountPreparer(name_prefix='clitestbootdiag') 提前创建预置资源
-7. VirtualNetworkPreparer
-8. 有了ResourceGroupPreparer 为什么还要主动删除资源 -- 某些场景为了测试删除, 创建时带 -g 的一般会自动删除
+7. 有了ResourceGroupPreparer 为什么还要主动删除资源 -- 某些场景为了测试删除, 创建时带 -g 的一般会自动删除
 ------------------------------------------------
 All locations:
 location="test_location"
