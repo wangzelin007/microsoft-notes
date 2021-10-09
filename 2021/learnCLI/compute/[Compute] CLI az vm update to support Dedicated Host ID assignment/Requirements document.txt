@@ -1,0 +1,64 @@
+https://github.com/Azure/azure-cli/issues/19622
+
+Is your feature request related to a problem? Please describe.
+Azure Dedicated Host (ADH) customers can already assign an existing VM to a specific ADH manually via Portal or by specifying the host ID through PS, but not on CLI. This is a problem for customers who would like to use CLI to manage their dedicated hosts and the VMs on them. We would like to have CLI and PS parity.
+
+Describe the solution you'd like
+Customers can call the az vm update command on CLI with a specified Dedicated Host ID to assign the VM to that host.
+
+Describe alternatives you've considered
+Routing customers through PS is not always an option, especially if they are Linux users. Going through the Portal is another alternative.
+
+Additional context
+
+ADH documentation for assigning a VM on PS: https://docs.microsoft.com/en-us/azure/virtual-machines/dedicated-hosts-how-to?tabs=portal%2Cpowershell2#add-an-existing-vm
+az vm create already supports the host ID (--host) parameter: https://docs.microsoft.com/en-us/cli/azure/vm?view=azure-cli-latest#az_vm_create
+
+您的功能请求是否与问题有关？请描述。
+Azure 专用主机 (ADH) 客户已经可以通过门户或通过 PS 指定主机 ID 手动将现有 VM 分配给特定 ADH，但不能在 CLI 上。对于希望使用 CLI 管理其专用主机及其上的 VM 的客户来说，这是一个问题。我们想要 CLI 和 PS 奇偶校验。
+
+描述您想要的解决方案
+客户可以使用指定的专用主机 ID 在 CLI 上调用 az vm update 命令以将 VM 分配给该主机。
+
+描述您考虑过的替代方案
+通过 PS 路由客户并不总是一种选择，特别是如果他们是 Linux 用户。通过门户是另一种选择。
+
+附加上下文
+
+在 PS 上分配 VM 的 ADH 文档：https://docs.microsoft.com/en-us/azure/virtual-machines/dedicated-hosts-how-to?tabs=portal%2Cpowershell2#add-an-existing-vm
+az vm create 已经支持主机 ID (--host) 参数：https://docs.microsoft.com/en-us/cli/azure/vm?view=azure-cli-latest#az_vm_create
+-------------------------------------------------
+我的理解：
+即在update情况下增加 --host参数，可以指定 vm 在哪个 host 上
+
+My understanding:
+That is, in the case of update, increase the --host parameter, you can specify which host the vm is on
+-------------------------------------------------
+流程梳理
+-------------------------------------------------
+API 拆解
+	deallocate
+	Update
+	StartVM
+-------------------------------------------------
+VM DOCS 补充
+-------------------------------------------------
+az vm update -h
+1. 没有前置条件比如网络：VPC Network subnet IP 等等。 -- 
+2. 我们需要和 powershell 一样stop update start 嘛 -- 不用
+3. self.check('length(value)', 4)  检查资源数量
+4. vm 和 vmss 虚拟机集合 scale sets
+5. PreviewItem 已有新增不稳定功能
+   ExperimentalItem 全新
+6. @StorageAccountPreparer(name_prefix='clitestbootdiag') 提前创建预置资源
+7. VirtualNetworkPreparer
+8. 有了ResourceGroupPreparer 为什么还要主动删除资源 -- 某些场景为了测试删除, 创建时带 -g 的一般会自动删除
+------------------------------------------------
+All locations:
+location="test_location"
+location="test_mc_location"
+location="eastus"
+location="westus"
+location="westus2"
+location="centralus"
+location="centraluseuap"

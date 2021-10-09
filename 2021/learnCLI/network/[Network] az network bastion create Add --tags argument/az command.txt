@@ -1,0 +1,5 @@
+azdev setup
+D:\code\azure-cli
+D:\code\azure-cli-extensions
+
+azdev setup --cli D:\code\azure-cli --repo D:\code\azure-cli-extensions

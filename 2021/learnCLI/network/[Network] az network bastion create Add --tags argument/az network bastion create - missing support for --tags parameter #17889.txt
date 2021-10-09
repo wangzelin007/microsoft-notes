@@ -1,0 +1,134 @@
+issues: https://github.com/Azure/azure-cli/issues/17889
+--------------------------------------------------------
+branch: git checkout -b network-bastion-create-add-tags
+--------------------------------------------------------
+description：
+In Portal you can add tags when creating bastion.
+Trying this from Cloud Shell bash:
+
+az network bastion create --resource-group ...... --tags someTag=.....
+
+...yields:
+unrecognized arguments: --tags
+
+modify files：
+_params.py
+add: c.argument('tags', tags_type, options_list=['--tags', '-t'])
+command.py
+search：g.custom_command('create', 'create_bastion_host')
+custom.py
+def create_bastion_host
+
+compare to resource_port:
+resource port only modify two files: _params.py && network/custom.py
+
+example:
+tags=None
+
+--------------------------------------------------------
+q0:
+宇哥，要在create_bastion_host 里面加一个参数tags，不确定最后谁接收了这个tags，是begin_create_or_update里面的kwargs嘛，最终走到了哪里呢？
+q1:
+az network bastion create -g ... -n clivm --vnet-name vnet --public-ip-address ip1 --tags ...
+如果我自己尝试创建，这四个参数应该填什么：resource_group/name/vnet-name/public-ip-address
+还是写完了以后只本地只需要执行这几个命令检查：
+azdev test network -> 指定一个对应的test name --live
+az login
+az account show 查看当前登录账号
+切换sub 0b1f6471-1bf0-4dda-aec3-cb9272f09590 代表AzureSDKTeam
+az account set -s 0b1f6471-1bf0-4dda-aec3-cb9272f09590 
+azdev test test_network_batsion_host_create --live
+azdev style network
+azdev linter network
+q2:
+是不是应该在
+test_network_batsion_host_create 中增加一个测试
+self.cmd('network bastion create -g {rg} -n {bastion} --vnet-name {vnet} --public-ip-address {ip1} --tags a=b', checks=[
+            self.check('type', 'Microsoft.Network/bastionHosts'),
+            self.check('name', '{bastion}')
+        ])
+改动涉及的文件应该是
+_params.py
+custom.py
+test_network_commands.py
+
+azure-sdk-for-python/sdk/network/azure-mgmt-network 下没有看到tags这个参数
+D:\code\azure-sdk-for-python\sdk\network\azure-mgmt-network\azure\mgmt\network\v2020_07_01\aio\_network_management_client.py
+
+代码走向：
+D:\code\azure-cli\src\azure-cli\azure\cli\command_modules\network\custom.py
+7648：def create_bastion_host ->
+	7650: client = network_client_factory(cmd.cli_ctx).bastion_hosts
+		D:\code\azure-cli\src\azure-cli\azure\cli\command_modules\network\_client_factory.py
+		7: network_client_factory
+			MGMT_NETWORK = ('azure.mgmt.network', 'NetworkManagementClient')
+			MGMT_NETWORK -> client_or_resource_type
+			D:\code\azure-cli\src\azure-cli-core\azure\cli\core\commands\client_factory.py
+			50：get_mgmt_service_client -> client_type = client_or_resource_type
+			189：_get_mgmt_service_client
+			222：client = client_type(cred, subscription_id, **client_kwargs)
+		
+    7663: client.begin_create_or_update(resource_group_name=resource_group_name,
+                                        bastion_host_name=bastion_host_name,
+                                        parameters=bastion_host)
+
+D:\code\azure-sdk-for-python\sdk\network\azure-mgmt-network\azure\mgmt\network\_network_management_client.py
+36: NetworkManagementClient
+--------------------------------------------------------
+checklist：
+# azdev test 不要跑这个！
+az network bastion -h
+az network bastion create -h
+azdev test network
+azdev style network
+azdev linter network
+azdev test test_network_batsion_host_create --live
+# az network bastion create -g resource_group -n clibastion --vnet-name vnet --public-ip-address ip1 --tags a=b
+--------------------------------------------------------
+！！！ --live 会生成新的 recording file，这个必须一起提交。 CI上就是对着这file test，不会再跑live的 ！！！
+git add
+git commit
+add tags argument to az network bastion create
+git push origin network-bastion-create-add-tags
+
+--------------------------------------------------------
+pull request:
+{} is for not customer-facing
+[] is for customer-facing and the message will be put into HISTORY.rst
+
+
+# issue id 也会自动关联起来
+# HISTORY.rst D:\code\azure-cli\src\azure-cli\HISTORY.rst **release 自动生成**
+
+**** Open a pull request ****
+[Network] `az network bastion create`: Add `--tags` argument
+
+Description
+
+Add --tags argument to az network bastion create.
+
+Testing Guide
+
+network bastion create -g {rg} -n {bastion} --vnet-name {vnet} --public-ip-address {ip} --tags a=b
+
+---
+
+This checklist is used to make sure that common guidelines for a pull request are followed.
+
+- [ ] The PR title and description has followed the guideline in [Submitting Pull Requests](https://github.com/Azure/azure-cli/tree/dev/doc/authoring_command_modules#submitting-pull-requests).
+
+- [ ] I adhere to the [Command Guidelines](https://github.com/Azure/azure-cli/blob/dev/doc/command_guidelines.md).
+
+- [ ] I adhere to the [Error Handling Guidelines](https://github.com/Azure/azure-cli/blob/dev/doc/error_handling_guidelines.md).
+
+--------------------------------------------------------
+reviewer:
+jsntcy
+kairu-ms
+
+Labels:
+Network - Bastion
+--------------------------------------------------------
+Squash and merge
+--------------------------------------------------------
+finish
