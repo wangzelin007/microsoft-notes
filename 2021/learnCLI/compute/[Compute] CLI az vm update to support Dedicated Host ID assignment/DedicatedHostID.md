@@ -505,6 +505,7 @@ az vm show -n {vm-name} -g {rg}
 az vm host show --name {host-name} --host-group {host-group} -g {rg}
 az vm host group show --name {host-group} -g {rg}
 az vm update -n {vm-name} -g {rg} --host {host2_id}
+az vm start -n vm2 -g {rg}
 az vm show -n {vm-name} -g {rg}
 az vm host show --name {host2-name} --host-group {host2-group} -g {rg}
 az vm host group show --name {host2-group} -g {rg}
@@ -521,9 +522,22 @@ az vm update -n ded-host-vm -g cli_test_dedicated_host_zm2hiz7dkfz56ppsb65qdqtfc
 (PropertyChangeNotAllowed) Updating Host of VM 'ded-host-vm' is not allowed as the VM is currently allocated. Please Deallocate the VM and retry the operation.
 az vm start -n ded-host-vm --no-wait -g cli_test_dedicated_host_zm2hiz7dkfz56ppsb65qdqtfc5yxsdgercsdm3whcrmnc7torvs
 
-# todo 测试其他参数影响
-# todo Dynamic/Static 应该使用Static 就不会有影响。
-# --host 和 --host-group 基础测试 done
-# ip 会改变 pub 20.112.81.247 pvt 10.0.0.4 -> pub 20.112.87.77 pvt 10.0.0.4 
-# 描述 done
-# 加例子: 三个命令。done
+**测试其他参数影响 done**  
+**Dynamic/Static 应该使用Static 就不会有影响。**  
+**--host 和 --host-group 基础测试 done**  
+**ip 会改变 pub 20.112.81.247 pvt 10.0.0.4 -> pub 20.112.87.77 pvt 10.0.0.4**  
+**描述 done**  
+**加例子: 三个命令。done**  
+
+-------------------------------------------------------------
+
+测试新建一台vm， no host and no group
+az vm create -n vm0 --image debian -g {rg} --size Standard_D4s_v3 --generate-ssh-keys --admin-username azureuser --nsg-rule NONE
+move to a host or group
+az vm update -n vm0 -g {rg} --host {host_id}
+az vm update -n vm0 -g {rg} --host-group my-host-group
+delete vm
+az vm delete --n vm0 -g {rg} --yes
+
+**get sku**  
+`az vm host show -g cli_test_dedicated_host_uno5ppot3rord6umdvn2lsimgzlveqta53iscvvdgdnslca34zc --host-group my-host-group --ids /subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/resourceGroups/cli_test_dedicated_host_uno5ppot3rord6umdvn2lsimgzlveqta53iscvvdgdnslca34zc/providers/Microsoft.Compute/hostGroups/my-host-group/hosts/my-host`
