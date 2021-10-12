@@ -1,3 +1,5 @@
+[issue](https://github.com/Azure/azure-cli/issues/19622)
+
 [Dedicated resource ARM] (https://github.com/Azure/azure-rest-api-specs/blob/master/specification/compute/resource-manager/Microsoft.Compute/stable/2021-07-01/compute.json)
 
 [Dedicated Host Overview] (https://go.microsoft.com/fwlink/?linkid=2082596)  
@@ -541,3 +543,37 @@ az vm delete --n vm0 -g {rg} --yes
 
 **get sku**  
 `az vm host show -g cli_test_dedicated_host_uno5ppot3rord6umdvn2lsimgzlveqta53iscvvdgdnslca34zc --host-group my-host-group --ids /subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/resourceGroups/cli_test_dedicated_host_uno5ppot3rord6umdvn2lsimgzlveqta53iscvvdgdnslca34zc/providers/Microsoft.Compute/hostGroups/my-host-group/hosts/my-host`
+
+as I mentioned before:  
+if you update the vm from a host to another host SUCCESS  
+if you update the vm from a host-group to another host-group SUCCESS  
+if you update the vm from None to a host Failed  
+if you update the vm from None to a host-group Failed  
+if you update the vm from a host to a host-group Failed  
+if you update the vm from a host-group to a host Failed  
+
+**rest api spec**
+not found
+
+**already try**
+```
+# DedicatedHost = cmd.get_models('DedicatedHost')
+# op = cf_dedicated_hosts(cmd.cli_ctx, '')
+# host_group_name = dedicated_host.split('/')[8]
+# host_name = dedicated_host.split('/')[10]
+# host_info = get_dedicated_host_instance_view(op, host_group_name, host_name, resource_group_name)
+# location and sku required
+# vm.host = DedicatedHost(location=vm.location, sku=host_info.sku)
+# DedicatedHost = cmd.get_models('DedicatedHostUpdate')
+# vm.host = DedicatedHost(host_id=dedicated_host)
+
+# DedicatedHostGroup = cmd.get_models('DedicatedHostGroup')
+# location required
+# vm.host_group = DedicatedHostGroup(location=vm.location)
+```
+
+**一些报错**
+1. 没有 automatic 的 group, 在创建vm时是不能指定的 
+Resource 'ded-host-vm2' cannot be placed automatically on host group 'my-host-group', since the host group does not support automatic placement.  
+If you would like to use automatic placement, please consider creating a new host group with the value of parameter 'hostGroup.properties.supportAutomaticPlacement' set to true.  
+Note that the value is set to false by default if it is not specified, and it cannot be changed once the host group is created.  

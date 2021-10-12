@@ -142,3 +142,122 @@ def normalize_disk_info(ephemeral_os_disk=False):
         if not os_disk_caching:
             os_disk_caching = 'ReadOnly'
 ```
+
+**modify**
+```python
+# 默认值：如果为 VM 大小配置了一个临时 OS 磁盘，则会将其放置在 CacheDisk 中，否则将使用 ResourceDisk  
+def normalize_disk_info(ephemeral_os_disk=False, ephemeral_os_disk_placement=False):
+    # update os diff disk settings
+    if ephemeral_os_disk:
+        info['os']['diffDiskSettings'] = {'option': 'Local'}
+        # local os disks require readonly caching, default to ReadOnly if os_disk_caching not specified.
+        if not os_disk_caching:
+            os_disk_caching = 'ReadOnly'
+        if ephemeral_os_disk_placement:
+            info['os']['diffDiskSettings']['placement'] = ephemeral_os_disk_placement # ["ResourceDisk", "CacheDisk"]
+# help 需要加上依赖说明，依赖 ephemeral_os_disk
+# validate 需要加上校验，必须提供 ephemeral_os_disk 参数
+```
+```json
+# example
+D:\code\azure-rest-api-specs\specification\compute\resource-manager\Microsoft.Compute\stable\2021-07-01\examples\compute\CreateAVmWithADiffOsDiskUsingDiffDiskPlacementAsResourceDisk.json
+"osDisk": {
+  "osType": "Windows",
+  "caching": "ReadOnly",
+  "diffDiskSettings": {
+    "option": "Local",
+    "placement": "ResourceDisk"
+  },
+"osDisk": {
+  "caching": "ReadOnly",
+  "diffDiskSettings": {
+    "option": "Local",
+    "placement": "ResourceDisk"
+  },
+"osDisk": {
+  "osType": "Windows",
+  "caching": "ReadOnly",
+  "diffDiskSettings": {
+    "option": "Local",
+    "placement": "ResourceDisk"
+  },
+D:\code\azure-rest-api-specs\specification\compute\resource-manager\Microsoft.Compute\stable\2021-07-01\examples\compute\CreateAVmWithADiffOsDiskUsingDiffDiskPlacementAsCacheDisk.json
+"osDisk": {
+            "caching": "ReadOnly",
+            "diffDiskSettings": {
+              "option": "Local",
+              "placement": "CacheDisk"
+            },
+"osDisk": {
+              "osType": "Windows",
+              "caching": "ReadOnly",
+              "diffDiskSettings": {
+                "option": "Local",
+                "placement": "CacheDisk"
+              },
+"osDisk": {
+              "osType": "Windows",
+              "caching": "ReadOnly",
+              "diffDiskSettings": {
+                "option": "Local",
+                "placement": "CacheDisk"
+              },
+D:\code\azure-rest-api-specs\specification\compute\resource-manager\Microsoft.Compute\stable\2021-07-01\examples\compute\CreateAScaleSetWithDiffOsDiskUsingDiffDiskPlacement.json
+"osDisk": {
+              "caching": "ReadOnly",
+              "diffDiskSettings": {
+                "option": "Local",
+                "placement": "ResourceDisk"
+              },
+"osDisk": {
+                "caching": "ReadOnly",
+                "diffDiskSettings": {
+                  "option": "Local",
+                  "placement": "ResourceDisk"
+                },
+"osDisk": {
+                "caching": "ReadOnly",
+                "diffDiskSettings": {
+                  "option": "Local",
+                  "placement": "ResourceDisk"
+                },
+```
+
+**rest api spec**
+```buildoutcfg
+"DiffDiskPlacement": {
+      "type": "string",
+      "description": "Specifies the ephemeral disk placement for operating system disk. This property can be used by user in the request to choose the location i.e, cache disk or resource disk space for Ephemeral OS disk provisioning. For more information on Ephemeral OS disk size requirements, please refer Ephemeral OS disk size requirements for Windows VM at https://docs.microsoft.com/azure/virtual-machines/windows/ephemeral-os-disks#size-requirements and Linux VM at https://docs.microsoft.com/azure/virtual-machines/linux/ephemeral-os-disks#size-requirements",
+      "enum": [
+        "CacheDisk",
+        "ResourceDisk"
+      ],
+      "x-ms-enum": {
+        "name": "DiffDiskPlacement",
+        "modelAsString": true
+      }
+    },
+"DiffDiskSettings": {
+      "properties": {
+        "option": {
+          "$ref": "#/definitions/DiffDiskOption",
+          "description": "Specifies the ephemeral disk settings for operating system disk."
+        },
+        "placement": {
+          "$ref": "#/definitions/DiffDiskPlacement",
+          "description": "Specifies the ephemeral disk placement for operating system disk.<br><br> Possible values are: <br><br> **CacheDisk** <br><br> **ResourceDisk** <br><br> Default: **CacheDisk** if one is configured for the VM size otherwise **ResourceDisk** is used.<br><br> Refer to VM size documentation for Windows VM at https://docs.microsoft.com/azure/virtual-machines/windows/sizes and Linux VM at https://docs.microsoft.com/azure/virtual-machines/linux/sizes to check which VM sizes exposes a cache disk."
+        }
+      },
+      "description": "Describes the parameters of ephemeral disk settings that can be specified for operating system disk. <br><br> NOTE: The ephemeral disk settings can only be specified for managed disk."
+    },
+```
+
+**如何指定有依赖关系的argument？**
+`c.argument('use_unmanaged_disk', action='store_true', help='Do not use managed disk to persist VM')`
+`c.argument('storage_account', help="Only applicable when used with `--use-unmanaged-disk`. The name to use when creating a new storage account or referencing an existing one. If omitted, an appropriate storage account in the same resource group and location will be used, or a new one will be created.")`
+`c.argument('storage_container_name', help="Only applicable when used with `--use-unmanaged-disk`. Name of the storage container for the VM OS disk. Default: vhds")`
+
+**如何指定有排斥关系的argument？**
+required = ['os_type', 'attach_os_disk', 'use_unmanaged_disk']
+forbidden = ['os_disk_name', 'os_caching', 'image', 'storage_account', 'ephemeral_os_disk',
+                     'storage_container_name', 'data_disk_sizes_gb', 'storage_sku'] + auth_params
