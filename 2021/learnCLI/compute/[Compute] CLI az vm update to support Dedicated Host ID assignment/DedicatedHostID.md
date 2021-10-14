@@ -553,10 +553,10 @@ if you update the vm from a host to a host-group Failed
 if you update the vm from a host-group to a host Failed  
 
 **rest api spec**
-not found
+https://github.com/Azure/azure-rest-api-specs/blob/master/specification/compute/resource-manager/Microsoft.Compute/stable/2021-07-01/compute.json#L12040-L12047
 
 **already try**
-```
+```python
 # DedicatedHost = cmd.get_models('DedicatedHost')
 # op = cf_dedicated_hosts(cmd.cli_ctx, '')
 # host_group_name = dedicated_host.split('/')[8]
@@ -570,6 +570,23 @@ not found
 # DedicatedHostGroup = cmd.get_models('DedicatedHostGroup')
 # location required
 # vm.host_group = DedicatedHostGroup(location=vm.location)
+
+if dedicated_host is not None:
+    if vm.host is None:
+        DedicatedHost = cmd.get_models('SubResource')
+        vm.host = DedicatedHost(additional_properties={}, id=dedicated_host)
+    else:
+        vm.host.id = dedicated_host
+    if vm.host_group is not None:
+        vm.host_group = N
+if dedicated_host_group is not None:
+    if vm.host_group is None:
+        DedicatedHostGroup = cmd.get_models('SubResource')
+        vm.host_group = DedicatedHostGroup(additional_properties={}, id=dedicated_host_group)
+    else:
+        vm.host_group.id = dedicated_host_group
+    if vm.host is not None:
+        vm.host = None
 ```
 
 **一些报错**
@@ -577,3 +594,17 @@ not found
 Resource 'ded-host-vm2' cannot be placed automatically on host group 'my-host-group', since the host group does not support automatic placement.  
 If you would like to use automatic placement, please consider creating a new host group with the value of parameter 'hostGroup.properties.supportAutomaticPlacement' set to true.  
 Note that the value is set to false by default if it is not specified, and it cannot be changed once the host group is created.  
+2. cannot have host and host group at the same time.
+
+**test cases**
+1. no host to host pass
+2. host to host2 pass
+not autopalcement group not allowed specified
+
+(autoplacement group)
+1. no host to host
+2. no group to group
+3. host to host2 pass
+4. group to group2 pass
+5. group2 to host
+6. host to group2

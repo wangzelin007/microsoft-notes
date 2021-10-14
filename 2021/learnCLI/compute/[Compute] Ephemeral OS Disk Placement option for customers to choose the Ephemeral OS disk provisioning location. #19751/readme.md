@@ -3,8 +3,8 @@ For az vmss create, az vm create cmds, currently we have param called [--ephemer
 we should have another param called that goes together with this is [--ephemeral-os-disk-placement {CacheDisk,ResourceDisk}]  
 which customer can set when customer selected the ephemeral-os-disk value as true.  
 我们应该有另一个与此一起调用的参数是 [--ephemeral-os-disk-placement {CacheDisk,ResourceDisk}]，当客户将 ephemeral-os-disk 值选择为 true 时，客户可以设置该参数。  
-如果设置CacheDisk 即使用缓存？  
-如果设置ResourceDisk 即使用本地磁盘？  
+如果设置CacheDisk 即使用缓存，In portal it shows with OS cache placement.  
+如果设置ResourceDisk 即使用本地磁盘, 需要保证 resourceDiskSizeInMb 足够大, In portal it shows with Temp disk placement.  
 
 If a VM has sufficient cache and temp space, you will now also be able to specify where you want to store the ephemeral OS Disk by using a new property called DiffDiskPlacement  
 如果 VM 有足够的缓存和临时空间，您现在还可以使用名为 DiffDiskPlacement 的新属性指定要存储临时 OS 磁盘的位置  
@@ -95,7 +95,7 @@ A: We support platform and custom images, up to the VM cache size, where all rea
 答：我们支持平台和自定义映像，最高可达 VM 缓存大小，其中对 OS 磁盘的所有读写都将在与虚拟机相同的节点上进行。  
 
 Q: Will all VM sizes be supported for ephemeral OS disks?  
-A: No, most Premium Storage VM sizes are supported (DS, ES, FS, GS, M, etc.). To know whether a particular VM size supports ephemeral OS disks, you can:  
+A: No, most Premium Storage VM sizes are supported (**DS, ES, FS, GS, M**, etc.). To know whether a particular VM size supports ephemeral OS disks, you can:  
 ```shell
 $vmSizes=Get-AzComputeResourceSku | where{$_.ResourceType -eq 'virtualMachines' -and $_.Locations.Contains('CentralUSEUAP')} 
 
@@ -155,8 +155,13 @@ def normalize_disk_info(ephemeral_os_disk=False, ephemeral_os_disk_placement=Fal
             os_disk_caching = 'ReadOnly'
         if ephemeral_os_disk_placement:
             info['os']['diffDiskSettings']['placement'] = ephemeral_os_disk_placement # ["ResourceDisk", "CacheDisk"]
-# help 需要加上依赖说明，依赖 ephemeral_os_disk
-# validate 需要加上校验，必须提供 ephemeral_os_disk 参数
+# help 需要加上依赖说明，依赖 ephemeral_os_disk done
+# validate 需要加上校验，必须提供 ephemeral_os_disk 参数 todo
+# message = 'Secret is missing vaultCertificates array or it is empty at index 0'
+# with self.assertRaisesRegexp(CLIError, message):
+# vm create -g {rg} -n {vm_2} --image {image} --ssh-key-value '{ssh_key}' --location {loc} --ephemeral-os-disk-placement {placement2} --os-disk-caching ReadOnly --admin-username {user} --nsg-rule NONE
+# 仅支持 enum ["ResourceDisk", "CacheDisk"] done
+# 把关联的 test_vm_create_ephemeral_os_disk 也跑一下 done
 ```
 ```json
 # example
@@ -261,3 +266,98 @@ D:\code\azure-rest-api-specs\specification\compute\resource-manager\Microsoft.Co
 required = ['os_type', 'attach_os_disk', 'use_unmanaged_disk']
 forbidden = ['os_disk_name', 'os_caching', 'image', 'storage_account', 'ephemeral_os_disk',
                      'storage_container_name', 'data_disk_sizes_gb', 'storage_sku'] + auth_params
+
+**error**
+```
+azure.cli.core.azclierror.DeploymentError: 
+{
+  "status": "Failed",
+  "error": {
+    "code": "DeploymentFailed",
+    "message": "At least one resource deployment operation failed. Please list deployment operations for details. Please see https://aka.ms/DeployOperations for usage details.",
+    "details": [
+      {
+        "code": "BadRequest",
+        "message": {
+            "error": {
+                "code": "NotSupported",
+                "message": "OS disk of Ephemeral VM with size greater than 7 GB is not allowed for VM size Standard_DS1_v2 when the DiffDiskPlacement is ResourceDisk."
+          }
+        }
+      }
+    ]
+  }
+}
+```
+
+**try DS, ES, FS, GS, M**
+1. OS disk of Ephemeral VM with size greater than 7 GB is not allowed for VM size Standard_DS1_v2 when the DiffDiskPlacement is ResourceDisk.
+use `--size Standard_D4s_v2` to specify vm size  
+use `--vm-sku Standard_DS4_v2` to specify vmss size
+default is `Standard_DS1_v2 7168MB`
+`Standard_DS4_v2 57344MB`
+```
+az vm list-sizes -l westus
+--size Standard_D4s_v3
+  {
+    "maxDataDiskCount": 64,
+    "memoryInMb": 2048000,
+    "name": "Standard_M128",
+    "numberOfCores": 128,
+    "osDiskSizeInMb": 1047552,
+    "resourceDiskSizeInMb": 16384000
+  },
+  {
+    "maxDataDiskCount": 64,
+    "memoryInMb": 3891200,
+    "name": "Standard_M128m",
+    "numberOfCores": 128,
+    "osDiskSizeInMb": 1047552,
+    "resourceDiskSizeInMb": 16384000
+  },
+    {
+    "maxDataDiskCount": 64,
+    "memoryInMb": 5836800,
+    "name": "Standard_M416-208s_v2",
+    "numberOfCores": 416,
+    "osDiskSizeInMb": 1047552,
+    "resourceDiskSizeInMb": 8388608
+  },
+  {
+    "maxDataDiskCount": 64,
+    "memoryInMb": 5836800,
+    "name": "Standard_M416s_v2",
+    "numberOfCores": 416,
+    "osDiskSizeInMb": 1047552,
+    "resourceDiskSizeInMb": 8388608
+  },
+  {
+    "maxDataDiskCount": 64,
+    "memoryInMb": 11673600,
+    "name": "Standard_M416-208ms_v2",
+    "numberOfCores": 416,
+    "osDiskSizeInMb": 1047552,
+    "resourceDiskSizeInMb": 8388608
+  },
+  {
+    "maxDataDiskCount": 64,
+    "memoryInMb": 11673600,
+    "name": "Standard_M416ms_v2",
+    "numberOfCores": 416,
+    "osDiskSizeInMb": 1047552,
+    "resourceDiskSizeInMb": 8388608
+  }
+```
+
+**help**
+```
+trade-off
+  - name: Create a VMSS choose the Ephemeral OS disk provisioning location.
+    text: >
+        az vmss create -n MyVmss -g MyResourceGroup --image {image} --vm-sku Standard_DS4_v2 --ephemeral-os-disk --ephemeral-os-disk-placement ResourceDisk
+        az vmss create -n MyVmss -g MyResourceGroup --image {image} --ephemeral-os-disk --ephemeral-os-disk-placement CacheDisk 
+  - name: Create a VM choose the Ephemeral OS disk provisioning location.
+    text: >
+        az vm create -n MyVm -g MyResourceGroup --image {image} --size Standard_DS4_v2 --location {loc} --ephemeral-os-disk --ephemeral-os-disk-placement ResourceDisk
+        az vm create -n MyVm -g MyResourceGroup --image {image} --location {loc} --ephemeral-os-disk --ephemeral-os-disk-placement CacheDisk
+```
