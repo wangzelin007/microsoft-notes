@@ -13,9 +13,11 @@ git push origin vm-update-support-dedicated-host-id
 ```
 --------------------------------------------------------
 **** Open a pull request ****
-[Compute] `az vm update`: Add `--host` argument and `--host-group` argument
+[Compute] az vm update: Add --host argument and --host-group argument to support assign an existing VM to a specific ADH
 
 Description
+
+[issue link](https://github.com/Azure/azure-cli/issues/19622)
 
 Add --host argument to az vm update.
 Add --host-group argument to az vm update.

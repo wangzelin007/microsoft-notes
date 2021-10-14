@@ -18,9 +18,11 @@ git push origin vm-update-support-dedicated-host-id
 ```
 --------------------------------------------------------
 **** Open a pull request ****
-[Compute] `az vm vmss create`: Add `--ephemeral-os-disk-placement` argument
+[Compute] `az vm vmss create`: Add `--ephemeral-os-disk-placement` argument for support to choose the Ephemeral OS disk provisioning location
 
 **Description**
+
+[issue link](https://github.com/Azure/azure-cli/issues/19751)
 
 Add --ephemeral-os-disk-placement argument to az vm create.
 Add --ephemeral-os-disk-placement argument to az vmss create.
