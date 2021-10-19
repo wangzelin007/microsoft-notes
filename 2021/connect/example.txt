@@ -2,21 +2,14 @@ website：
 
 
 Achieve 100% Breadth coverage across existing GA RPs and new PLR GA RPs/Services in Azure CLI.
-
-
 Contribute to feature development for some Ring-0 services (Network, Monitor, and etc.) .
-
-
 Achieve 100% Python track 2 mgmt. SDK adoption in Azure CLI.
-
-
 Improve interactive experience by providing better output & UX, AI powered recommendations, Az init & interactive config and Portal-CLI integration.
-
-
 Establish good relationship with different stakeholders (Portal, Service, Swagger, SDK teams, end users and etc.)
 
 Looking Back 总结 不用
 
+***忘记名字了 不用
 
 Going Forward
 
@@ -57,25 +50,16 @@ As part of the D&I core priority, create an inclusive work environment by encour
 
 -----------------------------------------------------------------------------------------
 MSGraph support GA in Azure CLI
-
 CodeGen V2
-
+Azure CLI Breaking change tool
 Az init GA
-
 E2E scenarios related to Central IT in Enterprise: Identity
-
 Portal-CLI integration V2
-
-Support reference docs rework
-
-Core improvements for packaging/MSI experience
-
-E2E guidance (Close gaps identified in CLI/Sample codes/Convenient commands)
-
+Core improvements for packaging/MSI experience (remove package size)
 Az next E2E
-
+E2E guidance (Close gaps identified in CLI/Sample codes/Convenient commands)
 Infrastructure refinement
-
-
+Azure CLI test coverage
+Support reference docs rework
 -----------------------------------------------------------------------------------------
 vendor -- 微创
