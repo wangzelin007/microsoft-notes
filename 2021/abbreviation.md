@@ -7,3 +7,4 @@ GRS: Geo Redundant Storage
 RAGRS: Read Access Geo Redundant Storage
 GZRS: Geo-Zone Redundant Storage
 RAGZRS: Read Access Geo-Zone Redundant Storage
+ARM: Azure Resource Management

@@ -3,8 +3,8 @@ For az vmss create, az vm create cmds, currently we have param called [--ephemer
 we should have another param called that goes together with this is [--ephemeral-os-disk-placement {CacheDisk,ResourceDisk}]  
 which customer can set when customer selected the ephemeral-os-disk value as true.  
 我们应该有另一个与此一起调用的参数是 [--ephemeral-os-disk-placement {CacheDisk,ResourceDisk}]，当客户将 ephemeral-os-disk 值选择为 true 时，客户可以设置该参数。  
-如果设置CacheDisk 即使用缓存，In portal it shows with OS cache placement.  
-如果设置ResourceDisk 即使用本地磁盘, 需要保证 resourceDiskSizeInMb 足够大, In portal it shows with Temp disk placement.  
+如果设置CacheDisk 即使用缓存，In portal it shows with **OS cache placement**.
+如果设置ResourceDisk 即使用本地磁盘, 需要保证 resourceDiskSizeInMb 足够大, In portal it shows with **Temp disk placement**.  
 
 If a VM has sufficient cache and temp space, you will now also be able to specify where you want to store the ephemeral OS Disk by using a new property called DiffDiskPlacement  
 如果 VM 有足够的缓存和临时空间，您现在还可以使用名为 DiffDiskPlacement 的新属性指定要存储临时 OS 磁盘的位置  
