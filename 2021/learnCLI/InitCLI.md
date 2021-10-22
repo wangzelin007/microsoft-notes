@@ -1,5 +1,8 @@
-   1. pip install azdev
-   2. azdev setup --cli D:\code\azure-cli --repo D:\code\azure-cli-extensions
+1. pip install azdev
+2. azdev setup --cli D:\code\azure-cli --repo D:\code\azure-cli-extensions
+3. pip install nose
+
+推荐Windows Terminal + PowerShell 7+
 
 **problem**
 ```

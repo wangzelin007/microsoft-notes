@@ -46,13 +46,18 @@ az vm update -n cli-test-vm-local-base -g cli_test_vm_create_ephemeral_os_disk_p
 And I think before update or resize , you need to deallocate vm/vmss first, then update or resize and start vm/vmss in the end.
 
 **代码逻辑**
+**TODO**
+if not os_disk.diff_disk_settings.placement ?
 az vm resize 
 D:\code\azure-cli\src\azure-cli\azure\cli\command_modules\vm\commands.py
 g.custom_command('resize', 'resize_vm', supports_no_wait=True)
 D:\code\azure-cli\src\azure-cli\azure\cli\command_modules\vm\custom.py
 def resize_vm(cmd, resource_group_name, vm_name, size, no_wait=False):
-vm.storage_profile.osdisk.diffdisksettings.placement=placement **todo**
+    vm = get_vm_to_update(cmd, resource_group_name, vm_name)
+    vm.hardware_profile.vm_size == size
+    vm.storage_profile.os_disk.diff_disk_settings.placement=ephemeral_os_disk_placement **todo**
 
+**test**
 test_vm_create_state_modifications
 self.cmd('vm deallocate --resource-group {rg} --name {vm}')
 self._check_vm_power_state('PowerState/deallocated')
@@ -60,5 +65,32 @@ self.cmd('vm resize -g {rg} -n {vm} --size Standard_DS2_v2',
          checks=self.check('hardwareProfile.vmSize', 'Standard_DS2_v2'))
 
 az vm update
+need to add --vm-sku in az vmss update and --size in az vm update first.
+D:\code\azure-cli\src\azure-cli\azure\cli\command_modules\vm\commands.py
+g.generic_update_command('update', getter_name='get_vm_to_update', setter_name='update_vm', setter_type=compute_custom, command_type=compute_custom, supports_no_wait=True, validator=process_vm_update_namespace)
+D:\code\azure-cli\src\azure-cli\azure\cli\command_modules\vm\custom.py
+def update_vm:
+    if size is not None:
+        vm.hardware_profile.vm_size = size
+    vm.storage_profile.os_disk.diff_disk_settings.placement=ephemeral_os_disk_placement
 
 az vmss update
+need to add --vm-sku in az vmss update and --size in az vm update first.
+**需要注意没有的时候怎么传**
+D:\code\azure-cli\src\azure-cli\azure\cli\command_modules\vm\commands.py
+g.generic_update_command('update', getter_name='get_vmss_modified', setter_name='update_vmss', supports_no_wait=True, command_type=compute_custom, validator=validate_vmss_update_namespace)
+D:\code\azure-cli\src\azure-cli\azure\cli\command_modules\vm\custom.py
+get_vmss_modified
+    vmss = client.virtual_machine_scale_sets.get(resource_group_name, name)
+update_vmss
+    vmss = kwargs['parameters']
+    if vm_sku is not None:
+        vmss.sku.name = vm_sku
+    vmss.virtual_machine_profile.storage_profile.os_disk.diff_disk_settings.placement=ephemeral_os_disk_placement **todo**
+    return sdk_no_wait(no_wait, client.virtual_machine_scale_sets.begin_create_or_update,
+                       resource_group_name, name, **kwargs)
+**test**
+azdev test test_vmss_update_ephemeral_os_disk_placement --live --discover
+
+**TODO**
+if not os_disk.diff_disk_settings.placement ?

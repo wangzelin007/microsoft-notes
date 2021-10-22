@@ -10,4 +10,7 @@ netstat -na | Select-String "PORT"
 
 **which**
 get-command python
+
+**wc -l**
+pip list|Measure-Object -line
 ```
