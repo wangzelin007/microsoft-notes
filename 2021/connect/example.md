@@ -24,28 +24,27 @@ Lead to achieve 100% Python track 2 mgmt. SDK adoption in Azure CLI.
     Leverage track 2 migration pipeline to speed up migration.
 Lead the work to improve interactive experience by providing better output & UX, AI powered recommendations, Az init & interactive config and Portal-CLI integration.
 
-
 Be specific about what you are going to do and why. Leverage perspectives you received to prioritize opportunities to learn or try something new. What are your future career plans and how can your manager support you?
 
 
 Grow/practice leadership/people management skills.
-Lead some projects (CLI track 2 migration, 100% breadth coverage and etc.) to grow project management skills.
-Drive the communication and collaboration across teams to grow communication skills with different stakeholders.
-1:1 with mentees to practice mentorship skills.
-Join training/activities about leadership/people management skills.
-Learn from senior leaders.
+ - Lead some projects (CLI track 2 migration, 100% breadth coverage and etc.) to grow project management skills.
+ - Drive the communication and collaboration across teams to grow communication skills with different stakeholders.
+ - 1:1 with mentees to practice mentorship skills.
+ - Join training/activities about leadership/people management skills.
+ - Learn from senior leaders.
 Seek more opportunities to practice management skill.
 Improve/expand technical skills.
-Lead/participant other projects besides Azure CLI such as Azure services or Azure portal.
+ - Lead/participant other projects besides Azure CLI such as Azure services or Azure portal.
 
 
 -----------------------------------------------------------------------------------------
 zhiyi
-Ramp up and contribute to these areas of services: Authentication/Authorization, Storage, Stack, KeyVault, and db-up.
-Own parts of the above areas by becoming the point of contact when customers require new features and encounter issues.
-Resolve issues for the codebase, address customer feedback and focus on customer satisfaction.
-Gain more technical expertise in the project and related technologies and move forward more efficiently
-As part of the D&I core priority, create an inclusive work environment by encouraging people with different background to speak up and challenge questionable behaviors.
+1. Ramp up and contribute to these areas of services: Authentication/Authorization, Storage, Stack, KeyVault, and db-up.
+2. Own parts of the above areas by becoming the point of contact when customers require new features and encounter issues.
+3. Resolve issues for the codebase, address customer feedback and focus on customer satisfaction.
+4. Gain more technical expertise in the project and related technologies and move forward more efficiently
+5. As part of the D&I core priority, create an inclusive work environment by encouraging people with different background to speak up and challenge questionable behaviors.
 
 
 -----------------------------------------------------------------------------------------

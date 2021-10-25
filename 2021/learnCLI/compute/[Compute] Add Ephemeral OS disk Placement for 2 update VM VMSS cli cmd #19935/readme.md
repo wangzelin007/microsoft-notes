@@ -46,7 +46,6 @@ az vm update -n cli-test-vm-local-base -g cli_test_vm_create_ephemeral_os_disk_p
 And I think before update or resize , you need to deallocate vm/vmss first, then update or resize and start vm/vmss in the end.
 
 **代码逻辑**
-**TODO**
 if not os_disk.diff_disk_settings.placement ?
 az vm resize 
 D:\code\azure-cli\src\azure-cli\azure\cli\command_modules\vm\commands.py
@@ -55,7 +54,7 @@ D:\code\azure-cli\src\azure-cli\azure\cli\command_modules\vm\custom.py
 def resize_vm(cmd, resource_group_name, vm_name, size, no_wait=False):
     vm = get_vm_to_update(cmd, resource_group_name, vm_name)
     vm.hardware_profile.vm_size == size
-    vm.storage_profile.os_disk.diff_disk_settings.placement=ephemeral_os_disk_placement **todo**
+    vm.storage_profile.os_disk.diff_disk_settings.placement=ephemeral_os_disk_placement
 
 **test**
 test_vm_create_state_modifications
@@ -86,11 +85,48 @@ update_vmss
     vmss = kwargs['parameters']
     if vm_sku is not None:
         vmss.sku.name = vm_sku
-    vmss.virtual_machine_profile.storage_profile.os_disk.diff_disk_settings.placement=ephemeral_os_disk_placement **todo**
+    vmss.virtual_machine_profile.storage_profile.os_disk.diff_disk_settings.placement=ephemeral_os_disk_placement
     return sdk_no_wait(no_wait, client.virtual_machine_scale_sets.begin_create_or_update,
                        resource_group_name, name, **kwargs)
 **test**
 azdev test test_vmss_update_ephemeral_os_disk_placement --live --discover
 
-**TODO**
 if not os_disk.diff_disk_settings.placement ?
+if ephemeral_os_disk:
+    info['os']['diffDiskSettings'] = {'option': 'Local'}
+    # wzl add: caching = 'ReadWrite', because caching have a default value already, so just ignore.
+    # local os disks require readonly caching, default to ReadOnly if os_disk_caching not specified.
+    # if not os_disk_caching:
+    #    os_disk_caching = 'ReadOnly'
+    if ephemeral_os_disk_placement:
+        info['os']['diffDiskSettings']['placement'] = ephemeral_os_disk_placement
+
+**None**
+diff_disk_settings=None
+
+**Not None**
+diff_disk_settings=(DiffDiskSettings){'additional_properties': {}, 'option': 'Local', 'placement': 'CacheDisk'}
+DiffDiskSettings = cmd.get_models('DiffDiskSettings')
+vm.host = DiffDiskSettings(option='local', placement=ephemeral_os_disk_placement)
+
+That make sense, but can we put this in next version?
+And do you think CLI needs to support vmss resize too?
+Maybe we can add both `az vm/vmss --resize --ephemeral-os-disk-placement ` in next version.
+Because there is not enough time to test both `update` and `resize` before ignite.
+
+**TODO**
+1. help
+2. validate --size and --sku-size 
+3. examples
+4. tests
+
+**validate**
+D:\code\azure-cli\src\azure-cli\azure\cli\command_modules\vm\commands.py
+g.generic_update_command('update', getter_name='get_vm_to_update', setter_name='update_vm', setter_type=compute_custom, command_type=compute_custom, supports_no_wait=True, validator=process_vm_update_namespace)
+g.generic_update_command('update', getter_name='get_vmss_modified', setter_name='update_vmss', supports_no_wait=True, command_type=compute_custom, validator=validate_vmss_update_namespace)
+
+**error**
+```
+zure.core.exceptions.ResourceExistsError: (OperationNotAllowed) Operation'deallocate' is not supported for VMs or VM Scale Set instances using an ephemeral OS disk.
+azure.core.exceptions.ResourceExistsError: (OperationNotAllowed) The 'Placement' option override for the ephemeral OS disk is not supported.Please upgrade the VM Size with desired placement option for provisioning the Ephemeral OS disk. Code: OperationNotAllowed
+```
