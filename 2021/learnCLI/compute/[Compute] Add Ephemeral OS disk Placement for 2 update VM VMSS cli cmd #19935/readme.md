@@ -107,7 +107,7 @@ diff_disk_settings=None
 **Not None**
 diff_disk_settings=(DiffDiskSettings){'additional_properties': {}, 'option': 'Local', 'placement': 'CacheDisk'}
 DiffDiskSettings = cmd.get_models('DiffDiskSettings')
-vm.host = DiffDiskSettings(option='local', placement=ephemeral_os_disk_placement)
+vm.host = DiffDiskSettings(option='Local', placement=ephemeral_os_disk_placement)
 
 That make sense, but can we put this in next version?
 And do you think CLI needs to support vmss resize too?
@@ -115,10 +115,13 @@ Maybe we can add both `az vm/vmss --resize --ephemeral-os-disk-placement ` in ne
 Because there is not enough time to test both `update` and `resize` before ignite.
 
 **TODO**
-1. help
-2. validate --size and --sku-size 
-3. examples
-4. tests
+1. examples N/A
+2. validate --size and --sku-size D
+3. help D
+4. tests D
+5. validate --ephemeral-os-disk D
+6. validate --size --vm-sku not change Usage Error in --placement NOT NEED!
+7. https://github.com/kevin1024/vcrpy/issues/533
 
 **validate**
 D:\code\azure-cli\src\azure-cli\azure\cli\command_modules\vm\commands.py

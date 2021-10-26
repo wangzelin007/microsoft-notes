@@ -34,6 +34,11 @@ az vm create -n MyVm -g MyResourceGroup --image {image} --location {loc} --ephem
 az vmss create -n MyVmss -g MyResourceGroup --image {image} --vm-sku Standard_DS4_v2 --ephemeral-os-disk --ephemeral-os-disk-placement ResourceDisk
 az vmss create -n MyVmss -g MyResourceGroup --image {image} --ephemeral-os-disk --ephemeral-os-disk-placement CacheDisk 
 
+**History Notes**
+
+[Compute] `az vm create`: Add `--ephemeral-os-disk-placement` argument to support choose the Ephemeral OS disk provisioning location  
+[Compute] `az vmss create`: Add `--ephemeral-os-disk-placement` argument to support choose the Ephemeral OS disk provisioning location
+
 ---
 
 This checklist is used to make sure that common guidelines for a pull request are followed.
