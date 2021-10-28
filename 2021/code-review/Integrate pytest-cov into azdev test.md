@@ -22,3 +22,5 @@ This is my experience of downloading the code and actually using it.
 az extension list-available
 az extension add --name $(az extension list-available --query "[].name" -o tsv)
 az vm resize --size Standard_DS3_v2 --ids $(az vm list -g MyResourceGroup --query "[].id" -o tsv)
+
+[why-should-text-files-end-with-a-newline](https://stackoverflow.com/questions/729692/why-should-text-files-end-with-a-newline)
