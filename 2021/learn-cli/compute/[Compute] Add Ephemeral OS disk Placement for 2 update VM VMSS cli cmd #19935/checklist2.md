@@ -1,3 +1,5 @@
+[PR link](https://github.com/Azure/azure-cli/pull/20043)
+
 ```
 az vm update -h
 az vm update --ephemeral-os-disk-placement -h
@@ -19,7 +21,7 @@ git push origin vm-vmss-update-support-ephemeral-os-disk-placement
 
 **Description**
 
-[issue link](https://github.com/Azure/azure-cli/issues/19751)
+[issue link](https://github.com/Azure/azure-cli/issues/19935)
 
 Add --ephemeral-os-disk-placement argument to az vm update.
 Add --ephemeral-os-disk-placement argument to az vmss update.
@@ -52,9 +54,21 @@ jsntcy
 zhoxing-ms
 hari-bodicherla
 
+Assignees:
+wangzelin007
+yonzhan
+
 Labels:
 Compute - VM
 Compute - VMSS
+
+Milestone
+xxx
+
+Create pull request
+
+Linked issues
+
 --------------------------------------------------------
 Squash and merge
 

@@ -1,3 +1,5 @@
+[PR link](https://github.com/Azure/azure-cli/pull/20043)
+
 ```
 az vm update -h
 az vm update --size -h

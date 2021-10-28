@@ -13,4 +13,7 @@ get-command python
 
 **wc -l**
 pip list|Measure-Object -line
+
+**rm**
+Remove-Item C:\tmp -Recurse -Force
 ```
