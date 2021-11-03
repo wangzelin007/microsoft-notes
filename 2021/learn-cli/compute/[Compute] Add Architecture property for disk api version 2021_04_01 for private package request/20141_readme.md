@@ -1,0 +1,22 @@
+[issue](https://github.com/Azure/azure-cli/issues/20141)
+[spec](https://github.com/Azure/azure-rest-api-specs/pull/16629)
+[PR]()
+```json
+"architecture": {
+  "type": "string",
+  "description": "The architecture of the image.",
+  "enum": [
+    "x64",
+    "Arm64"
+  ],
+  "x-ms-enum": {
+    "name": "Architecture",
+    "modelAsString": true
+  }
+```
+
+**command**
+az disk create
+az disk update
+az snapshot create
+az snapshot update

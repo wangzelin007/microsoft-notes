@@ -1,0 +1,1 @@
+crafted: true 代表是aladdin程序自动生成的help信息
