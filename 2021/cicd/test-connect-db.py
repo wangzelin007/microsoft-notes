@@ -55,9 +55,10 @@ def write_db():
                                   host='clisqldbserver.mysql.database.azure.com',
                                   port=3306,
                                   database='clidb',
+                                  connection_timeout=0.01,
     )
     print('Connect DB Success')
 
 if __name__ == '__main__':
-    # write_db()
-    test_timeout_fa()
+    write_db()
+    # test_timeout_fa()

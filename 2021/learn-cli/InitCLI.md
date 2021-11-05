@@ -1,8 +1,12 @@
 1. python -m venv 20211026
 2. .\20211026\Scripts\activate
 3. pip install azdev
-4. azdev setup --cli D:\code\azure-cli --repo D:\code\azure-cli-extensions
-5. pip install nose
+4. copy C:\Users\zelinwang\Anaconda3\envs\xxx\python.exe to C:\Users\zelinwang\Anaconda3\envs\xxx\Scripts
+5. azdev setup --cli D:\code\azure-cli --repo D:\code\azure-cli-extensions
+6. pip install nose
+7. rm pywin32_system32 && pywin32-302.dist-info
+8. az login
+9. az account show
 
 推荐Windows Terminal + PowerShell 7+
 
