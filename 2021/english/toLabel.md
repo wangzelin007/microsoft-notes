@@ -12,3 +12,4 @@ Like some investigation data about how many customers influenced/how many users 
 CI error:
 Could you pull the latest code from remote main branch first, and then fix the CI style check issue below.
 After that, we will help you solve the remainning CI issue later.
+git rebase dev

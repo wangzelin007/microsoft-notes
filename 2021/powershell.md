@@ -1,6 +1,10 @@
 ```
 powershell + azure
 https://docs.microsoft.com/en-us/powershell/azure/install-az-ps?view=azps-6.5.0
+https://docs.microsoft.com/en-us/powershell/scripting/install/installing-powershell-on-windows?view=powershell-7.2
+Install-Module -Name Az -Scope CurrentUser -Repository PSGallery -Force
+$PSVersionTable.PSVersion
+
 New-AzVirtualNetwork -?
 To see the examples, type: "Get-Help New-AzVirtualNetwork -Examples"
 For more information, type: "Get-Help New-AzVirtualNetwork -Detailed"
