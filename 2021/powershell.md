@@ -25,3 +25,8 @@ pip list|Measure-Object -line
 **rm**
 Remove-Item C:\tmp -Recurse -Force
 ```
+
+```cmd
+mklink /j "C:\Users\zelinwang\Anaconda3\envs\azdev-20211109-3\Lib\site-packages\azdev" "D:\code\azure-cli-dev-tools\azdev"
+mklink /j "C:\Users\zelinwang\OneDrive - Microsoft\D" "D:\"
+```

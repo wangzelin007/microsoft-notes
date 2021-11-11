@@ -1,12 +1,13 @@
 1. python -m venv 20211026
 2. .\20211026\Scripts\activate
 3. pip install azdev
-4. copy C:\Users\zelinwang\Anaconda3\envs\xxx\python.exe to C:\Users\zelinwang\Anaconda3\envs\xxx\Scripts
+4. copy C:\Users\zelinwang\Anaconda3\envs\xxx\python.exe to C:\Users\zelinwang\Anaconda3\envs\xxx\Scripts 暂时不支持py3.10
 5. azdev setup --cli D:\code\azure-cli --repo D:\code\azure-cli-extensions
 6. pip install nose
 7. rm pywin32_system32 && pywin32-302.dist-info
-8. az login
-9. az account show
+8. pip install pywin32==228
+9. az login
+10. az account show
 
 推荐Windows Terminal + PowerShell 7+
 
@@ -48,6 +49,9 @@ https://github.com/StrawnSC/azure-cli-dev-tools.git
 
 AttributeError: module 'azure.mgmt.cosmosdb.operations' has no attribute 'LocationsOperations'
 直接在 azure-cli 中搜索 azure-mgmt-cosmosdb 版本
+
+ImportError: DLL load failed while importing _ctypes: 找不到指定的模块。
+
 ```
 
 **install venv in D:\code\azure-cli\venv TODO**
