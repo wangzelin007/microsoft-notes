@@ -17,7 +17,7 @@ git push origin vm-vmss-update-support-size-vmsku
 ```
 --------------------------------------------------------
 **** Open a pull request ****
-[Compute] `az vm vmss update`: Add `--size` argument `--vm-sku` argument to support the resize
+[Compute] `az vm vmss update`: Add `--size` parameter `--vm-sku` argument to support the resize
 
 **Description**
 

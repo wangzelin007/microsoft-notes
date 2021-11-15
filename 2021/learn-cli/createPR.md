@@ -12,7 +12,7 @@ azdev test test_vm_update_ephemeral_os_disk_placement --live --discover
 azdev test test_vmss_update_ephemeral_os_disk_placement --live --discover
 git add
 git commit
-add ephemeral_os_disk_placement argument to az vm vmss update
+commit message
 git push origin vm-vmss-update-support-ephemeral-os-disk-placement
 ```
 --------------------------------------------------------
@@ -74,3 +74,8 @@ Squash and merge
 
 --------------------------------------------------------
 finish
+
+
+--------------------------------------------------------------------
+for ci & for bump version
+{compute} Bump disk 2021-04-01

@@ -1,2 +1,0 @@
-1. Since arg_type=get_enum_type(['ResourceDisk', 'CacheDisk']) is declared, so it is not necessary to declare the allowed value in help (Allowed values: ResourceDisk, CacheDisk), otherwise the information will be repeated
-2. Please use the specific error type ArgumentUsageError instead of CLIError
