@@ -6,8 +6,11 @@
     4. src\azure-cli\requirements.py3.windows.txt  
 - azdev setup --cli D:\code\azure-cli --repo D:\code\azure-cli-extensions
 - pip list to check the  installed package version 
-- azdev test --no-exitfirst
-- azdev test --no-exitfirst –-live --lf  
+- azdev test vm --no-exitfirst
+- azdev test --no-exitfirst --live --lf  
+
+-------------------------------------------------------------------
+
 Make sure the new api version do work in all regions  
 azdev test --no-exitfirst 
 Collect failed test name and files’path  
