@@ -8,10 +8,13 @@ Common:
 - I want to confirm with you that container.name and container_name are not None at any time, right?
 - Could you pull the latest code from remote main branch first, and then fix the CI style check issue below. After that, we will help you solve the remaining CI issue later.
 - Will the change of parameter type cause breaking change to users?
-- Could we add some scenario tests for those new commands?
+- May I ask you to add some scenario tests for those new commands?
 - Could you please use a specific error type instead of CLIError?
 - Could you please address those conflicts?
 - Could we abstract it into CLIArgumentType, so that we don't have to define the same flags repeatedly
+- Please use the first person voice
+- It seems that it and connectedvmware vm extension create have several common parameters. Could we consider using for loop to share them? (scope)
+- 
 
 Azure-cli:
 - For [] need check title
@@ -19,5 +22,5 @@ Azure-cli:
 - 
 
 Azure-cli-extensions:
-- Please write the description of changes into HISTORY,rst and update setup.py to release the new extension version
-- 
+- Please write the description of changes into HISTORY.rst and update setup.py to release the new extension version.
+- src/service_name.json when a new extension is added.
