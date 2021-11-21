@@ -3,11 +3,12 @@
 3. pip install azdev
 4. copy C:\Users\zelinwang\Anaconda3\envs\xxx\python.exe to C:\Users\zelinwang\Anaconda3\envs\xxx\Scripts 暂时不支持py3.10
 5. azdev setup --cli D:\code\azure-cli --repo D:\code\azure-cli-extensions
-6. pip install nose
-7. rm pywin32_system32 && pywin32-302.dist-info
-8. pip install pywin32==228
-9. az login
-10. az account show
+6. azdev setup --cli C:\code\azure-cli --repo C:\code\azure-cli-extensions
+7. pip install nose
+8. rm pywin32_system32 && pywin32-302.dist-info
+9. pip install pywin32==228
+10. az login
+11. az account show
 
 推荐Windows Terminal + PowerShell 7+
 
