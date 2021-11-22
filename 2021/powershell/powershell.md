@@ -33,6 +33,7 @@ Remove-Item C:\tmp -Recurse -Force
 ```cmd
 mklink /j "dst" "src" [j for directory]
 mklink /j "C:\Users\zelinwang\Anaconda3\envs\azdev-20211109-3\Lib\site-packages\azdev" "D:\code\azure-cli-dev-tools\azdev"
+mklink /j "D:\code\azure-cli-dev-tools\env\Lib\site-packages\azdev" "D:\code\azure-cli-dev-tools\azdev"
 mklink /j "C:\Users\zelinwang\OneDrive - Microsoft\D" "D:\"
 mklink "C:\Code\azure-cli\venv\Scripts\wzl.ps1" "C:\Code\microsoft-notes\2021\powershell\wzl.ps1"
 
