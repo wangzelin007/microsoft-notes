@@ -1,0 +1,38 @@
+- 提取所有module-command
+  - command_loader: <azure.cli.core.MainCommandsLoader object at 0x0000017BEBB274F0>
+    - argument_registry.arguments
+      - 'connectedmachine show'.'machine_name'.settings.'option_list'
+      - --_DISK_xx
+    - selected_mod_names: ['acr', 'acs', 'advisor', 'ams', 'apim', 'appconfig', 'appservice', 'aro', 'backup', 'batch', 'batchai', 'billing', 'botservice', 'cdn', 'cloud', 'cognitiveservices', 'config', 'configure', 'consumption', 'container', 'cosmosdb', 'databoxedge', 'deploymentmanager', 'dla', 'dls', 'dms', 'eventgrid', 'eventhubs', 'extension', 'feedback', 'find', 'hdinsight', 'interactive', 'iot', 'keyvault', 'kusto', 'lab', 'managedservices', 'maps', 'marketplaceordering', 'monitor', 'natgateway', 'netappfiles', 'network', 'policyinsights', 'privatedns', 'profile', 'rdbms', 'redis', 'relay', 'reservations', 'resource', 'role', 'search', 'security', 'servicebus', 'serviceconnector', 'servicefabric', 'signalr', 'sql', 'sqlvm', 'storage', 'synapse', 'util', 'vm', 'azure-cli', 'azure-cli-core', 'azure-cli-telemetry', 'azure-cli-testsdk']
+    - selected_mod_paths: ['d:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\acr']
+    - selected_modules: core: 4 ext: 0 mod: 65
+  - help_file_entries: 
+    - 'kusto operation-result show': {'type': 'command', 'short-summary': 'Returns operation results.', 'examples': [{'name': 'KustoOperationResultsGet', 'text': 'az kusto operation-result show --operation-id "30972f1b-b61d-4fd8-bd34-3dcfa24670f3" --location "westus"'}]}
+  - loaded_help:
+    - 'webpubsub update': <azure.cli.core._help.CliCommandHelpFile object at 0x0000019E813A1970>}
+  - exclusions:
+    - {}
+  - rules: None
+  - ci_exclusions: None
+  - min_severity: None
+  - update_global_exclusion: None
+  - rule_types: None
+  - loaded_help
+    - 'xxx'.parameters 不一定存在挺好的~
+    - 'xxx'.command_source.extension_name ['ad'] TODO
+    - 'xxx'.preview_info.target ['afd'] TODO
+    - 'xxx'.command_source ['ams']
+    - 56975 条命令
+    - exclude 
+      - ['-h', '--help']
+      - ['--verbose']
+      - ['--debug']
+      - ['--only-show-errors']
+      - ['--output', '-o']
+      - ['--query']
+      - 'acr build <SOURCE_LOCATION>'
+      - 'acr helm delete <CHART>'
+      - 'acr helm push <CHART_PACKAGE>'
+
+---
+- 
