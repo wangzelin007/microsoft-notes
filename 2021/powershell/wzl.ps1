@@ -1,6 +1,7 @@
 # C:\Code\azure-cli\venv\Scripts
 # mklink "C:\Code\wzl.ps1" "C:\Code\microsoft-notes\2021\powershell\wzl.ps1"
 # mklink "D:\Code\wzl.ps1" "D:\Code\microsoft-notes\2021\powershell\wzl.ps1"
+# add C:\Code to Registry Editor,Usage: wzl xxx
 
 param(
  [Parameter(Mandatory=$True)]

@@ -185,7 +185,13 @@ History notes are auto-generated based on PR titles and descriptions starting fr
     * `Component Name` shall be replaced by the real ones such as `Storage`, `Compute`. It could be the name of a command module, but in title case with necessary spaces for better readability, such as `API Management`, `Managed Service`. Other possible component names include but are not limited to: `Packaging`, `Misc.`, `Aladdin`.
     * `[]` means this change is customer-facing and the message will be put into `HISTORY.rst`. `{}` means this change is not customer-facing and the message will **NOT** be included in `HISTORY.rst`.
     * If the component name is `Core`, the message will be written in `src/azure-cli-core/HISTORY.rst`. Otherwise, the message will be written in `src/azure-cli/HISTORY.rst`.
-   [强制的] 每个 PR 标题必须以 `[Component Name]` 或 `{Component Name}` 开头。 `Component Name` 应替换为真实的，如`Storage`、`Compute`。它可能是一个命令模块的名称，但在标题的情况下，为了更好的可读性，需要有必要的空格，例如`API Management`、`Managed Service`。其他可能的组件名称包括但不限于：`Packaging`、`Misc.`、`Aladdin`。 `[]` 表示此更改是面向客户的，并且消息将放入 `HISTORY.rst`。 `{}` 表示此更改不是面向客户的，并且该消息不会包含在 `HISTORY.rst` 中。如果组件名称为`Core`，则消息将写入`src/azure-cli-core/HISTORY.rst`。否则，消息将写入`src/azure-cli/HISTORY.rst`。 
+   [强制的] 每个 PR 标题必须以 `[Component Name]` 或 `{Component Name}` 开头。 `Component Name` 应替换为真实的，如`Storage`、`Compute`。
+   它可能是一个命令模块的名称，但在标题的情况下，为了更好的可读性，需要有必要的空格，例如`API Management`、`Managed Service`。
+   其他可能的组件名称包括但不限于：`Packaging`、`Misc.`、`Aladdin`。 
+   `[]` 表示此更改是面向客户的，并且消息将放入 `HISTORY.rst`。 
+   `{}` 表示此更改不是面向客户的，并且该消息不会包含在 `HISTORY.rst` 中。
+   如果组件名称为`Core`，则消息将写入`src/azure-cli-core/HISTORY.rst`。
+   否则，消息将写入`src/azure-cli/HISTORY.rst`。 
 2. [**Mandatory**] If it's a breaking change, the second part should be `BREAKING CHANGE` followed by a colon. In the case of hotfix, put `Hotfix` in this part. If it's related to fixing an issue, put `Fix #number` in this part. For other cases, this part could be empty.
    [强制的] 如果是破坏性更改，第二部分应该是`BREAKING CHANGE` 后跟一个冒号。在hotfix的情况下，把`Hotfix`放在这部分。如果它与修复问题有关，请在此部分输入“修复编号”。对于其他情况，这部分可能是空的。 
 3. [**Recommendation**] If the change can be mapped into a command, then the next part could be the command name starting with `az`, followed by a colon.

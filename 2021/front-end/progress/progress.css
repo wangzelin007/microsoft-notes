@@ -1,0 +1,33 @@
+.progressbar {
+  background-color: #eee;
+  border-radius: 13px;
+  /* (height of inner div) / 2 + padding */
+  padding: 3px;
+}
+
+.progressbar .red {
+  background-color: red;
+  width: 40%;
+  /* Adjust with JavaScript */
+  height: 20px;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.progressbar .orange {
+  background-color: orange;
+  width: 40%;
+  /* Adjust with JavaScript */
+  height: 20px;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.progressbar .green {
+  background-color: green;
+  width: 40%;
+  /* Adjust with JavaScript */
+  height: 20px;
+  border-radius: 10px;
+  text-align: center;
+}

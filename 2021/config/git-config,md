@@ -1,7 +1,7 @@
 ```
 D:\Users\wangzelin007\.gitconfig
 [alias]
-    st = status
+    st = status -sb
     ci = commit
     co = checkout
     br = branch
@@ -22,7 +22,7 @@ D:\Users\wangzelin007\.gitconfig
     process = git-lfs filter-process
     required = true
 [user]
-    name = 王泽霖
+    name = ZelinWang
     email = zelinwang@microsoft.com
 [push]
     default = current
