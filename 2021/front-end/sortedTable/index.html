@@ -1,11 +1,10 @@
+<!--done-->
 <!doctype html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>html5</title>
-    <style>
-
-    </style>
+    <style></style>
 
     <!--不需要再次引用jquery-->
     <script type="text/javascript" src="http://code.jquery.com/jquery-1.7.2.min.js"></script>
@@ -17,7 +16,29 @@
         }
         function sortNumberDesc(a, b)
         {
-            return b-a
+            return b - a
+        }
+        function sortStrAS(a, b)
+        {
+            x = a.toUpperCase();
+            y = b.toUpperCase();
+            if (x < y) {
+                return -1;
+            }
+            if (x > y) {
+                return 1;
+            }
+        }
+        function sortStrDesc(a, b)
+        {
+            x = a.toUpperCase();
+            y = b.toUpperCase();
+            if (x < y) {
+                return 1;
+            }
+            if (x > y) {
+                return -1;
+            }
         }
 
         function SortTable(obj){
@@ -29,6 +50,7 @@
             var tdArray1=[];
             var tdArray2=[];
             var tdArray3=[];
+            console.log('td0s' + td0s)
             for(var i=0;i<td0s.length;i++){
                 tdArray0.push(td0s[i].innerHTML);
             }
@@ -39,28 +61,59 @@
                 tdArray2.push(parseInt(td2s[i].innerHTML));
             }
             for(var i=0;i<td3s.length;i++){
-                tdArray3.push(parseInt(td3s[i].innerHTML));
+                tdArray3.push(td3s[i].innerHTML);
             }
             var tds=document.getElementsByName("td"+obj.id.substr(2,1));
+            console.log('tds' + tds)
+            console.log('tds0' + tds[0].innerHTML)
+            console.log('tds1' + tds[1].innerHTML)
+            console.log('tds2' + tds[2].innerHTML)
+            console.log('tds3' + tds[3].innerHTML)
             var columnArray=[];
+<!--            columnArray [1,2,3]-->
             for(var i=0;i<tds.length;i++){
-                columnArray.push(parseInt(tds[i].innerHTML));
+                if($.isNumeric(tds[i].innerHTML)){
+                    columnArray.push(parseInt(tds[i].innerHTML));
+                }else{
+                    columnArray.push(tds[i].innerHTML);
+                }
             }
             var orginArray=[];
             for(var i=0;i<columnArray.length;i++){
                 orginArray.push(columnArray[i]);
             }
+            console.log('column ' + columnArray)
+            console.log('origin ' + orginArray)
+            var newArray = columnArray.slice(1,)
+            console.log('newArray ' + newArray)
             if(obj.className=="as"){
-                columnArray.sort(sortNumberAS);               //排序后的新值
+                console.log('columnArrary: ' + columnArray)
+                console.log($.isNumeric(columnArray[0]))
+                if($.isNumeric(columnArray[0])){
+                    newArray.sort(sortNumberAS);
+                }else{
+                    newArray.sort(sortStrAS);
+                }
+                console.log('newArray ' + newArray)
                 obj.className="desc";
             }else{
-                columnArray.sort(sortNumberDesc);               //排序后的新值
+                if($.isNumeric(columnArray[0])){
+                    newArray.sort(sortNumberDesc);
+                }else{
+                    newArray.sort(sortStrDesc);
+                }
+                console.log('newArray ' + newArray)
                 obj.className="as";
             }
-
-
-            for(var i=0;i<columnArray.length;i++){
-                for(var j=0;j<orginArray.length;j++){
+            columnArray = $.merge([columnArray[0]], newArray);
+            console.log('column ' + columnArray)
+            console.log('origin ' + orginArray)
+            console.log('td0 ' + tdArray0)
+            console.log('td1 ' + tdArray1)
+            console.log('td2 ' + tdArray2)
+            console.log('td3 ' + tdArray3)
+            for(var i=1;i<columnArray.length;i++){
+                for(var j=1;j<orginArray.length;j++){
                     if(orginArray[j]==columnArray[i]){
                         document.getElementsByName("td0")[i].innerHTML=tdArray0[j];
                         document.getElementsByName("td1")[i].innerHTML=tdArray1[j];
@@ -82,34 +135,34 @@
 
 <table>
     <tr>
-        <th>姓名</th>
+        <th id="th0" onclick="SortTable(this)" class="as">name</th>
         <th id="th1" onclick="SortTable(this)" class="as">力量</th>
         <th id="th2" onclick="SortTable(this)" class="as">敏捷</th>
         <th id="th3" onclick="SortTable(this)" class="as">智力</th>
     </tr>
     <tr>
-        <td name="td0">德鲁伊</td>
-        <td name="td1">17</td>
-        <td name="td2">24</td>
-        <td name="td3">13</td>
+        <td name="td0">Total</td>
+        <td name="td1">6497</td>
+        <td name="td2">8399</td>
+        <td name="td3">42.106%</td>
     </tr>
     <tr>
-        <td name="td0">月之骑士</td>
-        <td name="td1">15</td>
-        <td name="td2">22</td>
-        <td name="td3">16</td>
+        <td name="td0">acr</td>
+        <td name="td1">135</td>
+        <td name="td2">210</td>
+        <td name="td3">39.130%</td>
     </tr>
     <tr>
-        <td name="td0">众神之王</td>
-        <td name="td1">19</td>
-        <td name="td2">15</td>
-        <td name="td3">20</td>
+        <td name="td0">acs</td>
+        <td name="td1">37</td>
+        <td name="td2">222</td>
+        <td name="td3">14.286%</td>
     </tr>
     <tr>
-        <td name="td0">流浪剑客</td>
-        <td name="td1">23</td>
-        <td name="td2">15</td>
-        <td name="td3">14</td>
+        <td name="td0">advisor</td>
+        <td name="td1">6</td>
+        <td name="td2">1</td>
+        <td name="td3">85.714%</td>
     </tr>
 </table>
 
