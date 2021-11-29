@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css"/>
+<link rel="stylesheet" type="text/css" href="style.css"/>
+<script type="text/javascript" src="table.js"></script>
+
+<div id="nameselect">
+    <select required>
+        <option value="-1">select</option>
+        <option value="0">Module</option>
+        <option value="1">Tested</option>
+        <option value="2">Untested</option>
+        <option value="3">Percentage</option>
+    </select>
+</div>
+
+<div class="sort-direction-radio">
+  <input type="radio" name="sort-direction" value="ASC" checked />ASC
+  <input type="radio" name="sort-direction" value="DESC" />DESC
+</div>
+
+<div class="sort-module">
+    <input type="radio" name="sort-direction-1" value="ASC" checked/>ASC
+    <input type="radio" name="sort-direction-1" value="DESC"/>DESC
+</div>
+
+<div class="sort-tested">
+    <input type="radio" name="sort-direction-2" value="ASC" checked/>ASC
+    <input type="radio" name="sort-direction-2" value="DESC"/>DESC
+</div>
+
+<div class="sort-untested">
+    <input type="radio" name="sort-direction-3" value="ASC" checked/>ASC
+    <input type="radio" name="sort-direction-3" value="DESC"/>DESC
+</div>
+
+<div class="sort-percentage">
+    <input type="radio" name="sort-direction-4" value="ASC" checked/>ASC
+    <input type="radio" name="sort-direction-4" value="DESC"/>DESC
+</div>
+
+<table id="myTable">
+    <thead>
+    <tr id="table-header">
+        <th>Module</th>
+        <th>Tested</th>
+        <th>Untested</th>
+        <th>Percentage</th>
+    </tr>
+    </thead>
+    <tbody id="">
+    <tr class="" data-type="Total">
+        <td>Total</td>
+        <td>6152</td>
+        <td>8137</td>
+        <td>43.054%</td>
+    </tr>
+    <tr class="" data-type="acr">
+        <td>acr</td>
+        <td>135</td>
+        <td>210</td>
+        <td>135</td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>
