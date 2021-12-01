@@ -15,6 +15,7 @@ Common:
 - Please use the first person voice
 - It seems that it and connectedvmware vm extension create have several common parameters. Could we consider using for loop to share them? (scope)
 - May I ask will backup_config_response.properties always have property storage_type or cross_region_restore_flag
+- use dict.get(key[, default]) to assign default values.
 
 Azure-cli:
 - For [] need check title
