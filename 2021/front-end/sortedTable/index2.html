@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <meta charset="UTF-8">
+        <title>一个简易的排序按钮</title>
+
+        <style type="text/css">
+<!--            .click {-->
+<!--              width: 50px;-->
+<!--              height: 40px;-->
+<!--              display: table-cell;-->
+<!--              position: relative;-->
+<!--            }-->
+<!--        -->
+<!--            .top {-->
+<!--              width: 0;-->
+<!--              height: 0;-->
+<!--              border-style: solid;-->
+<!--              border-width: 0 6px 7px;-->
+<!--              border-color: transparent transparent #999999;-->
+<!--              position: absolute;-->
+<!--              transform: rotate(180deg);-->
+<!--              bottom: 14px;-->
+<!--              right: 17px;-->
+<!--            }-->
+<!--            .top:hover {-->
+<!--              cursor: pointer;-->
+<!--              border-color: transparent transparent #333333;-->
+<!--            }-->
+<!--        -->
+<!--            .bottom {-->
+<!--              width: 0;-->
+<!--              height: 0;-->
+<!--              border-style: solid;-->
+<!--              border-width: 0 6px 7px;-->
+<!--              border-color: transparent transparent #999999;-->
+<!--              position: absolute;-->
+<!--              top: 10px;-->
+<!--              right: 17px;-->
+<!--            }-->
+<!--            .bottom:hover {-->
+<!--              cursor: pointer;-->
+<!--              border-color: transparent transparent #333333;-->
+<!--            }-->
+
+
+            .arr {
+              width: 160px;
+            }
+
+            .arrUp {
+              width: 0;
+              height: 0;
+              border: 80px solid transparent;
+              border-bottom-color: #ccc;
+              cursor: pointer;
+            }
+
+            .arrDown {
+              width: 0;
+              height: 0;
+              border: 80px solid transparent;
+              border-top-color: #ccc;
+              margin-top: 10px;
+              cursor: pointer;
+            }
+        </style>
+        <script src="js/jquery-1.11.2.js"></script>
+        <script>
+          $(function () {
+            $(".arrUp").on("click", function () {
+              console.log('arrup')
+              $(this).css("border-bottom-color", "#b2b2b2");
+              $(".arrDown").css("border-top-color", "#ccc")
+            });
+            $(".arrDown").on("click", function () {
+              console.log('arrdown')
+              $(this).css("border-top-color", "#b2b2b2")
+              $(".arrUp").css("border-bottom-color", "#ccc")
+            })
+          })
+        </script>
+    </head>
+
+    <body>
+<!--        <div class="click">-->
+<!--            <span class="top"></span>-->
+<!--            <span class="bottom"></span>-->
+<!--        </div>-->
+        <div class="arr">
+            <div class="arrUp"></div>
+            <div class="arrDown"></div>
+        </div>
+    </body>
+
+</html>

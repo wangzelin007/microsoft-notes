@@ -1,0 +1,225 @@
+<!--done-->
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>html5</title>
+        <
+        <style type="text/css">
+            .click {
+              width: 50px;
+              height: 40px;
+              display: table-cell;
+              position: relative;
+            }
+
+            .top {
+              width: 0;
+              height: 0;
+              border-style: solid;
+              border-width: 0 6px 7px;
+              border-color: transparent transparent #999999;
+              position: absolute;
+              transform: rotate(180deg);
+              bottom: 14px;
+              right: 17px;
+            }
+            .top:hover {
+              cursor: pointer;
+              border-color: transparent transparent #333333;
+            }
+
+            .bottom {
+              width: 0;
+              height: 0;
+              border-style: solid;
+              border-width: 0 6px 7px;
+              border-color: transparent transparent #999999;
+              position: absolute;
+              top: 10px;
+              right: 17px;
+            }
+            .bottom:hover {
+              cursor: pointer;
+              border-color: transparent transparent #333333;
+            }
+
+        </style>
+        <!--不需要再次引用jquery-->
+        <script type="text/javascript" src="http://code.jquery.com/jquery-1.7.2.min.js"></script>
+        <script>
+        var tag=1;
+        function sortNumberAS(a, b)
+        {
+            return a - b
+        }
+        function sortNumberDesc(a, b)
+        {
+            return b - a
+        }
+        function sortStrAS(a, b)
+        {
+            x = a.toUpperCase();
+            y = b.toUpperCase();
+            if (x < y) {
+                return -1;
+            }
+            if (x > y) {
+                return 1;
+            }
+        }
+        function sortStrDesc(a, b)
+        {
+            x = a.toUpperCase();
+            y = b.toUpperCase();
+            if (x < y) {
+                return 1;
+            }
+            if (x > y) {
+                return -1;
+            }
+        }
+
+        function SortTable(obj){
+            var td0s=document.getElementsByName("td0");
+            var td1s=document.getElementsByName("td1");
+            var td2s=document.getElementsByName("td2");
+            var td3s=document.getElementsByName("td3");
+            var tdArray0=[];
+            var tdArray1=[];
+            var tdArray2=[];
+            var tdArray3=[];
+            console.log('td0s' + td0s)
+            for(var i=0;i<td0s.length;i++){
+                tdArray0.push(td0s[i].innerHTML);
+            }
+            for(var i=0;i<td1s.length;i++){
+                tdArray1.push(parseInt(td1s[i].innerHTML));
+            }
+            for(var i=0;i<td2s.length;i++){
+                tdArray2.push(parseInt(td2s[i].innerHTML));
+            }
+            for(var i=0;i<td3s.length;i++){
+                tdArray3.push(td3s[i].innerHTML);
+            }
+            var tds=document.getElementsByName("td"+obj.id.substr(2,1));
+            console.log('tds' + tds)
+            console.log('tds0' + tds[0].innerHTML)
+            console.log('tds1' + tds[1].innerHTML)
+            console.log('tds2' + tds[2].innerHTML)
+            console.log('tds3' + tds[3].innerHTML)
+            var columnArray=[];
+<!--            columnArray [1,2,3]-->
+            for(var i=0;i<tds.length;i++){
+                if($.isNumeric(tds[i].innerHTML)){
+                    columnArray.push(parseInt(tds[i].innerHTML));
+                }else{
+                    columnArray.push(tds[i].innerHTML);
+                }
+            }
+            var orginArray=[];
+            for(var i=0;i<columnArray.length;i++){
+                orginArray.push(columnArray[i]);
+            }
+            console.log('column ' + columnArray)
+            console.log('origin ' + orginArray)
+            var newArray = columnArray.slice(1,)
+            console.log('newArray ' + newArray)
+            if(obj.className=="as"){
+                console.log('columnArrary: ' + columnArray)
+                console.log($.isNumeric(columnArray[0]))
+                if($.isNumeric(columnArray[0])){
+                    newArray.sort(sortNumberAS);
+                }else{
+                    newArray.sort(sortStrAS);
+                }
+                console.log('newArray ' + newArray)
+                obj.className="desc";
+            }else{
+                if($.isNumeric(columnArray[0])){
+                    newArray.sort(sortNumberDesc);
+                }else{
+                    newArray.sort(sortStrDesc);
+                }
+                console.log('newArray ' + newArray)
+                obj.className="as";
+            }
+            columnArray = $.merge([columnArray[0]], newArray);
+            console.log('column ' + columnArray)
+            console.log('origin ' + orginArray)
+            console.log('td0 ' + tdArray0)
+            console.log('td1 ' + tdArray1)
+            console.log('td2 ' + tdArray2)
+            console.log('td3 ' + tdArray3)
+            for(var i=1;i<columnArray.length;i++){
+                for(var j=1;j<orginArray.length;j++){
+                    if(orginArray[j]==columnArray[i]){
+                        document.getElementsByName("td0")[i].innerHTML=tdArray0[j];
+                        document.getElementsByName("td1")[i].innerHTML=tdArray1[j];
+                        document.getElementsByName("td2")[i].innerHTML=tdArray2[j];
+                        document.getElementsByName("td3")[i].innerHTML=tdArray3[j];
+                        orginArray[j]=null;
+                        break;
+                    }
+                }
+            }
+        }
+
+        </script>
+
+    </head>
+    <body>
+        <table>
+            <tr>
+                <th id="th0" onclick="SortTable(this)" class="as">name</th>
+                <div class="click">
+                    <span class="top"></span>
+                    <span class="bottom"></span>
+                </div>
+                <div class="click">
+                    <th id="th1" onclick="SortTable(this)" class="as">力量</th>
+                    <span class="top"></span>
+                    <span class="bottom"></span>
+                </div>
+                <div class="click">
+                    <th id="th2" onclick="SortTable(this)" class="as">敏捷</th>
+                    <span class="top"></span>
+                    <span class="bottom"></span>
+                </div>
+                <div class="click">
+                    <th id="th3" onclick="SortTable(this)" class="as">智力</th>
+                    <span class="top"></span>
+                    <span class="bottom"></span>
+                </div>
+            </tr>
+            <tr>
+                <td name="td0">Total</td>
+                <td name="td1">6497</td>
+                <td name="td2">8399</td>
+                <td name="td3">42.106%</td>
+            </tr>
+            <tr>
+                <td name="td0">acr</td>
+                <td name="td1">135</td>
+                <td name="td2">210</td>
+                <td name="td3">39.130%</td>
+            </tr>
+            <tr>
+                <td name="td0">acs</td>
+                <td name="td1">37</td>
+                <td name="td2">222</td>
+                <td name="td3">14.286%</td>
+            </tr>
+            <tr>
+                <td name="td0">advisor</td>
+                <td name="td1">6</td>
+                <td name="td2">1</td>
+                <td name="td3">85.714%</td>
+            </tr>
+        </table>
+        <div class="click">
+            <span class="top"></span>
+            <span class="bottom"></span>
+        </div>
+    </body>
+</html>
