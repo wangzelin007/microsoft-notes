@@ -88,3 +88,5 @@
                            '-n {node_pool_name} '
         no_uptime_sla_cmd = 'aks update --resource-group={resource_group} --name={name} --no-uptime-sla'
 ```
+
+azdev test --no-exitfirst --profile latest --verbose --series
