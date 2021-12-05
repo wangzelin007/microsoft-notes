@@ -58,3 +58,29 @@ def send_email():
     except Exception as e:
         print(e.message)
 ```
+
+```bash
+# pipeline
+${FinalTarget} = $(Target) = module
+$(USER_PARALLELISM) = 8
+$(USER_LIVE) == --live
+if [[ "$(USER_USERNAME)" != "" && "$(USER_TOKEN)" != "" ]]; then
+  echo "Commit mode"
+  azdev test ${FinalTarget} --no-exitfirst -a "-n $(USER_PARALLELISM)"
+  azdev test ${FinalTarget} --live --lf --xml-path test_results.parallel.xml --no-exitfirst -a "-n $(USER_PARALLELISM) --json-report --json-report-summary --json-report-file=$(Target).report.parallel.json --html=$(Target).report.parallel.html --self-contained-html --reruns 3 --capture=sys"
+else
+  echo "Normal mode"
+  # Sequential
+  azdev test ${FinalTarget} $(USER_LIVE) --mark serial --xml-path test_results.sequential.xml --no-exitfirst -a "-n 1 --json-report --json-report-summary --json-report-file=$(Target).report.sequential.json --html=$(Target).report.sequential.html --self-contained-html --reruns 3 --capture=sys"
+  # Parallel
+  azdev test ${FinalTarget} $(USER_LIVE) --mark "not serial" --xml-path test_results.parallel.xml --no-exitfirst -a "-n $(USER_PARALLELISM) --json-report --json-report-summary --json-report-file=$(Target).report.parallel.json --html=$(Target).report.parallel.html --self-contained-html --reruns 3 --capture=sys"
+
+azdev test --no-exitfirst --profile latest --verbose --series
+azdev test --no-exitfirst -a "-n 8"
+#azdev test --live --lf --xml-path test_results.parallel.xml --no-exitfirst -a "-n 8 --json-report --json-report-summary --json-report-file=cli.report.parallel.json --html=cli.report.parallel.html --self-contained-html --reruns 3 --capture=sys"
+azdev test --live --lf --xml-path test_results.parallel.xml --no-exitfirst -a "-n 8 --capture=sys"
+#azdev test --live --mark serial --xml-path test_results.sequential.xml --no-exitfirst -a "-n 1 --json-report --json-report-summary --json-report-file=cli.report.sequential.json --html=cli.report.sequential.html --self-contained-html --reruns 3 --capture=sys"
+azdev test --live --mark serial --xml-path test_results.sequential.xml --no-exitfirst -a "-n 1 --capture=sys"
+#azdev test --live --mark "not serial" --xml-path test_results.parallel.xml --no-exitfirst -a "-n 8 --json-report --json-report-summary --json-report-file=cli.report.parallel.json --html=cli.report.parallel.html --self-contained-html --reruns 3 --capture=sys"
+azdev test --live --mark "not serial" --xml-path test_results.parallel.xml --no-exitfirst -a "-n 8 --capture=sys"
+```
