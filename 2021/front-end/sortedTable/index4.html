@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>纯CSS实现表格排序-利用CSS 变量和Flexbox</title>
+    <style type="text/css">
+        /* 关键代码 */
+
+        .table-body {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .table-row {
+          order: calc(var(--order) * var(--sort-order, -1));
+        }
+
+        #sort-by-tested:checked ~ .table > .table-body > .table-row {
+          --order: var(--order-by-tested);
+        }
+
+        #sort-by-pct:checked ~ .table > .table-body > .table-row {
+          --order: var(--order-by-pct);
+        }
+
+        #sort-ascending:checked + .table {
+          --sort-order: 1;
+        }
+
+        /* 反向排序 */
+        #sort-by-module:checked ~ #sort-ascending:checked + .table > .table-body {
+          flex-direction: column-reverse;
+        }
+        /* 其他代码 */
+
+        .table-wrapper>input {
+            position: fixed;
+            left: 0;
+            right: 0;
+            clip: rect(1px, 1px, 1px, 1px);
+            visibility: hidden;
+        }
+
+        .table,
+        .table-caption,
+        .table-head {
+            display: block;
+            margin: 0;
+        }
+
+        table,
+        td,
+        th {
+            border: 1px solid #000;
+            border-collapse: collapse;
+        }
+
+        a {
+            text-decoration: none;
+            color: black;
+        }
+
+        .table-row {
+            position: relative;
+            display: grid;
+            grid-template-columns: 50% 25% 25%;
+        }
+
+        .table-cell {
+            text-align: right;
+            padding: 0.25em 0.5em;
+            white-space: nowrap;
+        }
+
+        .table-cell:first-child {
+            text-align: left;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .table-orderer {
+            display: none;
+        }
+
+        .table-head .table-cell {
+            position: relative;
+            display: flex;
+            user-select: none;
+        }
+
+        .table-head .table-cell:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .table-head .table-cell:not(:first-child) {
+            flex-direction: row-reverse;
+        }
+
+        .table-sorter:before,
+        .table-orderer:before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            cursor: pointer;
+        }
+
+        #sort-by-module:checked~.table .table-sorter[for=sort-by-module]~.table-orderer,
+        #sort-by-tested:checked~.table .table-sorter[for=sort-by-tested]~.table-orderer,
+        #sort-by-pct:checked~.table .table-sorter[for=sort-by-pct]~.table-orderer {
+            display: inline;
+        }
+
+        #sort-ascending:checked+.table .table-orderer[for=sort-ascending],
+        #sort-ascending:not(:checked)+.table .table-orderer[for=sort-descending] {
+            display: none !important;
+        }
+
+
+    </style>
+</head>
+<body>
+<div class="table-wrapper">
+    <!--  :checked实现单击，这些input不在网页中显示  -->
+    <input type="radio" name="sort" id="sort-by-module">
+    <input type="radio" name="sort" id="sort-by-tested" checked="checked">
+    <input type="radio" name="sort" id="sort-by-pct">
+    <input type="radio" name="sort-order" id="sort-descending" checked="checked">
+    <input type="radio" name="sort-order" id="sort-ascending">
+    <table class="table">
+        <thead class="table-head">
+        <tr class="table-row">
+            <th class="table-cell">
+                <label class="table-sorter" for="sort-by-module">Module</label>
+                <label class="table-orderer" for="sort-ascending" data-filtered="filtered">↓</label>
+                <label class="table-orderer" for="sort-descending" data-filtered="filtered">↑</label>
+            </th>
+            <th class="table-cell">
+                <label class="table-sorter" for="sort-by-tested">Tested</label>
+                <label class="table-orderer" for="sort-ascending">↓</label>
+                <label class="table-orderer" for="sort-descending" data-filtered="filtered">↑</label>
+            </th>
+            <th class="table-cell">
+                <label class="table-sorter" for="sort-by-pct">PCT</label>
+                <label class="table-orderer" for="sort-ascending" data-filtered="filtered">↓</label>
+                <label class="table-orderer" for="sort-descending" data-filtered="filtered">↑</label>
+            </th>
+        </tr>
+        </thead>
+        <tbody class="table-body">
+        <!--        <tr class="table-row1">-->
+        <tr class="table-row" style="--order-by-tested: 222; --order-by-pct: 100;">
+            <th class="table-cell">total</th>
+            <td class="table-cell">222</td>
+            <td class="table-cell">100%</td>
+        </tr>
+        <tr class="table-row" style="--order-by-tested: 111; --order-by-pct: 99;">
+            <th class="table-cell">acs</th>
+            <td class="table-cell">111</td>
+            <td class="table-cell">99%</td>
+        </tr>
+        <tr class="table-row" style="--order-by-tested: 33; --order-by-pct: 50;">
+            <th class="table-cell">acr</th>
+            <td class="table-cell">33</td>
+            <td class="table-cell">50%</td>
+        </tr>
+        <tr class="table-row" style="--order-by-tested: 22; --order-by-pct: 10;">
+            <th class="table-cell">vm</th>
+            <td class="table-cell">22</td>
+            <td class="table-cell">10%</td>
+        </tr>
+        <tr class="table-row" style="--order-by-tested: 11; --order-by-pct: 20;">
+            <th class="table-cell">network</th>
+            <td class="table-cell">11</td>
+            <td class="table-cell">20%</td>
+        </tr>
+        <tr class="table-row" style="--order-by-tested: 99; --order-by-pct: 35;">
+            <th class="table-cell">storage</th>
+            <td class="table-cell">99</td>
+            <td class="table-cell">35%</td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+</body>
+</html>

@@ -2,6 +2,7 @@
 [**pipeline**:](https://dev.azure.com/azure-sdk/internal/_build?definitionId=1896)  
 [knowledge transition](onenote:https://microsoft.sharepoint.com/teams/IoTToolingTeam/Shared%20Documents/Azure%20Management%20Experience/Azure%20Management%20Experience/AZ%20CLI/Transition.one#Live%20Test&section-id=%7BCADD4696-365A-48BD-80B4-0DF0B2451ECC%7D&page-id=%7B1B77ECCB-F1D1-4CE7-BF08-E89C1C85E1B3%7D&end)  
 [edit pipeline](https://dev.azure.com/azure-sdk/internal/_apps/hub/ms.vss-build-web.ci-designer-hub?pipelineId=1896&nonce=06F4BUw0jgsxnvhRpSdnrQ%3D%3D&branch=dev)  
+[powerBI](https://msit.powerbi.com/groups/8de24d49-e97c-4672-9bfc-45fee0ec58f7/reports/65dfcfce-5d59-4dc9-8bc5-3726443c8fe1/ReportSection)
 
 python /home/vsts/work/1/s/scripts/live_test/sendemail.py "$(SENDGRID_KEY)" "$(Build.BuildId)" "$(USER_REPO)" "$(USER_BRANCH)" "$(USER_TARGET)" "$(USER_LIVE)" "$(System.ArtifactsDirectory)" "$(Build.RequestedForEmail)" "$(ACCOUNT_KEY)" "$commit_id" "$(DB_PWD)"
 SENDGRID_KEY = sys.argv[1] have

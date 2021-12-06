@@ -1,11 +1,10 @@
 <!--done-->
 <!doctype html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <title>html5</title>
-        <
-        <style type="text/css">
+<head>
+    <meta charset="UTF-8">
+    <title>html5</title>
+    <style type="text/css">
             .click {
               width: 50px;
               height: 40px;
@@ -44,10 +43,55 @@
               border-color: transparent transparent #333333;
             }
 
-        </style>
-        <!--不需要再次引用jquery-->
-        <script type="text/javascript" src="http://code.jquery.com/jquery-1.7.2.min.js"></script>
-        <script>
+            input {
+            position: fixed;
+            left: 0;
+            right: 0;
+            clip: rect(1px, 1px, 1px, 1px);
+            visibility: hidden;
+            }
+            .table-orderer {
+              display: none;
+            }
+            .table-sorter:before,
+            .table-orderer:before {
+              content: "";
+              position: absolute;
+              top: 0;
+              left: 0;
+              right: 0;
+              bottom: 0;
+              cursor: pointer;
+              color: orange;
+            }
+            .table-sorter {
+              color: orange;
+            }
+            .table-orderer {
+              color: orange;
+            }
+            .table-sorter:checked {
+              color: red;
+            }
+            .table-orderer:checked {
+              color: red;
+            }
+            #sort-by-module:checked~.table .table-sorter[for=sort-by-module]~.table-orderer,
+            #sort-by-tested:checked~.table .table-sorter[for=sort-by-tested]~.table-orderer,
+            #sort-by-pct:checked~.table .table-sorter[for=sort-by-pct]~.table-orderer {
+            display: inline;
+            }
+
+            #sort-ascending:checked+.table .table-orderer[for=sort-ascending],
+            #sort-ascending:not(:checked)+.table .table-orderer[for=sort-descending] {
+            display: none !important;
+            }
+
+
+    </style>
+    <!--不需要再次引用jquery-->
+    <script type="text/javascript" src="http://code.jquery.com/jquery-1.7.2.min.js"></script>
+    <script>
         var tag=1;
         function sortNumberAS(a, b)
         {
@@ -109,7 +153,6 @@
             console.log('tds2' + tds[2].innerHTML)
             console.log('tds3' + tds[3].innerHTML)
             var columnArray=[];
-<!--            columnArray [1,2,3]-->
             for(var i=0;i<tds.length;i++){
                 if($.isNumeric(tds[i].innerHTML)){
                     columnArray.push(parseInt(tds[i].innerHTML));
@@ -165,61 +208,64 @@
             }
         }
 
-        </script>
 
-    </head>
-    <body>
-        <table>
-            <tr>
-                <th id="th0" onclick="SortTable(this)" class="as">name</th>
-                <div class="click">
-                    <span class="top"></span>
-                    <span class="bottom"></span>
-                </div>
-                <div class="click">
-                    <th id="th1" onclick="SortTable(this)" class="as">力量</th>
-                    <span class="top"></span>
-                    <span class="bottom"></span>
-                </div>
-                <div class="click">
-                    <th id="th2" onclick="SortTable(this)" class="as">敏捷</th>
-                    <span class="top"></span>
-                    <span class="bottom"></span>
-                </div>
-                <div class="click">
-                    <th id="th3" onclick="SortTable(this)" class="as">智力</th>
-                    <span class="top"></span>
-                    <span class="bottom"></span>
-                </div>
-            </tr>
-            <tr>
-                <td name="td0">Total</td>
-                <td name="td1">6497</td>
-                <td name="td2">8399</td>
-                <td name="td3">42.106%</td>
-            </tr>
-            <tr>
-                <td name="td0">acr</td>
-                <td name="td1">135</td>
-                <td name="td2">210</td>
-                <td name="td3">39.130%</td>
-            </tr>
-            <tr>
-                <td name="td0">acs</td>
-                <td name="td1">37</td>
-                <td name="td2">222</td>
-                <td name="td3">14.286%</td>
-            </tr>
-            <tr>
-                <td name="td0">advisor</td>
-                <td name="td1">6</td>
-                <td name="td2">1</td>
-                <td name="td3">85.714%</td>
-            </tr>
-        </table>
-        <div class="click">
-            <span class="top"></span>
-            <span class="bottom"></span>
-        </div>
-    </body>
+
+    </script>
+
+</head>
+<body>
+<input type="radio" name="sort" id="sort-by-module">
+<input type="radio" name="sort" id="sort-by-tested" checked="checked">
+<input type="radio" name="sort" id="sort-by-pct">
+<input type="radio" name="sort-order" id="sort-descending" checked="checked">
+<input type="radio" name="sort-order" id="sort-ascending">
+<table>
+    <tr>
+        <th id="th0" onclick="SortTable(this)" class="as">
+            <label class="table-sorter">name</label>
+            <label class="table-orderer" data-filtered="filtered">↓</label>
+            <label class="table-orderer" data-filtered="filtered">↑</label>
+        </th>
+        <th id="th1" onclick="SortTable(this)" class="as">
+            <label class="table-sorter">力量</label>
+            <label class="table-orderer" data-filtered="filtered">↓</label>
+            <label class="table-orderer" data-filtered="filtered">↑</label>
+        </th>
+        <th id="th2" onclick="SortTable(this)" class="as">
+            <label class="table-sorter">敏捷</label>
+            <label class="table-orderer" data-filtered="filtered">↓</label>
+            <label class="table-orderer" data-filtered="filtered">↑</label>
+        </th>
+        <th id="th3" onclick="SortTable(this)" class="as">
+            <label class="table-sorter">智力</label>
+            <label class="table-orderer" data-filtered="filtered">↓</label>
+            <label class="table-orderer" data-filtered="filtered">↑</label>
+        </th>
+    </tr>
+    <tr>
+        <td name="td0">Total</td>
+        <td name="td1">6497</td>
+        <td name="td2">8399</td>
+        <td name="td3">42.106%</td>
+    </tr>
+    <tr>
+        <td name="td0">acr</td>
+        <td name="td1">135</td>
+        <td name="td2">210</td>
+        <td name="td3">39.130%</td>
+    </tr>
+    <tr>
+        <td name="td0">acs</td>
+        <td name="td1">37</td>
+        <td name="td2">222</td>
+        <td name="td3">14.286%</td>
+    </tr>
+    <tr>
+        <td name="td0">advisor</td>
+        <td name="td1">6</td>
+        <td name="td2">1</td>
+        <td name="td3">85.714%</td>
+    </tr>
+</table>
+</body>
 </html>
