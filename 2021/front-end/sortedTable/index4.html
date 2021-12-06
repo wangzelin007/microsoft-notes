@@ -7,12 +7,18 @@
         /* 关键代码 */
 
         .table-body {
-          display: flex;
+<!--        一维的布局模型-->
+        display: flex;
+<!--          主轴会沿着上下方向延伸-->
           flex-direction: column;
         }
 
         .table-row {
-          order: calc(var(--order) * var(--sort-order, -1));
+<!-- calc() 此 CSS 函数允许在声明 CSS 属性值时执行一些计算-->
+<!-- var()函数可以代替元素中任何属性中的值的任何部分。-->
+<!-- -1 默认值-->
+<!--order: 正值或者负值-->
+        order: calc(var(--order) * var(--sort-order, -1));
         }
 
         #sort-by-tested:checked ~ .table > .table-body > .table-row {
@@ -37,7 +43,9 @@
             position: fixed;
             left: 0;
             right: 0;
+<!--            clip 属性定义了元素的哪一部分是可见的。-->
             clip: rect(1px, 1px, 1px, 1px);
+<!--visibility 显示或隐藏元素而不更改文档的布局。-->
             visibility: hidden;
         }
 
@@ -52,6 +60,7 @@
         td,
         th {
             border: 1px solid #000;
+<!--            用来决定表格的边框是分开的还是合并的。-->
             border-collapse: collapse;
         }
 
@@ -107,14 +116,23 @@
             cursor: pointer;
         }
 
-        #sort-by-module:checked~.table .table-sorter[for=sort-by-module]~.table-orderer,
-        #sort-by-tested:checked~.table .table-sorter[for=sort-by-tested]~.table-orderer,
-        #sort-by-pct:checked~.table .table-sorter[for=sort-by-pct]~.table-orderer {
+        /*
+        https://developer.mozilla.org/zh-CN/docs/Web/CSS/CSS_Selectors
+        > 直接子代组合器（Child combinator）组合器选择前一个元素的直接子代的节点。
+        ~ 一般兄弟组合器（General sibling combinator）后一个节点在前一个节点后面的任意位置，并且共享同一个父节点。
+        + 紧邻兄弟组合器（Adjacent sibling combinator）组合器选择相邻元素，即后一个元素紧跟在前一个之后，并且共享同一个父节点。
+        分别拿到 Module Tested PCT 下面的 table-orderer
+        */
+        #sort-by-module:checked ~ .table .table-sorter[for=sort-by-module] ~ .table-orderer,
+        #sort-by-tested:checked ~ .table .table-sorter[for=sort-by-tested] ~ .table-orderer,
+        #sort-by-pct:checked ~ .table .table-sorter[for=sort-by-pct] ~ .table-orderer {
             display: inline;
         }
-
-        #sort-ascending:checked+.table .table-orderer[for=sort-ascending],
-        #sort-ascending:not(:checked)+.table .table-orderer[for=sort-descending] {
+        /*
+        !important 强制执行
+        */
+        #sort-ascending:checked + .table .table-orderer[for=sort-ascending],
+        #sort-ascending:not(:checked) + .table .table-orderer[for=sort-descending] {
             display: none !important;
         }
 

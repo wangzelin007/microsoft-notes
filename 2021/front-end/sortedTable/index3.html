@@ -5,89 +5,110 @@
     <meta charset="UTF-8">
     <title>html5</title>
     <style type="text/css">
-            .click {
-              width: 50px;
-              height: 40px;
-              display: table-cell;
-              position: relative;
-            }
+<!--        .table-body {-->
+<!--          display: flex;-->
+<!--          flex-direction: column;-->
+<!--        }-->
+        .table-wrapper>input {
+          position: fixed;
+          left: 0;
+          right: 0;
+          clip: rect(1px, 1px, 1px, 1px);
+          visibility: hidden;
+        }
+<!--        .as .table-orderer1 {-->
+<!--            display: inline;-->
+<!--        }-->
+<!--        .as .table-orderer2 {-->
+<!--            display: none;-->
+<!--        }-->
+<!--        .desc .table-orderer1 {-->
+<!--            display: none;-->
+<!--        }-->
+<!--        .desc .table-orderer2 {-->
+<!--            display: inline;-->
+<!--        }-->
+<!--            .table,-->
+<!--            .table-caption,-->
+<!--            .table-head {-->
+<!--                display: block;-->
+<!--                margin: 0;-->
+<!--            }-->
+<!--        table,-->
+<!--        td,-->
+<!--        th {-->
+<!--            border: 1px solid #000;-->
+<!--            border-collapse: collapse;-->
+<!--        }-->
 
-            .top {
-              width: 0;
-              height: 0;
-              border-style: solid;
-              border-width: 0 6px 7px;
-              border-color: transparent transparent #999999;
-              position: absolute;
-              transform: rotate(180deg);
-              bottom: 14px;
-              right: 17px;
-            }
-            .top:hover {
-              cursor: pointer;
-              border-color: transparent transparent #333333;
-            }
+<!--        a {-->
+<!--            text-decoration: none;-->
+<!--            color: black;-->
+<!--        }-->
 
-            .bottom {
-              width: 0;
-              height: 0;
-              border-style: solid;
-              border-width: 0 6px 7px;
-              border-color: transparent transparent #999999;
-              position: absolute;
-              top: 10px;
-              right: 17px;
-            }
-            .bottom:hover {
-              cursor: pointer;
-              border-color: transparent transparent #333333;
-            }
+<!--        .table-row {-->
+<!--            position: relative;-->
+<!--            display: grid;-->
+<!--            grid-template-columns: 25% 25% 25% 25%;-->
+<!--        }-->
 
-            input {
-            position: fixed;
-            left: 0;
-            right: 0;
-            clip: rect(1px, 1px, 1px, 1px);
-            visibility: hidden;
-            }
-            .table-orderer {
-              display: none;
-            }
-            .table-sorter:before,
-            .table-orderer:before {
-              content: "";
-              position: absolute;
-              top: 0;
-              left: 0;
-              right: 0;
-              bottom: 0;
-              cursor: pointer;
-              color: orange;
-            }
-            .table-sorter {
-              color: orange;
-            }
-            .table-orderer {
-              color: orange;
-            }
-            .table-sorter:checked {
-              color: red;
-            }
-            .table-orderer:checked {
-              color: red;
-            }
-            #sort-by-module:checked~.table .table-sorter[for=sort-by-module]~.table-orderer,
-            #sort-by-tested:checked~.table .table-sorter[for=sort-by-tested]~.table-orderer,
-            #sort-by-pct:checked~.table .table-sorter[for=sort-by-pct]~.table-orderer {
-            display: inline;
-            }
+<!--        .table-cell {-->
+<!--            text-align: right;-->
+<!--            padding: 0.25em 0.5em;-->
+<!--            white-space: nowrap;-->
+<!--        }-->
 
-            #sort-ascending:checked+.table .table-orderer[for=sort-ascending],
-            #sort-ascending:not(:checked)+.table .table-orderer[for=sort-descending] {
-            display: none !important;
-            }
+<!--        .table-cell:first-child {-->
+<!--            text-align: left;-->
+<!--            overflow: hidden;-->
+<!--            text-overflow: ellipsis;-->
+<!--        }-->
+        .table-orderer {
+            display: none;
+        }
+<!--        .table-head .table-cell {-->
+<!--            position: relative;-->
+<!--            display: flex;-->
+<!--            user-select: none;-->
+<!--        }-->
+        .table-head th {
+            position: relative;
+            display: flex;
+            user-select: none;
+        }
+<!--        .table-head .desc {-->
+<!--            position: relative;-->
+<!--            display: flex;-->
+<!--            user-select: none;-->
+<!--        }-->
+<!--        .table-head .table-cell:hover {-->
+<!--            background: rgba(0, 0, 0, 0.05);-->
+<!--        }-->
 
+<!--        .table-head .table-cell:not(:first-child) {-->
+<!--            flex-direction: row-reverse;-->
+<!--        }-->
+        .table-sorter:before,
+        .table-orderer:before {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          cursor: pointer;
+        }
+        #sort-by-module:checked ~ .table .table-sorter[for=sort-by-module] ~ .table-orderer,
+        #sort-by-tested:checked ~ .table .table-sorter[for=sort-by-tested] ~ .table-orderer,
+        #sort-by-pct:checked ~ .table .table-sorter[for=sort-by-pct] ~ .table-orderer,
+        #sort-by-pct2:checked ~ .table .table-sorter[for=sort-by-pct2] ~ .table-orderer {
+        display: inline;
+        }
 
+        #sort-ascending:checked + .table .table-orderer[for=sort-ascending],
+        #sort-ascending:not(:checked) + .table .table-orderer[for=sort-descending] {
+        display: none !important;
+        }
     </style>
     <!--不需要再次引用jquery-->
     <script type="text/javascript" src="http://code.jquery.com/jquery-1.7.2.min.js"></script>
@@ -207,65 +228,73 @@
                 }
             }
         }
-
-
-
     </script>
 
 </head>
 <body>
-<input type="radio" name="sort" id="sort-by-module">
-<input type="radio" name="sort" id="sort-by-tested" checked="checked">
-<input type="radio" name="sort" id="sort-by-pct">
-<input type="radio" name="sort-order" id="sort-descending" checked="checked">
-<input type="radio" name="sort-order" id="sort-ascending">
-<table>
-    <tr>
-        <th id="th0" onclick="SortTable(this)" class="as">
-            <label class="table-sorter">name</label>
-            <label class="table-orderer" data-filtered="filtered">↓</label>
-            <label class="table-orderer" data-filtered="filtered">↑</label>
-        </th>
-        <th id="th1" onclick="SortTable(this)" class="as">
-            <label class="table-sorter">力量</label>
-            <label class="table-orderer" data-filtered="filtered">↓</label>
-            <label class="table-orderer" data-filtered="filtered">↑</label>
-        </th>
-        <th id="th2" onclick="SortTable(this)" class="as">
-            <label class="table-sorter">敏捷</label>
-            <label class="table-orderer" data-filtered="filtered">↓</label>
-            <label class="table-orderer" data-filtered="filtered">↑</label>
-        </th>
-        <th id="th3" onclick="SortTable(this)" class="as">
-            <label class="table-sorter">智力</label>
-            <label class="table-orderer" data-filtered="filtered">↓</label>
-            <label class="table-orderer" data-filtered="filtered">↑</label>
-        </th>
-    </tr>
-    <tr>
-        <td name="td0">Total</td>
-        <td name="td1">6497</td>
-        <td name="td2">8399</td>
-        <td name="td3">42.106%</td>
-    </tr>
-    <tr>
-        <td name="td0">acr</td>
-        <td name="td1">135</td>
-        <td name="td2">210</td>
-        <td name="td3">39.130%</td>
-    </tr>
-    <tr>
-        <td name="td0">acs</td>
-        <td name="td1">37</td>
-        <td name="td2">222</td>
-        <td name="td3">14.286%</td>
-    </tr>
-    <tr>
-        <td name="td0">advisor</td>
-        <td name="td1">6</td>
-        <td name="td2">1</td>
-        <td name="td3">85.714%</td>
-    </tr>
-</table>
+    <div class="table-wrapper">
+    <input type="radio" name="sort" id="sort-by-module">
+    <input type="radio" name="sort" id="sort-by-tested" checked="checked">
+    <input type="radio" name="sort" id="sort-by-pct">
+    <input type="radio" name="sort" id="sort-by-pct2">
+    <input type="radio" name="sort-order" id="sort-descending" checked="checked">
+    <input type="radio" name="sort-order" id="sort-ascending">
+    <table class="table">
+        <thead class="table-head">
+        <tr class="table-row">
+            <th id="th0" onclick="SortTable(this)" class="as">
+<!--                name-->
+                <label class="table-sorter" for="sort-by-module">name</label>
+                <label class="table-orderer" for="sort-ascending" data-filtered="filtered">↓</label>
+                <label class="table-orderer" for="sort-descending" data-filtered="filtered">↑</label>
+            </th>
+            <th id="th1" onclick="SortTable(this)" class="as">
+<!--                力量-->
+                <label class="table-sorter" for="sort-by-tested">力量</label>
+                <label class="table-orderer" for="sort-ascending">↓</label>
+                <label class="table-orderer" for="sort-descending" data-filtered="filtered">↑</label>
+            </th>
+            <th id="th2" onclick="SortTable(this)" class="as">
+<!--                敏捷-->
+                <label class="table-sorter" for="sort-by-pct">敏捷</label>
+                <label class="table-orderer" for="sort-ascending" data-filtered="filtered">↓</label>
+                <label class="table-orderer" for="sort-descending" data-filtered="filtered">↑</label>
+            </th>
+            <th id="th3" onclick="SortTable(this)" class="as">
+<!--                智力-->
+                <label class="table-sorter" for="sort-by-pct2">智力</label>
+                <label class="table-orderer" for="sort-ascending" data-filtered="filtered">↓</label>
+                <label class="table-orderer" for="sort-descending" data-filtered="filtered">↑</label>
+            </th>
+        </tr>
+        </thead>
+        <tbody class="table-body">
+        <tr class="table-row">
+            <td name="td0" class="table-cell">Total</td>
+            <td name="td1" class="table-cell">6497</td>
+            <td name="td2" class="table-cell">8399</td>
+            <td name="td3" class="table-cell">42.106%</td>
+        </tr>
+        <tr class="table-row">
+            <td name="td0" class="table-cell">acr</td>
+            <td name="td1" class="table-cell">135</td>
+            <td name="td2" class="table-cell">210</td>
+            <td name="td3" class="table-cell">39.130%</td>
+        </tr>
+        <tr class="table-row">
+            <td name="td0" class="table-cell">acs</td>
+            <td name="td1" class="table-cell">37</td>
+            <td name="td2" class="table-cell">222</td>
+            <td name="td3" class="table-cell">14.286%</td>
+        </tr>
+        <tr class="table-row">
+            <td name="td0" class="table-cell">advisor</td>
+            <td name="td1" class="table-cell">6</td>
+            <td name="td2" class="table-cell">1</td>
+            <td name="td3" class="table-cell">85.714%</td>
+        </tr>
+        </tbody>
+    </table>
+    </div>
 </body>
 </html>
