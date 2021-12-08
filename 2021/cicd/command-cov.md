@@ -89,4 +89,12 @@
         no_uptime_sla_cmd = 'aks update --resource-group={resource_group} --name={name} --no-uptime-sla'
 ```
 
+# azdev test aro --no-exitfirst --profile latest --verbose --series
 azdev test --no-exitfirst --profile latest --verbose --series
+# azdev test --no-exitfirst -a "-n 8"
+# azdev test --live --lf --xml-path test_results.parallel.xml --no-exitfirst -a "-n 8 --json-report --json-report-summary --json-report-file=cli.report.parallel.json --html=cli.report.parallel.html --self-contained-html --reruns 3 --capture=sys"
+# azdev test --live --lf --xml-path test_results.parallel.xml --no-exitfirst -a "-n 8 --capture=sys"
+# azdev test --live --mark serial --xml-path test_results.sequential.xml --no-exitfirst -a "-n 1 --json-report --json-report-summary --json-report-file=cli.report.sequential.json --html=cli.report.sequential.html --self-contained-html --reruns 3 --capture=sys"
+azdev test --live --mark serial --xml-path test_results.sequential.xml --no-exitfirst -a "-n 1 --capture=sys"
+# azdev test --live --mark "not serial" --xml-path test_results.parallel.xml --no-exitfirst -a "-n 8 --json-report --json-report-summary --json-report-file=cli.report.parallel.json --html=cli.report.parallel.html --self-contained-html --reruns 3 --capture=sys"
+# azdev test --live --mark "not serial" --xml-path test_results.parallel.xml --no-exitfirst -a "-n 8 --capture=sys"
