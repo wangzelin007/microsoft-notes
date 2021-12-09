@@ -1,4 +1,5 @@
 #!/bin/sh
+# 有风险，只能在个人项目里面使用。
 
 git filter-branch --env-filter '
 
