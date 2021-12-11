@@ -35,3 +35,21 @@ print(''.join(
                  'Original', 'Current')),
     end="")
 
+from difflib import context_diff
+from pprint import pprint
+
+for diff in diff_index:
+    filename = diff.a_path.split('/')[-1].split('.')[0]
+    if 'params' in filename or 'commands' in filename or filename.startswith('test_'):
+        # _params, commands, test_*
+        # print(''.join(
+        #     context_diff(diff.a_blob.data_stream.read().decode("utf-8") .splitlines(True),
+        #                  diff.b_blob.data_stream.read().decode("utf-8") .splitlines(True),
+        #                  'Original', 'Current')),
+        #     end="")
+        lines = list(context_diff(diff.a_blob.data_stream.read().decode("utf-8").splitlines(True),
+                                  diff.b_blob.data_stream.read().decode("utf-8").splitlines(True),
+                                  'Original', 'Current'))
+    for line in lines:
+        pass
+    pprint(lines)
