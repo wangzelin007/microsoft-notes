@@ -98,3 +98,24 @@ azdev test --no-exitfirst --profile latest --verbose --series
 azdev test --live --mark serial --xml-path test_results.sequential.xml --no-exitfirst -a "-n 1 --capture=sys"
 # azdev test --live --mark "not serial" --xml-path test_results.parallel.xml --no-exitfirst -a "-n 8 --json-report --json-report-summary --json-report-file=cli.report.parallel.json --html=cli.report.parallel.html --self-contained-html --reruns 3 --capture=sys"
 # azdev test --live --mark "not serial" --xml-path test_results.parallel.xml --no-exitfirst -a "-n 8 --capture=sys"
+
+---
+Linter
+```
+if [[ "$(System.PullRequest.TargetBranch)" != "" ]]; then
+azdev linter --ci-exclusions --min-severity medium --repo=./ --src=HEAD --tgt=origin/$(System.PullRequest.TargetBranch)
+else
+azdev linter --ci-exclusions --min-severity medium
+fi
+```
+linter --ci-exclusions --min-severity medium --repo=D:\code\azure-cli --src=20141 --tgt=dev
+Add:
+- missing_command_test
+- missing_parameter_test
+File:
+- command_rules.py --> _params.py: `+        c.argument(`
+- parameter_rules.py --> commands.py: `+        g.*command`
+Exclude:
+- linter_exclusions.yml
+Severity:
+- Only HIGH will set self._exit_code = 1

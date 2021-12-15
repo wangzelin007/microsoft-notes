@@ -17,6 +17,7 @@ Common:
 - May I ask will backup_config_response.properties always have property storage_type or cross_region_restore_flag
 - use dict.get(key[, default=None]) to assign default values.
 - May I ask could we get those enumeration values from the Python SDK?
+- Please add more context for why this is changed.
 
 Azure-cli:
 - For [] need check title

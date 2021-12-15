@@ -132,3 +132,6 @@ src/azure-cli/azure/cli/command_modules/vm/tests/latest/test_vm_commands.py
 # 程序入口
 1. `azure-cli\tools\automation\__main__.py` azdev
 2. `azure-cli\src\azure-cli\azure\cli\__main__.py` az
+
+# LROPoller
+Use LROPoller for long running operation.
