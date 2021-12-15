@@ -102,3 +102,72 @@ CSS 选择器
    - H色相 0-360度，代表颜色 
    - S饱和度 颜色浓度 0-100 **%**
    - L亮度 0-100 **%** 
+
+**文档流 normal flow**
+- 网页是多层结构，最底下的一层称为文档流，创建的元素默认在文档流中排列。
+- 文档流中元素的特点：
+  - 块元素独占一行（自上向下垂直排列)，默认宽度是父元素宽度，默认高度是内容宽度（子元素）
+  - 行内元素在页面中自左向右水平排列，超出一行自动换行排列，等同书写习惯，默认高度和宽度都由内容决定。
+
+**盒子模型 box model**
+- 四个值：上右下左；
+- 三个值：上 左右 下；
+- 两个值：上下 左右；
+- 一个值：上下左右  
+- CSS 将页面中的所有元素都设置为了矩形盒子  
+- 每一个盒子都由：内容 content，内边距 padding，边框 border，外边距 margin 组成。  
+  - content：width，height  
+  - border：border-width，border-color，border-style，border-[top,right,bottom,left]-width  
+    - solid 实线
+    - dotted 点状虚线
+    - dashed 虚线
+    - double 双线
+    - border 简写： border: 10px solid red;
+  - padding: 
+    - padding-[top,right,bottom,left]
+  - margin:
+    - 外边距不会影响盒子大小，但是会影响盒子位置。
+    - top,left 自身移动； bottom,right 移动其他元素。
+    - margin-[top,right,bottom,left]
+- 水平布局 由一下属性共同决定
+  - margin-left
+  - border-left
+  - padding-left
+  - width
+  - padding-right
+  - border-right
+  - margin-right  
+![css-auto](css-auto.png)  
+![css-box-model](css-box-model.png)    
+- 垂直布局
+  - 默认父元素高度被子元素撑开
+  - 指定父元素高度后，父元素高度固定，overflow属性决定如何处理溢出的子元素
+  - overflow: 
+    - [visible(default),hidden,scroll,auto] auto 根据需要自动生成滚动条
+    - 单独处理某一个方向: overflow-x, overflow-y 
+- 外边距的折叠: 
+  - 相邻的垂直方向的外边距会发生折叠现象。
+  - .box1{marigin-bottom: 100px;}
+  - .box2{marigin-top: 100px;}
+  - 兄弟元素：
+    - 都是正值取最大值
+    - 一正一负取和
+    - 都是负值取绝对值最大值
+  - 父子元素
+    - 父子元素相邻外边距，子元素会传递给父元素（上外边距）**必须处理**
+    - 改用padding-top，同时父元素height需要调整。
+    - 父元素设置border-top，同时调整height。（border 0px不行吗？ TODO）
+- 行内元素的盒子模型
+  - 不支持设置宽度和高度。
+  - 行内元素可以设置padding，但是垂直方向不会影响布局，即会发生隐藏和遮挡。
+  - 行内元素可以设置border，但是垂直方向不会影响布局，即会发生隐藏和遮挡。
+  - 行内元素可以设置margin，但是垂直方向不会影响布局，即会发生隐藏和遮挡，且不会折叠。
+  - 形如 <a></a> 行内元素，disply: [inline,block,inline-block,table,none]; 来改变宽高。
+    - inline-block 行内块，可以改宽高且不会独占一行，尽量不用，会有缝隙。
+    - none 元素不在页面中显示，不占据位置。
+  - visibility: [visible,hidden]
+    - hidden 隐藏，但是占据页面位置。
+
+**浏览器默认样**
+- 引入 reset.css 去除所有浏览器默认样式。
+- 引入 normalize.css 统一了默认样式。
