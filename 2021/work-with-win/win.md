@@ -7,3 +7,6 @@ vscode:
 ctrl + shift + p 全局搜索  
 ctrl + p 搜索文件
 ctrl + shift + f
+
+pycharm:
+ctrl + alt + ⬅/➡ 回到上/下一次 和 QQ音乐冲突

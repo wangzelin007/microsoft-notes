@@ -18,7 +18,12 @@ Common:
 - use dict.get(key[, default=None]) to assign default values.
 - May I ask could we get those enumeration values from the Python SDK?
 - Please add more context for why this is changed.
-
+- [] means this change is customer-facing and the message will be put into HISTORY.rst.
+  {} means this change is not customer-facing and the message will NOT be included in HISTORY.rst.
+  Usually bump version is not customer-facing.
+  May I ask whether description 2-4 is customer-facing?
+  If we have multiple customer-facing changes, we need add them in the History Notes one by one, so we can automatically generate release note from History Notes instead of PR title.
+- The failure of CI is caused by the api-version of ResourceType.MGMT_CONTAINERREGISTRY upgraded from 2021-06-01-preview to 2021-08-01-preview and needed to re record these tests in live mode
 Azure-cli:
 - For [] need check title
 - If have mutiple functions, put it in history
