@@ -28,3 +28,7 @@ Common:
 Azure-cli-extensions:
 - If you want to release the new extension version, please write the description of changes into HISTORY.rst and update setup.py.
 - src/service_name.json when a new extension is added.
+
+Title:
+[App Config] BREAKING CHANGE: Support app service slots
+
