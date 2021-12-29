@@ -45,13 +45,19 @@ Mysql 如何通过索引快速查找数据的
 为什么不能使用select * 
 
 正则表达式：
+https://regex101.com/
+**test1**
 self.cmd('az vm create -n')
 test.cmd("az vm create -n")
 self.vm_cmd(f'az vm create -n')
 **az vm create -n**
 r'.\w{0,}cmd\(f?(?:\'|")(.*)(?:\'|")\)'
+**test2**
+2021-12-29
+02021-12-29
+2021-12-42
 **yyyy-mm-dd**
-reg = r'\d{4}-(?:1[0-2]|0?[1-9])-(?:[12]\d|3[01]|0?[1-9])'
+reg = r'^\d{4}-(?:1[0-2]|0?[1-9])-(?:[12]\d|3[01]|0?[1-9])$'
 
 算法题
 关注测试怎么写！
