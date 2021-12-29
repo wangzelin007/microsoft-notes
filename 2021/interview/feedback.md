@@ -30,3 +30,9 @@ when given someone else's code, she wanted to contact previous code owner and ta
 追求结果：<name> 问了很多问题来检查她对任务的理解，当她不确定一些想法时，她也会寻求确认。她很容易将有关该服务的反馈或新事实纳入她的想法中。
 合作：<name> 看起来是一个很好的团队合作者。她准备好从她周围的人和整个组织中收集反馈和想法。
 如有必要。一些例子：当给别人的代码时，她想联系以前的代码所有者并与他们讨论设计决策。
+
+Project experience: The candidate is mainly focus on research work, but does not have much experience on Engineering and Coding
+Computer Fundamental: The candidate cannot explain some basic concepts like database index and the difference between TCP and UDP .
+Algorithm & Code: The candidate can provide the algorithm with my hint.
+The candidate has Good English skills and mainly focus on AI work, I think it's better to let an interviewer in the AI direction have an interview.
+The candidate have good communication skills.

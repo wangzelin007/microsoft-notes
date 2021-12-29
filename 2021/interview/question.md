@@ -80,3 +80,6 @@ Git 使用：
 4. 测试提示
 5. 使用方法
 6. 一些必要的截图等等。
+
+进程通信的几种方式
+[1](https://cloud.tencent.com/developer/article/1690556)
