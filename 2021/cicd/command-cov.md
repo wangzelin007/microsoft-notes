@@ -108,6 +108,13 @@ else
 azdev linter --ci-exclusions --min-severity medium
 fi
 ```
+代码走向：
+D:\code\azure-cli-dev-tools\azdev\operations\linter\__init__.py
+D:\code\azure-cli-dev-tools\azdev\operations\linter\linter.py
+D:\code\azure-cli-dev-tools\azdev\operations\linter\rules\command_coverage_rules.py
+D:\code\azure-cli-dev-tools\azdev\utilities\git_util.py
+D:\code\azure-cli-dev-tools\azdev\operations\linter\rule_decorators.py
+
 linter --ci-exclusions --min-severity medium --repo=D:\code\azure-cli --src=20141 --tgt=dev
 Add:
 - missing_command_test
@@ -119,3 +126,10 @@ Exclude:
 - linter_exclusions.yml
 Severity:
 - Only HIGH will set self._exit_code = 1
+
+Fix tox:
+1. azdev running check
+  - python ./scripts/license_verify.py
+  - python setup.py check -r -s
+  - pylint azdev --rcfile=.pylintrc -r n
+  - flake8 --statistics --append-config=.flake8 azdev
