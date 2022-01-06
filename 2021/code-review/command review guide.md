@@ -1,5 +1,5 @@
 Common:
-- Do we need to consider adding confirmation=True for the delete operation
+- Do we need to consider adding confirmation=True for the delete operation ?
 - Filpath to File path
 - May I ask is this the tag stored in ARM service? If so, do we need to consider using **tags_type**?
 - Do we need these two methods? If not, please delete them
@@ -26,9 +26,17 @@ Common:
 - The failure of CI is caused by the api-version of ResourceType.MGMT_CONTAINERREGISTRY upgraded from 2021-06-01-preview to 2021-08-01-preview and needed to re record these tests in live mode
 
 Azure-cli-extensions:
-- If you want to release the new extension version, please write the description of changes into HISTORY.rst and update setup.py.
+- (By the way) If you want to release the new extension version, please write the description of changes into HISTORY.rst and update setup.py.
 - src/service_name.json when a new extension is added.
 
 Title:
 [App Config] BREAKING CHANGE: Support app service slots
 
+Error:
+MutuallyExclusiveArgumentError -相互排他性
+InvalidArgumentValueError
+ArgumentUsageError
+
+Test Exclude:
+k8s-configuration: have E2E tests that we run in our fork that are not merged into upstream. 
+k8s-extension: have E2E tests that we run in our fork that are not merged into upstream. 
