@@ -31,12 +31,15 @@ Azure-cli-extensions:
 
 Title:
 [App Config] BREAKING CHANGE: Support app service slots
+[App Service] Fix #19550: `az staticwebapp users update`: Allow updating static web app user roles again 
 
 Error:
 MutuallyExclusiveArgumentError -相互排他性
 InvalidArgumentValueError
 ArgumentUsageError
+RequiredArgumentMissingError - 明确的缺少参数
 
 Test Exclude:
 k8s-configuration: have E2E tests that we run in our fork that are not merged into upstream. 
 k8s-extension: have E2E tests that we run in our fork that are not merged into upstream. 
+spring-cloud: 
