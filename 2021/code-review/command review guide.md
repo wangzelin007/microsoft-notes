@@ -24,10 +24,14 @@ Common:
   May I ask whether description 2-4 is customer-facing?
   If we have multiple customer-facing changes, we need add them in the History Notes one by one, so we can automatically generate release note from History Notes instead of PR title.
 - The failure of CI is caused by the api-version of ResourceType.MGMT_CONTAINERREGISTRY upgraded from 2021-06-01-preview to 2021-08-01-preview and needed to re record these tests in live mode
+- type=str is the default setting, so we don't need an explicit declaration
 
 Azure-cli-extensions:
 - (By the way) If you want to release the new extension version, please write the description of changes into HISTORY.rst and update setup.py.
 - src/service_name.json when a new extension is added.
+
+Azure-cli:
+- Could we get the valid value of build_pool_size from Python SDK?
 
 Title:
 [App Config] BREAKING CHANGE: Support app service slots
