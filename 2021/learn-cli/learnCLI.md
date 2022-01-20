@@ -135,3 +135,10 @@ src/azure-cli/azure/cli/command_modules/vm/tests/latest/test_vm_commands.py
 
 # LROPoller
 Use LROPoller for long running operation.
+
+scripts/ci/credscan/CredScanSuppressions.json
+
+Add a new module in CLI: https://github.com/Azure/azure-cli/pull/21041
+
+class ScenarioTest
+class LiveScenarioTest -> @live_only()

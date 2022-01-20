@@ -41,6 +41,7 @@ Error:
 MutuallyExclusiveArgumentError -相互排他性
 InvalidArgumentValueError
 ArgumentUsageError
+ValidationError
 RequiredArgumentMissingError - 明确的缺少参数
 
 Test Exclude:
