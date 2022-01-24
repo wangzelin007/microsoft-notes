@@ -12,4 +12,4 @@
    以及在不同的分支下，有不同的actions
 
 8. actions 能否支持邮件通知选项。
-9. 
+9. Config-as-code 权限安全问题。
