@@ -3,18 +3,19 @@
   - (done) Auto assign assignees based on labels.
     - Label-assignee mapping for service team (service attention): https://dev.azure.com/azure-sdk/internal/_wiki/wikis/internal.wiki/43/Service-Team-Label-and-Contact-List
     - Label-assignee mapping for CLI team: Prerequisites: Add two columns (label and owners) in https://github.com/Azure/azure-cli/blob/dev/doc/modules_owned_by_cli_team.md
-  - Auto assign milestone based on issue creation date.
-  - (X) SLA don’t count bot comments | Auto add a comment based on template to avoid issue response SLA. 
+  - 【待确认】 TODO Auto assign milestone based on issue creation date. 
+  - 【不支持】 SLA don’t count bot comments | Auto add a comment based on template to avoid issue response SLA. 
   - (done) Auto notify issue creators/resolvers if they have no response for a long time (7 days).
   - (done) Auto close issue if the issue creators have no response longer than 14 days.
+    - use label: needs-author-feedback+
 - Pull requests:
   - **Auto assign labels based on PR title/description.**
   - **Auto assign reviewers and assignee based on labels.**
-  - **Auto assign milestone based on PR creation date.**
-  - **Notify PR creators when the PR created cannot be released in this sprint (created in the last week of the sprint)**
-  - **Notify PR creator when CI fail.**
-  - TODO discuss **Verify PR title, history notes to make it more standard to reduce manual effort during release.**
-  - Show date for code freeze and release in PR page (template or GitHub banner). (reply?)
+  - 【待确认】TODO **Auto assign milestone based on PR creation date.**
+  - 【待确认】TODO **Notify PR creators when the PR created cannot be released in this sprint (created in the last week of the sprint)**
+  - 【待确认】TODO **Notify PR creator when CI fail.**
+  - 【待确认】TODO **Verify PR title, history notes to make it more standard to reduce manual effort during release.**
+  - 【待确认】TODO Show date for code freeze and release in PR page (template or GitHub banner). (reply?)
 
 ------------------------------------------------------------------------
 1. Auto add a comment based on template to avoid issue response SLA.
