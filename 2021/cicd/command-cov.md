@@ -88,6 +88,10 @@
                            '-n {node_pool_name} '
         no_uptime_sla_cmd = 'aks update --resource-group={resource_group} --name={name} --no-uptime-sla'
 ```
+切换profile
+profile 会影响到self.loaded_help的数量
+az cloud show
+az cloud set --name AzureCloud --profile latest
 
 # azdev test aro --no-exitfirst --profile latest --verbose --series
 azdev test --no-exitfirst --profile latest --verbose --series
