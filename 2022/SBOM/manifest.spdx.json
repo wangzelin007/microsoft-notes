@@ -1,0 +1,184 @@
+{
+  "files": [
+    {
+      "fileName": "./D:/a/1/a/windows/D:/a/1/a/windows/packages.config",
+      "SPDXID": "SPDXRef-File-/D:/a/1/a/windows/D:/a/1/a/windows/packages.config-69B7910C6FC95DB019934AA3BE0CDFDC3F3F2D8E",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "0e52530d0b4bc0494acfb9d7d5c5e2fee1b4987a14dd6a791e90afa28e814f1c"
+        },
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "69b7910c6fc95db019934aa3be0cdfdc3f3f2d8e"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "licenseInfoInFile": "NOASSERTION",
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": "./D:/a/1/a/windows/D:/a/1/a/windows/pest.nuspec",
+      "SPDXID": "SPDXRef-File-/D:/a/1/a/windows/D:/a/1/a/windows/pest.nuspec-A2EBA85861EAFD340496A9A7948D193284A19408",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "21e9ba93bfc4cb161692aaa4c29e9872ce2ea9f4e5caf82d36bcc354f782755d"
+        },
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "a2eba85861eafd340496a9a7948d193284a19408"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "licenseInfoInFile": "NOASSERTION",
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": "./D:/a/1/a/windows/D:/a/1/a/windows/[Content_Types].xml",
+      "SPDXID": "SPDXRef-File-/D:/a/1/a/windows/D:/a/1/a/windows/[Content_Types].xml-EB0036B6C11A1AF694FA8ABACA0A4C43584225DE",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "76c0b8e99ee7bdf6fc49451e7bb5543820c1e3d0690109444a8d0fd9d69cbc31"
+        },
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "eb0036b6c11a1af694fa8abaca0a4c43584225de"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "licenseInfoInFile": "NOASSERTION",
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": "./D:/a/1/a/windows/D:/a/1/a/windows/package/services/metadata/core-properties/16e5bdb646ef44f485b1227d6d005f14.psmdcp",
+      "SPDXID": "SPDXRef-File-/D:/a/1/a/windows/D:/a/1/a/windows/package/services/metadata/core-properties/16e5bdb646ef44f485b1227d6d005f14.psmdcp-81EC7E121D7F03CDE59C8A4570A7D75C7EBB063A",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "4df8923641741605d72b4b80149f12a3ed3020f204d2212d2ebf063814b08ae7"
+        },
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "81ec7e121d7f03cde59c8a4570a7d75c7ebb063a"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "licenseInfoInFile": "NOASSERTION",
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": "./D:/a/1/a/windows/D:/a/1/a/windows/_rels/.rels",
+      "SPDXID": "SPDXRef-File-/D:/a/1/a/windows/D:/a/1/a/windows/_rels/.rels-2DBE1B6566BFF9F17C259FB7D8B21231D4F11857",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "690ada02157b02a4fb64d5dc954d29eea6e22a9e7b0da7f7dbb3d04858e0f0d3"
+        },
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "2dbe1b6566bff9f17c259fb7d8b21231d4f11857"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "licenseInfoInFile": "NOASSERTION",
+      "copyrightText": "NOASSERTION"
+    }
+  ],
+  "packages": [
+    {
+      "name": "pest",
+      "SPDXID": "SPDXRef-Package-pest-A2EBA85861EAFD340496A9A7948D193284A19408",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "versionInfo": "1.0.0",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "21e9ba93bfc4cb161692aaa4c29e9872ce2ea9f4e5caf82d36bcc354f782755d"
+        },
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "a2eba85861eafd340496a9a7948d193284a19408"
+        }
+      ],
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:nuget/pest@1.0.0"
+        }
+      ],
+      "supplier": "NOASSERTION"
+    },
+    {
+      "name": "Demo:682_Drop",
+      "SPDXID": "SPDXRef-Package-Demo:682_Drop-E50FB0586FE8E1C3B451D6CC0C80F91DCCCD5E54",
+      "downloadLocation": "NOASSERTION",
+      "packageVerificationCode": {
+        "packageVerificationCodeValue": "E50FB0586FE8E1C3B451D6CC0C80F91DCCCD5E54"
+      },
+      "filesAnalyzed": true,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "supplier": "Organization: Microsoft"
+    }
+  ],
+  "relationships": [
+    {
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Package-Demo:682_Drop-E50FB0586FE8E1C3B451D6CC0C80F91DCCCD5E54",
+      "spdxElement": "SPDXRef-DOCUMENT-Demo:682_Drop-E50FB0586FE8E1C3B451D6CC0C80F91DCCCD5E54"
+    },
+    {
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-pest-A2EBA85861EAFD340496A9A7948D193284A19408",
+      "spdxElement": "SPDXRef-Package-Demo:682_Drop-E50FB0586FE8E1C3B451D6CC0C80F91DCCCD5E54"
+    },
+    {
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-File-/D:/a/1/a/windows/D:/a/1/a/windows/_rels/.rels-2DBE1B6566BFF9F17C259FB7D8B21231D4F11857",
+      "spdxElement": "SPDXRef-Package-Demo:682_Drop-E50FB0586FE8E1C3B451D6CC0C80F91DCCCD5E54"
+    },
+    {
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-File-/D:/a/1/a/windows/D:/a/1/a/windows/pest.nuspec-A2EBA85861EAFD340496A9A7948D193284A19408",
+      "spdxElement": "SPDXRef-Package-Demo:682_Drop-E50FB0586FE8E1C3B451D6CC0C80F91DCCCD5E54"
+    },
+    {
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-File-/D:/a/1/a/windows/D:/a/1/a/windows/package/services/metadata/core-properties/16e5bdb646ef44f485b1227d6d005f14.psmdcp-81EC7E121D7F03CDE59C8A4570A7D75C7EBB063A",
+      "spdxElement": "SPDXRef-Package-Demo:682_Drop-E50FB0586FE8E1C3B451D6CC0C80F91DCCCD5E54"
+    },
+    {
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-File-/D:/a/1/a/windows/D:/a/1/a/windows/[Content_Types].xml-EB0036B6C11A1AF694FA8ABACA0A4C43584225DE",
+      "spdxElement": "SPDXRef-Package-Demo:682_Drop-E50FB0586FE8E1C3B451D6CC0C80F91DCCCD5E54"
+    },
+    {
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-File-/D:/a/1/a/windows/D:/a/1/a/windows/packages.config-69B7910C6FC95DB019934AA3BE0CDFDC3F3F2D8E",
+      "spdxElement": "SPDXRef-Package-Demo:682_Drop-E50FB0586FE8E1C3B451D6CC0C80F91DCCCD5E54"
+    }
+  ],
+  "spdxVersion": "SPDX-2.2",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT-Demo:682_Drop-E50FB0586FE8E1C3B451D6CC0C80F91DCCCD5E54",
+  "name": "Demo:682_Drop SPDX2.2 SBOM",
+  "documentNamespace": "https://docs.microsoft.com/package/Demo:682_Drop",
+  "creationInfo": {
+    "created": "2021-11-15T18:18:28.4557307\u002B00:00",
+    "creators": [
+      "Organization: Microsoft",
+      "Tool: manifest-generator-1.0.0"
+    ]
+  },
+  "documentDescribes": [
+    "SPDXRef-Package-Demo:682_Drop-E50FB0586FE8E1C3B451D6CC0C80F91DCCCD5E54"
+  ]
+}

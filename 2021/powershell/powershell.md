@@ -28,6 +28,9 @@ pip list|Measure-Object -line
 
 **rm**
 Remove-Item C:\tmp -Recurse -Force
+
+**package code**
+Get-Package -name 'Microsoft Azure CLI' | fl TagId
 ```
 
 ```cmd
