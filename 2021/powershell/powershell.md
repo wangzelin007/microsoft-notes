@@ -44,3 +44,16 @@ Connect-AzAccount
 Set-AzContext -Subscription "0b1f6471-1bf0-4dda-aec3-cb9272f09590"
 Register-AzProviderFeature -FeatureName "CreateOptionClone" -ProviderNamespace "Microsoft.Compute"
 ```
+
+```shell
+# hashtable
+$metadata = @{ written = 1934; updated = 1958; published = 1969; author = "Rudyard kipling"}
+
+# array
+$metadata="written=1934 updated=1958 published=1969 author=`"Rudyard kipling`""
+az storage blob metadata update -c yscontainer -n policy.json --account-name yssa --metadata $metadata --debug
+
+# str
+$metadata = "written=1934", "updated=1958", "published=1969", "author=`"Rudyard kipling`""
+az storage blob metadata update -c yscontainer -n policy.json --account-name yssa --metadata $metadata.split(" ") --debug
+```

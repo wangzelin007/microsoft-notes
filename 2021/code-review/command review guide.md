@@ -34,6 +34,8 @@ Azure-cli:
 - Could we get the valid value of build_pool_size from Python SDK?
 - Since @ResourceGroupPreparer is used in this test, the snapshot will be automatically removed after this test is completed.
 Therefore, the exposure of SAS token will not cause security vulnerabilities. We can consider adding exclusion for credential scanning in file CredScanSuppressions.json
+- Sorry, because the comments were resolved a little late, and included upgrading api-version, this poses a risk to the quality of CLI and may blocking CLI release.
+Therefore, this PR cannot catch up with the release of this sprint. Next time, please try to get the PR ready on the code completion date. The release time of the next sprint is 2022-02-08 (this is also the milestone we set at the beginning for this PR)
 
 Title:
 [App Config] BREAKING CHANGE: Support app service slots

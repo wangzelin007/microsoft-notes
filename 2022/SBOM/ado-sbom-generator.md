@@ -197,3 +197,6 @@ AzureAD/azure-activedirectory-library-for-python
 - [] system diagnosis 开启
 - [] 修改requirements.txt 如果支持pip
 - [] 如何拆分 build 和 package
+
+Set retention policies for builds, releases, and tests
+https://docs.microsoft.com/en-us/azure/devops/pipelines/policies/retention?view=azure-devops&tabs=yaml
