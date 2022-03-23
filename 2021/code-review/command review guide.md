@@ -37,6 +37,8 @@ Therefore, the exposure of SAS token will not cause security vulnerabilities. We
 - Sorry, because the comments were resolved a little late, and included upgrading api-version, this poses a risk to the quality of CLI and may blocking CLI release.
 Therefore, this PR cannot catch up with the release of this sprint. Next time, please try to get the PR ready on the code completion date. The release time of the next sprint is 2022-02-08 (this is also the milestone we set at the beginning for this PR)
 
+Could you take it as high priority since currently Azure CLI release is blocked by this issue and we need to ship it tomorrow. Thanks a lot.
+
 Title:
 [App Config] BREAKING CHANGE: Support app service slots
 [App Service] Fix #19550: `az staticwebapp users update`: Allow updating static web app user roles again 
@@ -54,7 +56,10 @@ k8s-extension: have E2E tests that we run in our fork that are not merged into u
 spring-cloud: 
 
 ERROR:
-1. 修改代码也能导致大量重录 [jepio](https://github.com/Azure/azure-cli/pull/21028)
+1. 修改代码也能导致大量重录 [jepio](https://github.com/Azure/azure-cli/pull/21028)  
+**不要同时 download 多个 azcli**  
+**reset: 删除 C:\Users\zelinwang\[.azdev,.azure] 等目录**  
+**不要同时运行多个profile**
 
 ------
 切换profile:
@@ -64,34 +69,6 @@ get all failed test case in profile 2018-03-01-hybrid
 `azdev test vm --repo=./ --src=HEAD --tgt=origin/dev --no-exitfirst --profile 2018-03-01-hybrid --verbose --series`
 re-run error cases to generate recording files:
 `azdev test vm --no-exitfirst --live --lf --profile 2018-03-01-hybrid`
-{
-  "status": "Failed",
-  "error": {
-    "code": "DeploymentFailed",
-    "message": "At least one resource deployment operation failed. Please list deployment operations for details. Please see https://aka.ms/DeployOperations for usage details.",
-    "details": [
-      {
-        "code": "BadRequest",
-        "message": {
-          "error": {
-            "details": [
-              {
-                "message": "Could not find member vmSizeProperties on object of type VMHardwareProfile. Path properties.hardwareProfile.vmSizeProperties, line 1, position 110.",
-                "target": "vm.properties.hardwareProfile.vmSizeProperties"
-              },
-              {
-                "message": "Could not find member additionalCapabilities on object of type Properties. Path properties.additionalCapabilities, line 1, position 1230.",
-                "target": "vm.properties.additionalCapabilities"
-              }
-            ],
-            "code": "BadRequest",
-            "message": "The request message is invalid."
-          }
-        }
-      }
-    ]
-  }
-}
 
 get all failed test case in profile 2019-03-01-hybrid
 `azdev test vm --repo=./ --src=HEAD --tgt=origin/dev --no-exitfirst --profile 2019-03-01-hybrid --verbose --series`
@@ -121,73 +98,4 @@ azdev test test_vm_secret_e2e_test --live --profile 2019-03-01-hybrid
 [x] azdev test test_vm_secret_e2e_test --live --profile 2020-09-01-hybrid
 azdev test test_vm_secret_e2e_test --live --profile latest
 
-2018-03-01-hybrid: 5
-test_custom_image azure.cli.core.azclierror.DeploymentError
-test_vm_create_by_attach_os_and_data_disks azure.cli.core.azclierror.DeploymentError
-test_vm_create_ubuntu azure.cli.core.azclierror.DeploymentError
-test_vmss_create_options azure.cli.core.azclierror.DeploymentError
-test_set_os_disk_size azure.common.AzureHttpError:
-azdev test test_vm_create_ubuntu --debug --profile 2018-03-01-hybrid
-az vm create --resource-group zelin62 --admin-username ubuntu --name cli-test-vm2 --authentication-type ssh --image UbuntuLTS --ssh-key-value 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCbIg1guRHbI0lV11wWDt1r2cUdcNd27CJsg+SfgC7miZeubtwUhbsPdhMQsfDyhOWHq1+ZL0M+nJZV63d/1dhmhtgyOqejUwrPlzKhydsbrsdUor+JmNJDdW01v7BXHyuymT8G4s09jCasNOwiufbP/qp72ruu0bIA1nySsvlf9pCQAuFkAnVnf/rFhUlOkhtRpwcq8SUNY2zRHR/EKb/4NWY1JzR4sa3q2fWIJdrrX0DvLoa5g9bIEd4Df79ba7v+yiUBOS0zT2ll+z4g9izHK3EO5d8hL4jYxcjKs+wcslSYRWrascfscLgMlMGh0CdKeNTDjHpGPncaf3Z+FwwwjWeuiNBxv7bJo13/8B/098KlVDl4GZqsoBCEjPyJfV6hO0y/LkRGkk7oHWKgeWAfKtfLItRp00eZ4fcJNK9kCaSMmEugoZWcI7NGbZXzqFWqbpRI7NcDP9+WIQ+i9U5vqWsqd/zng4kbuAJ6UuKqIzB0upYrLShfQE3SAck8oaLhJqqq56VfDuASNpJKidV+zq27HfSBmbXnkR/5AK337dc3MXKJypoK/QPMLKUAP5XLPbs+NddJQV7EZXd29DLgp+fRIg3edpKdO7ZErWhv7d+3Kws+e1Y+ypmR2WIVSwVyBEUfgv2C8Ts9gnTF4pNcEY/S2aBicz5Ew2+jdyGNQQ== test@example.com\n' --location westus --data-disk-sizes-gb 1 --data-disk-caching ReadOnly
 
-
-2019-03-01-hybrid: 10
-test_vm_custom_image  azure.cli.core.azclierror.DeploymentError
-test_vm_create_by_attach_os_and_data_disks  azure.cli.core.azclierror.DeploymentError
-test_vm_generic_update  azure.cli.core.azclierror.DeploymentError
-test_vm_create_ubuntu  azure.cli.core.azclierror.DeploymentError
-test_vmss_create_options  azure.cli.core.azclierror.DeploymentError
-test_vm_create_zones  azure.cli.core.azclierror.InvalidTemplateError
-test_vmss_create_single_zone azure.cli.core.azclierror.InvalidTemplateError
-test_vmss_create_x_zones azure.cli.core.azclierror.InvalidTemplateError
-test_vmss_create_zonal_with_fd azure.cli.core.azclierror.InvalidTemplateError
-test_vm_set_os_disk_size azure.common.AzureHttpError:
-
-2020-09-01-hybrid: 5
-test_vm_create_by_attach_os_and_data_disks azure.cli.core.azclierror.DeploymentError
-test_vm_create_ubuntu azure.cli.core.azclierror.DeploymentError
-test_vmss_create_options azure.cli.core.azclierror.DeploymentError
-test_vm_generic_update azure.cli.core.azclierror.DeploymentError
-test_vm_custom_image azure.core.exceptions.HttpResponseError
-azdev test test_vmss_create_and_modify --profile 2020-09-01-hybrid --live done
-
-latest: 26
-VMCreateAndStateModificationsScenarioTest::test_vm_create_state_modifications - SystemExit: 2
-VMCreateAndStateModificationsScenarioTest::test_vm_user_update_win - SystemExit: 2
-VMMonitorTestDefault::test_vm_create_with_monitor - SystemExit: 2
-VMMonitorTestCreateWindows::test_vm_create_with_workspace_windows - SystemExit: 2
-VMMonitorTestUpdateLinux::test_vm_update_with_workspace_linux - SystemExit: 2
-VMCreateExistingOptions::test_vm_create_existing_options - SystemExit: 2
-VMCreateExistingOptions::test_vm_create_provision_vm_agent - SystemExit: 2
-VMCreateExistingIdsOptions::test_vm_create_existing_ids_options - SystemExit: 2
-VMDiskAttachDetachTest::test_vm_ultra_ssd_storage_sku - azure.core.exceptions.HttpResponseError: (LocationNotSupportAvaila
-VMDiskAttachDetachTest::test_vm_vmss_update_ultra_ssd_enabled - azure.cli.core.azclierror.InvalidTemplateError: {"error":{
-VMSSCreateOptions::test_vmss_create_options - SystemExit: 2
-VMSSCreateBalancerOptionsTest::test_vmss_create_default_app_gateway - azure.cli.core.azclierror.InvalidTemplateError: {"er
-AcceleratedNetworkingTest::test_vmss_accelerated_networking - SystemExit: 2
-VMSSCreateExistingOptions::test_vmss_create_existing_options - SystemExit: 2
-VMSSCreateExistingIdsOptions::test_vmss_create_existing_ids_options - SystemExit: 2
-MSIScenarioTest::test_vm_msi - azure.cli.core.azclierror.DeploymentError: {"status":"Failed","error":{"code":"DeploymentFa
-MSIScenarioTest::test_vmss_msi - azure.cli.core.azclierror.DeploymentError: {"status":"Failed","error":{"code":"Deployment
-VMZoneScenarioTest::test_vm_create_zones - azure.cli.core.azclierror.InvalidTemplateError: {"error":{"code":"InvalidTempla
-VMDiskEncryptionTest::test_vmss_disk_encryption_e2e - SystemExit: 2
-VMGalleryImage::test_create_vm_with_shared_gallery_image - azure.core.exceptions.ResourceNotFoundError: (NotFound) The ent
-VMGalleryImage::test_gallery_e2e - azure.core.exceptions.HttpResponseError: (InvalidParameter) Gallery image version publi
-VMGalleryImage::test_shared_gallery - azure.core.exceptions.HttpResponseError: (InvalidParameter) Cannot update the galler
-DiskEncryptionSetTest::test_disk_encryption_set - azure.core.exceptions.ResourceExistsError: (KeyVaultAndDiskInDifferentRe
-VMCreateAutoCreateSubnetScenarioTest::test_vm_create_auto_create_subnet - knack.util.CLIError: Can't overwrite existing ca
-VMSSOrchestrationModeScenarioTest::test_vmss_complex_orchestration_mode - azure.cli.core.azclierror.DeploymentError: {"sta
-DiskZRSScenarioTest::test_disk_zrs - azure.core.exceptions.HttpResponseError: (InvalidParameter) SKU StandardSSD_ZRS is no
-
-azdev test test_update_dedicated_host_e2e --profile latest --live done
-quota:
-Standard DSv3 Family vCPUs: Microsoft.Compute: East US 2: 1000
-**rg name 最好保持唯一！**
-azdev test test_vm_error_on_zone_unavailable --profile latest --live done
-azdev test test_vmss_windows_patch_mode --profile latest --live done
-
-T: azdev test test_vm_create_ubuntu --profile latest --live
-F: azdev test test_vm_create_ubuntu --profile 2018-03-01-hybrid --live
-
-TODO:
-E       azure.cli.core.azclierror.DeploymentError: {"status":"Failed","error":{"code":"DeploymentFailed","message":"At least one resource deployment operation failed. Please list deployment operations for details. Please see https://aka.ms/DeployOperations for usage details.","details":[{"code":"BadRequest","message":"{\r\n  \"error\": {\r\n    \"code\": \"BadRequest\",\r\n    \"message\": \"Could not find member 'deleteOption' on object of type 'DataDisk'. Path 'properties.storageProfile.dataDisks[0].deleteOption', line 1, position 736.\",\r\n    \"target\": \"vm.properties.storageProfile.dataDisks[0].deleteOption\"\r\n  }\r\n}"}]}}

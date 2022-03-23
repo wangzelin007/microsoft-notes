@@ -1,8 +1,8 @@
-1. python -m venv env --prompt xxx
-2. pip install azdev
-3. azdev setup --cli D:\code\azure-cli --repo D:\code\azure-cli-extensions
-4. azdev setup --cli C:\code\azure-cli --repo C:\code\azure-cli-extensions
-5. azdev setup --cli C:\code\pr\azure-cli --repo C:\code\azure-cli-extensions
+1. python -m venv env --prompt [azcli, azdev]
+2. .\env\Scripts\activate
+3. pip install azdev
+4. azdev setup --cli D:\code\azure-cli --repo D:\code\azure-cli-extensions
+5. azdev setup --cli C:\code\azure-cli --repo C:\code\azure-cli-extensions
 6. pip install nose
 7. az login
 8. az account show (0b1f6471-xxx)

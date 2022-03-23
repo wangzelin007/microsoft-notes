@@ -14,7 +14,7 @@
   - 【待确认】TODO **Auto assign milestone based on PR creation date.**
   - 【待确认】TODO **Notify PR creators when the PR created cannot be released in this sprint (created in the last week of the sprint)**
   - 【待确认】TODO **Notify PR creator when CI fail.**
-  - 【待确认】TODO **Verify PR title, history notes to make it more standard to reduce manual effort during release.**
+  - done **Verify PR title, history notes to make it more standard to reduce manual effort during release.**
   - 【待确认】TODO Show date for code freeze and release in PR page (template or GitHub banner). (reply?)
 
 ------------------------------------------------------------------------
