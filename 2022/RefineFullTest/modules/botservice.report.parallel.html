@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title>Test Report</title>
+    <link href="assets/style.css" rel="stylesheet" type="text/css"/></head>
+  <body onLoad="init()">
+    <script>/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+function toArray(iter) {
+    if (iter === null) {
+        return null;
+    }
+    return Array.prototype.slice.call(iter);
+}
+
+function find(selector, elem) { // eslint-disable-line no-redeclare
+    if (!elem) {
+        elem = document;
+    }
+    return elem.querySelector(selector);
+}
+
+function findAll(selector, elem) {
+    if (!elem) {
+        elem = document;
+    }
+    return toArray(elem.querySelectorAll(selector));
+}
+
+function sortColumn(elem) {
+    toggleSortStates(elem);
+    const colIndex = toArray(elem.parentNode.childNodes).indexOf(elem);
+    let key;
+    if (elem.classList.contains('result')) {
+        key = keyResult;
+    } else if (elem.classList.contains('links')) {
+        key = keyLink;
+    } else if (elem.classList.contains('float')) {
+        key = keyFloat;
+    } else {
+        key = keyAlpha;
+    }
+    sortTable(elem, key(colIndex));
+}
+
+function showAllExtras() { // eslint-disable-line no-unused-vars
+    findAll('.col-result').forEach(showExtras);
+}
+
+function hideAllExtras() { // eslint-disable-line no-unused-vars
+    findAll('.col-result').forEach(hideExtras);
+}
+
+function showExtras(colresultElem) {
+    const extras = colresultElem.parentNode.nextElementSibling;
+    const expandcollapse = colresultElem.firstElementChild;
+    extras.classList.remove('collapsed');
+    expandcollapse.classList.remove('expander');
+    expandcollapse.classList.add('collapser');
+}
+
+function hideExtras(colresultElem) {
+    const extras = colresultElem.parentNode.nextElementSibling;
+    const expandcollapse = colresultElem.firstElementChild;
+    extras.classList.add('collapsed');
+    expandcollapse.classList.remove('collapser');
+    expandcollapse.classList.add('expander');
+}
+
+function showFilters() {
+    const filterItems = document.getElementsByClassName('filter');
+    for (let i = 0; i < filterItems.length; i++)
+        filterItems[i].hidden = false;
+}
+
+function addCollapse() {
+    // Add links for show/hide all
+    const resulttable = find('table#results-table');
+    const showhideall = document.createElement('p');
+    showhideall.innerHTML = '<a href="javascript:showAllExtras()">Show all details</a> / ' +
+                            '<a href="javascript:hideAllExtras()">Hide all details</a>';
+    resulttable.parentElement.insertBefore(showhideall, resulttable);
+
+    // Add show/hide link to each result
+    findAll('.col-result').forEach(function(elem) {
+        const collapsed = getQueryParameter('collapsed') || 'Passed';
+        const extras = elem.parentNode.nextElementSibling;
+        const expandcollapse = document.createElement('span');
+        if (extras.classList.contains('collapsed')) {
+            expandcollapse.classList.add('expander');
+        } else if (collapsed.includes(elem.innerHTML)) {
+            extras.classList.add('collapsed');
+            expandcollapse.classList.add('expander');
+        } else {
+            expandcollapse.classList.add('collapser');
+        }
+        elem.appendChild(expandcollapse);
+
+        elem.addEventListener('click', function(event) {
+            if (event.currentTarget.parentNode.nextElementSibling.classList.contains('collapsed')) {
+                showExtras(event.currentTarget);
+            } else {
+                hideExtras(event.currentTarget);
+            }
+        });
+    });
+}
+
+function getQueryParameter(name) {
+    const match = RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
+    return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
+}
+
+function init () { // eslint-disable-line no-unused-vars
+    resetSortHeaders();
+
+    addCollapse();
+
+    showFilters();
+
+    sortColumn(find('.initial-sort'));
+
+    findAll('.sortable').forEach(function(elem) {
+        elem.addEventListener('click',
+            function() {
+                sortColumn(elem);
+            }, false);
+    });
+}
+
+function sortTable(clicked, keyFunc) {
+    const rows = findAll('.results-table-row');
+    const reversed = !clicked.classList.contains('asc');
+    const sortedRows = sort(rows, keyFunc, reversed);
+    /* Whole table is removed here because browsers acts much slower
+     * when appending existing elements.
+     */
+    const thead = document.getElementById('results-table-head');
+    document.getElementById('results-table').remove();
+    const parent = document.createElement('table');
+    parent.id = 'results-table';
+    parent.appendChild(thead);
+    sortedRows.forEach(function(elem) {
+        parent.appendChild(elem);
+    });
+    document.getElementsByTagName('BODY')[0].appendChild(parent);
+}
+
+function sort(items, keyFunc, reversed) {
+    const sortArray = items.map(function(item, i) {
+        return [keyFunc(item), i];
+    });
+
+    sortArray.sort(function(a, b) {
+        const keyA = a[0];
+        const keyB = b[0];
+
+        if (keyA == keyB) return 0;
+
+        if (reversed) {
+            return keyA < keyB ? 1 : -1;
+        } else {
+            return keyA > keyB ? 1 : -1;
+        }
+    });
+
+    return sortArray.map(function(item) {
+        const index = item[1];
+        return items[index];
+    });
+}
+
+function keyAlpha(colIndex) {
+    return function(elem) {
+        return elem.childNodes[1].childNodes[colIndex].firstChild.data.toLowerCase();
+    };
+}
+
+function keyFloat(colIndex) {
+    return function(elem) {
+        return Number(elem.childNodes[1].childNodes[colIndex].firstChild.data);
+    };
+}
+
+function keyLink(colIndex) {
+    return function(elem) {
+        const dataCell = elem.childNodes[1].childNodes[colIndex].firstChild;
+        return dataCell == null ? '' : dataCell.innerText.toLowerCase();
+    };
+}
+
+function keyResult(colIndex) {
+    return function(elem) {
+        const strings = ['Error', 'Failed', 'Rerun', 'XFailed', 'XPassed',
+            'Skipped', 'Passed'];
+        return strings.indexOf(elem.childNodes[1].childNodes[colIndex].firstChild.data);
+    };
+}
+
+function resetSortHeaders() {
+    findAll('.sort-icon').forEach(function(elem) {
+        elem.parentNode.removeChild(elem);
+    });
+    findAll('.sortable').forEach(function(elem) {
+        const icon = document.createElement('div');
+        icon.className = 'sort-icon';
+        icon.textContent = 'vvv';
+        elem.insertBefore(icon, elem.firstChild);
+        elem.classList.remove('desc', 'active');
+        elem.classList.add('asc', 'inactive');
+    });
+}
+
+function toggleSortStates(elem) {
+    //if active, toggle between asc and desc
+    if (elem.classList.contains('active')) {
+        elem.classList.toggle('asc');
+        elem.classList.toggle('desc');
+    }
+
+    //if inactive, reset all other functions and add ascending active
+    if (elem.classList.contains('inactive')) {
+        resetSortHeaders();
+        elem.classList.remove('inactive');
+        elem.classList.add('active');
+    }
+}
+
+function isAllRowsHidden(value) {
+    return value.hidden == false;
+}
+
+function filterTable(elem) { // eslint-disable-line no-unused-vars
+    const outcomeAtt = 'data-test-result';
+    const outcome = elem.getAttribute(outcomeAtt);
+    const classOutcome = outcome + ' results-table-row';
+    const outcomeRows = document.getElementsByClassName(classOutcome);
+
+    for(let i = 0; i < outcomeRows.length; i++){
+        outcomeRows[i].hidden = !elem.checked;
+    }
+
+    const rows = findAll('.results-table-row').filter(isAllRowsHidden);
+    const allRowsHidden = rows.length == 0 ? true : false;
+    const notFoundMessage = document.getElementById('not-found-message');
+    notFoundMessage.hidden = !allRowsHidden;
+}
+</script>
+    <h1>botservice.report.parallel.html</h1>
+    <p>Report generated on 23-Mar-2022 at 17:48:09 by <a href="https://pypi.python.org/pypi/pytest-html">pytest-html</a> v3.1.1</p>
+    <h2>Summary</h2>
+    <p>34 tests ran in 5.99 seconds. </p>
+    <p class="filter" hidden="true">(Un)check the boxes to filter the results.</p><input checked="true" class="filter" data-test-result="passed" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="passed">34 passed</span>, <input checked="true" class="filter" data-test-result="skipped" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="skipped">10 skipped</span>, <input checked="true" class="filter" data-test-result="failed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="failed">0 failed</span>, <input checked="true" class="filter" data-test-result="error" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="error">0 errors</span>, <input checked="true" class="filter" data-test-result="xfailed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="xfailed">0 expected failures</span>, <input checked="true" class="filter" data-test-result="xpassed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="xpassed">0 unexpected passes</span>
+    <h2>Results</h2>
+    <table id="results-table">
+      <thead id="results-table-head">
+        <tr>
+          <th class="sortable result initial-sort" col="result">Result</th>
+          <th class="sortable" col="name">Test</th>
+          <th class="sortable float" col="duration">Duration</th>
+          <th class="sortable links" col="links">Links</th></tr>
+        <tr hidden="true" id="not-found-message">
+          <th colspan="4">No results found. Try to check the filters</th></tr></thead>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/botservice/tests/latest/test_bot_commands.py::BotTests::test_botservice_create_v4_csharp_echo_webapp_bot</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\botservice\\tests\\latest\\test_bot_commands.py&#x27;, 163, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/botservice/tests/latest/test_bot_commands.py::BotTests::test_botservice_create_v4_js_echo_webapp_bot</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\botservice\\tests\\latest\\test_bot_commands.py&#x27;, 209, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/botservice/tests/latest/test_bot_commands.py::BotTests::test_botservice_download_should_create_appsettings_for_v4_csharp_webapp_echo_bots_no_bot_file</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\botservice\\tests\\latest\\test_bot_commands.py&#x27;, 260, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/botservice/tests/latest/test_bot_commands.py::BotTests::test_botservice_download_should_create_env_file_for_v4_node_webapp_echo_bots_no_bot_file</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\botservice\\tests\\latest\\test_bot_commands.py&#x27;, 302, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/botservice/tests/latest/test_bot_commands.py::BotTests::test_botservice_keep_node_modules_should_not_empty_node_modules_or_install_dependencies</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\botservice\\tests\\latest\\test_bot_commands.py&#x27;, 341, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/botservice/tests/latest/test_bot_commands.py::BotLiveOnlyTests::test_botservice_create_enable_encryption_then_disable</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\botservice\\tests\\latest\\test_bot_commands.py&#x27;, 839, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/botservice/tests/latest/test_bot_commands.py::BotLiveOnlyTests::test_botservice_create_should_remove_invalid_char_from_name_when_registration</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\botservice\\tests\\latest\\test_bot_commands.py&#x27;, 805, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/botservice/tests/latest/test_bot_commands.py::BotLiveOnlyTests::test_botservice_create_should_remove_invalid_char_from_name_when_webapp</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\botservice\\tests\\latest\\test_bot_commands.py&#x27;, 821, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/botservice/tests/latest/test_bot_commands.py::BotLiveOnlyTests::test_botservice_create_webapp_enable_encryption_then_disable</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\botservice\\tests\\latest\\test_bot_commands.py&#x27;, 929, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/botservice/tests/latest/test_bot_commands.py::BotLiveOnlyTests::test_botservice_update_enable_cmk</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\botservice\\tests\\latest\\test_bot_commands.py&#x27;, 886, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/botservice/tests/latest/test_authsetting_commands.py::AuthSettingTests::test_auth_setting</td>
+          <td class="col-duration">0.30</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/botservice/tests/latest/test_authsetting_commands.py::AuthSettingTests::test_service_providers</td>
+          <td class="col-duration">0.11</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/botservice/tests/latest/test_bot_commands.py::BotTests::test_botservice_create_should_be_idempotent_and_return_existing_bot_info</td>
+          <td class="col-duration">0.11</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.botservice.custom:custom.py:87 Provided bot name already exists in Resource Group. Returning bot information:<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/botservice/tests/latest/test_bot_commands.py::BotTests::test_botservice_create_should_create_registration_bot_without_endpoint</td>
+          <td class="col-duration">0.10</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/botservice/tests/latest/test_bot_commands.py::BotTests::test_botservice_create_should_raise_error_for_empty_password_strings_for_webapp_bots</td>
+          <td class="col-duration">0.06</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/botservice/tests/latest/test_bot_commands.py::BotTests::test_botservice_create_should_raise_error_for_invalid_app_id_args</td>
+          <td class="col-duration">0.15</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/botservice/tests/latest/test_bot_commands.py::BotTests::test_botservice_create_should_raise_error_with_no_password_for_webapp_bots</td>
+          <td class="col-duration">0.06</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/botservice/tests/latest/test_bot_commands.py::BotTests::test_botservice_create_v4_js_empty_webapp_for_webapp_bot</td>
+          <td class="col-duration">0.36</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/botservice/tests/latest/test_bot_commands.py::BotTests::test_botservice_publish_remove_node_iis_files_if_not_already_local</td>
+          <td class="col-duration">0.90</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>C:\Code\microsoft-notes\2022\RefineFullTest\upload.zip
+<br/> ------------------------------Captured stderr call------------------------------ <br/>WARNING: This command is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: This command is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.botservice.custom:custom.py:578 DEPRECATION WARNING: `az bot publish` is deprecated for v4 bots. We recommend using `az webapp` to deploy your bot to Azure. For more information on how to deploy a v4 bot, see https://aka.ms/deploy-your-bot.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/botservice/tests/latest/test_bot_commands.py::BotTests::test_botservice_registration_bot_create</td>
+          <td class="col-duration">0.19</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/botservice/tests/latest/test_bot_commands.py::BotTests::test_botservice_should_throw_if_name_is_unavailable</td>
+          <td class="col-duration">0.11</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/botservice/tests/latest/test_bot_commands.py::BotTests::test_botservice_show_on_v4_csharp_webapp_bot</td>
+          <td class="col-duration">0.35</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/botservice/tests/latest/test_bot_commands.py::BotTests::test_botservice_show_on_v4_js_webapp_bot</td>
+          <td class="col-duration">0.40</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/botservice/tests/latest/test_bot_commands.py::BotTests::test_botservice_update_should_update_bot_properties</td>
+          <td class="col-duration">0.15</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/botservice/tests/latest/test_bot_commands.py::BotTests::test_create_v4_webapp_bot_should_succeed_with_ending_hyphen</td>
+          <td class="col-duration">0.31</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/botservice/tests/latest/test_bot_commands.py::BotTests::test_prepare_publish_should_raise_cli_error_when_version_is_v4</td>
+          <td class="col-duration">0.09</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Option &#x27;--proj-name&#x27; has been deprecated and will be removed in version &#x27;3.0.0&#x27;. Use &#x27;--proj-file-path&#x27; instead.
+WARNING: This command is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/botservice/tests/latest/test_bot_commands.py::BotTests::test_prepare_publish_with_registration_bot_should_raise_error</td>
+          <td class="col-duration">0.15</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Option &#x27;--proj-name&#x27; has been deprecated and will be removed in version &#x27;3.0.0&#x27;. Use &#x27;--proj-file-path&#x27; instead.
+WARNING: This command is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.botservice.custom:custom.py:428 WARNING: `az bot prepare-publish` is in maintenance mode for v3 bots as support for creating v3 SDK bots via `az bot create` will be discontinued on August 1st, 2019. We encourage developers move to creating and deploying v4 bots.
+
+For more information on creating and deploying v4 bots, please visit https://aka.ms/create-and-deploy-v4-bot
+
+For more information on v3 bot creation deprecation, please visit this blog post: https://blog.botframework.com/2019/06/07/v3-bot-broadcast-message/<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/botservice/tests/latest/test_bot_commands.py::BotTests::test_prepare_publish_with_unregistered_bot_name_should_fail</td>
+          <td class="col-duration">0.06</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Option &#x27;--proj-name&#x27; has been deprecated and will be removed in version &#x27;3.0.0&#x27;. Use &#x27;--proj-file-path&#x27; instead.
+WARNING: This command is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.botservice.custom:custom.py:428 WARNING: `az bot prepare-publish` is in maintenance mode for v3 bots as support for creating v3 SDK bots via `az bot create` will be discontinued on August 1st, 2019. We encourage developers move to creating and deploying v4 bots.
+
+For more information on creating and deploying v4 bots, please visit https://aka.ms/create-and-deploy-v4-bot
+
+For more information on v3 bot creation deprecation, please visit this blog post: https://blog.botframework.com/2019/06/07/v3-bot-broadcast-message/<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/botservice/tests/latest/test_bot_commands.py::BotTests::test_update_bot_should_raise_mutuallyexclusiveargumenterror</td>
+          <td class="col-duration">0.11</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/botservice/tests/latest/test_bot_commands.py::BotLocalErrorsTests::test_botservice_prepare_deploy_csharp</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/botservice/tests/latest/test_bot_commands.py::BotLocalErrorsTests::test_botservice_prepare_deploy_csharp_fail_if_deployment_file_exists</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/botservice/tests/latest/test_bot_commands.py::BotLocalErrorsTests::test_botservice_prepare_deploy_csharp_no_proj_file</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/botservice/tests/latest/test_bot_commands.py::BotLocalErrorsTests::test_botservice_prepare_deploy_csharp_preserve_filename_casing</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/botservice/tests/latest/test_bot_commands.py::BotLocalErrorsTests::test_botservice_prepare_deploy_javascript</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.botservice.custom:custom.py:545 WARNING: This command should normally be run in the same folder as the package.json for Node.js bots. When using &#x27;az webapp deployment source config-zip&#x27; the package.json and web.config are usually in the same folder and at the root level of the .zip file. See &#x27;az bot prepare-deploy --help&#x27;.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/botservice/tests/latest/test_bot_commands.py::BotLocalErrorsTests::test_botservice_prepare_deploy_javascript_fail_if_web_config_exists</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/botservice/tests/latest/test_bot_commands.py::BotLocalErrorsTests::test_botservice_prepare_deploy_javascript_should_fail_with_proj_file_path</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/botservice/tests/latest/test_bot_commands.py::BotLocalErrorsTests::test_botservice_prepare_deploy_should_fail_if_code_dir_doesnt_exist</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>Provided --code-dir value (does_not_exist) does not exist
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/botservice/tests/latest/test_bot_commands.py::BotLocalErrorsTests::test_botservice_prepare_deploy_typescript</td>
+          <td class="col-duration">0.01</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.botservice.custom:custom.py:545 WARNING: This command should normally be run in the same folder as the package.json for Node.js bots. When using &#x27;az webapp deployment source config-zip&#x27; the package.json and web.config are usually in the same folder and at the root level of the .zip file. See &#x27;az bot prepare-deploy --help&#x27;.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/botservice/tests/latest/test_bot_commands.py::BotLocalErrorsTests::test_botservice_prepare_deploy_typescript_should_fail_with_proj_file_path</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/botservice/tests/latest/test_channel_commands.py::ChannelTests::test_botservice_update_directline</td>
+          <td class="col-duration">0.15</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Command group &#x27;bot directline&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;bot directline&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/botservice/tests/latest/test_channel_commands.py::ChannelTests::test_directline_channel</td>
+          <td class="col-duration">0.27</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Command group &#x27;bot directline&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;bot directline&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;bot directline&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;bot directline&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/botservice/tests/latest/test_channel_commands.py::ChannelTests::test_msteams_channel</td>
+          <td class="col-duration">0.23</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Command group &#x27;bot msteams&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;bot msteams&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;bot msteams&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;bot msteams&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/botservice/tests/latest/test_channel_commands.py::ChannelTests::test_skype_channel</td>
+          <td class="col-duration">0.23</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Command group &#x27;bot skype&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;bot skype&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;bot skype&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;bot skype&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/botservice/tests/latest/test_channel_commands.py::ChannelTests::test_webchat_channel</td>
+          <td class="col-duration">0.14</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody></table></body></html>

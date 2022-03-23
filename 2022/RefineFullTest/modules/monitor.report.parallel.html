@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title>Test Report</title>
+    <link href="assets/style.css" rel="stylesheet" type="text/css"/></head>
+  <body onLoad="init()">
+    <script>/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+function toArray(iter) {
+    if (iter === null) {
+        return null;
+    }
+    return Array.prototype.slice.call(iter);
+}
+
+function find(selector, elem) { // eslint-disable-line no-redeclare
+    if (!elem) {
+        elem = document;
+    }
+    return elem.querySelector(selector);
+}
+
+function findAll(selector, elem) {
+    if (!elem) {
+        elem = document;
+    }
+    return toArray(elem.querySelectorAll(selector));
+}
+
+function sortColumn(elem) {
+    toggleSortStates(elem);
+    const colIndex = toArray(elem.parentNode.childNodes).indexOf(elem);
+    let key;
+    if (elem.classList.contains('result')) {
+        key = keyResult;
+    } else if (elem.classList.contains('links')) {
+        key = keyLink;
+    } else if (elem.classList.contains('float')) {
+        key = keyFloat;
+    } else {
+        key = keyAlpha;
+    }
+    sortTable(elem, key(colIndex));
+}
+
+function showAllExtras() { // eslint-disable-line no-unused-vars
+    findAll('.col-result').forEach(showExtras);
+}
+
+function hideAllExtras() { // eslint-disable-line no-unused-vars
+    findAll('.col-result').forEach(hideExtras);
+}
+
+function showExtras(colresultElem) {
+    const extras = colresultElem.parentNode.nextElementSibling;
+    const expandcollapse = colresultElem.firstElementChild;
+    extras.classList.remove('collapsed');
+    expandcollapse.classList.remove('expander');
+    expandcollapse.classList.add('collapser');
+}
+
+function hideExtras(colresultElem) {
+    const extras = colresultElem.parentNode.nextElementSibling;
+    const expandcollapse = colresultElem.firstElementChild;
+    extras.classList.add('collapsed');
+    expandcollapse.classList.remove('collapser');
+    expandcollapse.classList.add('expander');
+}
+
+function showFilters() {
+    const filterItems = document.getElementsByClassName('filter');
+    for (let i = 0; i < filterItems.length; i++)
+        filterItems[i].hidden = false;
+}
+
+function addCollapse() {
+    // Add links for show/hide all
+    const resulttable = find('table#results-table');
+    const showhideall = document.createElement('p');
+    showhideall.innerHTML = '<a href="javascript:showAllExtras()">Show all details</a> / ' +
+                            '<a href="javascript:hideAllExtras()">Hide all details</a>';
+    resulttable.parentElement.insertBefore(showhideall, resulttable);
+
+    // Add show/hide link to each result
+    findAll('.col-result').forEach(function(elem) {
+        const collapsed = getQueryParameter('collapsed') || 'Passed';
+        const extras = elem.parentNode.nextElementSibling;
+        const expandcollapse = document.createElement('span');
+        if (extras.classList.contains('collapsed')) {
+            expandcollapse.classList.add('expander');
+        } else if (collapsed.includes(elem.innerHTML)) {
+            extras.classList.add('collapsed');
+            expandcollapse.classList.add('expander');
+        } else {
+            expandcollapse.classList.add('collapser');
+        }
+        elem.appendChild(expandcollapse);
+
+        elem.addEventListener('click', function(event) {
+            if (event.currentTarget.parentNode.nextElementSibling.classList.contains('collapsed')) {
+                showExtras(event.currentTarget);
+            } else {
+                hideExtras(event.currentTarget);
+            }
+        });
+    });
+}
+
+function getQueryParameter(name) {
+    const match = RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
+    return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
+}
+
+function init () { // eslint-disable-line no-unused-vars
+    resetSortHeaders();
+
+    addCollapse();
+
+    showFilters();
+
+    sortColumn(find('.initial-sort'));
+
+    findAll('.sortable').forEach(function(elem) {
+        elem.addEventListener('click',
+            function() {
+                sortColumn(elem);
+            }, false);
+    });
+}
+
+function sortTable(clicked, keyFunc) {
+    const rows = findAll('.results-table-row');
+    const reversed = !clicked.classList.contains('asc');
+    const sortedRows = sort(rows, keyFunc, reversed);
+    /* Whole table is removed here because browsers acts much slower
+     * when appending existing elements.
+     */
+    const thead = document.getElementById('results-table-head');
+    document.getElementById('results-table').remove();
+    const parent = document.createElement('table');
+    parent.id = 'results-table';
+    parent.appendChild(thead);
+    sortedRows.forEach(function(elem) {
+        parent.appendChild(elem);
+    });
+    document.getElementsByTagName('BODY')[0].appendChild(parent);
+}
+
+function sort(items, keyFunc, reversed) {
+    const sortArray = items.map(function(item, i) {
+        return [keyFunc(item), i];
+    });
+
+    sortArray.sort(function(a, b) {
+        const keyA = a[0];
+        const keyB = b[0];
+
+        if (keyA == keyB) return 0;
+
+        if (reversed) {
+            return keyA < keyB ? 1 : -1;
+        } else {
+            return keyA > keyB ? 1 : -1;
+        }
+    });
+
+    return sortArray.map(function(item) {
+        const index = item[1];
+        return items[index];
+    });
+}
+
+function keyAlpha(colIndex) {
+    return function(elem) {
+        return elem.childNodes[1].childNodes[colIndex].firstChild.data.toLowerCase();
+    };
+}
+
+function keyFloat(colIndex) {
+    return function(elem) {
+        return Number(elem.childNodes[1].childNodes[colIndex].firstChild.data);
+    };
+}
+
+function keyLink(colIndex) {
+    return function(elem) {
+        const dataCell = elem.childNodes[1].childNodes[colIndex].firstChild;
+        return dataCell == null ? '' : dataCell.innerText.toLowerCase();
+    };
+}
+
+function keyResult(colIndex) {
+    return function(elem) {
+        const strings = ['Error', 'Failed', 'Rerun', 'XFailed', 'XPassed',
+            'Skipped', 'Passed'];
+        return strings.indexOf(elem.childNodes[1].childNodes[colIndex].firstChild.data);
+    };
+}
+
+function resetSortHeaders() {
+    findAll('.sort-icon').forEach(function(elem) {
+        elem.parentNode.removeChild(elem);
+    });
+    findAll('.sortable').forEach(function(elem) {
+        const icon = document.createElement('div');
+        icon.className = 'sort-icon';
+        icon.textContent = 'vvv';
+        elem.insertBefore(icon, elem.firstChild);
+        elem.classList.remove('desc', 'active');
+        elem.classList.add('asc', 'inactive');
+    });
+}
+
+function toggleSortStates(elem) {
+    //if active, toggle between asc and desc
+    if (elem.classList.contains('active')) {
+        elem.classList.toggle('asc');
+        elem.classList.toggle('desc');
+    }
+
+    //if inactive, reset all other functions and add ascending active
+    if (elem.classList.contains('inactive')) {
+        resetSortHeaders();
+        elem.classList.remove('inactive');
+        elem.classList.add('active');
+    }
+}
+
+function isAllRowsHidden(value) {
+    return value.hidden == false;
+}
+
+function filterTable(elem) { // eslint-disable-line no-unused-vars
+    const outcomeAtt = 'data-test-result';
+    const outcome = elem.getAttribute(outcomeAtt);
+    const classOutcome = outcome + ' results-table-row';
+    const outcomeRows = document.getElementsByClassName(classOutcome);
+
+    for(let i = 0; i < outcomeRows.length; i++){
+        outcomeRows[i].hidden = !elem.checked;
+    }
+
+    const rows = findAll('.results-table-row').filter(isAllRowsHidden);
+    const allRowsHidden = rows.length == 0 ? true : false;
+    const notFoundMessage = document.getElementById('not-found-message');
+    notFoundMessage.hidden = !allRowsHidden;
+}
+</script>
+    <h1>monitor.report.parallel.html</h1>
+    <p>Report generated on 23-Mar-2022 at 18:04:18 by <a href="https://pypi.python.org/pypi/pytest-html">pytest-html</a> v3.1.1</p>
+    <h2>Summary</h2>
+    <p>47 tests ran in 75.58 seconds. </p>
+    <p class="filter" hidden="true">(Un)check the boxes to filter the results.</p><input checked="true" class="filter" data-test-result="passed" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="passed">46 passed</span>, <input checked="true" class="filter" data-test-result="skipped" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="skipped">5 skipped</span>, <input checked="true" class="filter" data-test-result="failed" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="failed">1 failed</span>, <input checked="true" class="filter" data-test-result="error" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="error">0 errors</span>, <input checked="true" class="filter" data-test-result="xfailed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="xfailed">0 expected failures</span>, <input checked="true" class="filter" data-test-result="xpassed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="xpassed">0 unexpected passes</span>
+    <h2>Results</h2>
+    <table id="results-table">
+      <thead id="results-table-head">
+        <tr>
+          <th class="sortable result initial-sort" col="result">Result</th>
+          <th class="sortable" col="name">Test</th>
+          <th class="sortable float" col="duration">Duration</th>
+          <th class="sortable links" col="links">Links</th></tr>
+        <tr hidden="true" id="not-found-message">
+          <th colspan="4">No results found. Try to check the filters</th></tr></thead>
+      <tbody class="failed results-table-row">
+        <tr>
+          <td class="col-result">Failed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_general_operations.py::MonitorCloneVMScenarios::test_monitor_clone_vm_metric_alerts_scenario</td>
+          <td class="col-duration">0.23</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">self = &lt;azure.cli.core.commands.AzCliCommandInvoker object at 0x00000189C98C1F40&gt;<br/>parsed_ns = Namespace(_log_verbosity_verbose=False, _log_verbosity_debug=False, _log_verbosity_only_show_errors=False, _output_for...usage=None, description=&#x27;&#x27;, formatter_class=&lt;class &#x27;argparse.HelpFormatter&#x27;&gt;, conflict_handler=&#x27;error&#x27;, add_help=True))<br/><br/>    def _validation(self, parsed_ns):<br/>        try:<br/>            cmd_validator = getattr(parsed_ns, &#x27;_command_validator&#x27;, None)<br/>            if cmd_validator:<br/>&gt;               self._validate_cmd_level(parsed_ns, cmd_validator)<br/><br/>C:\Code\azure-cli\env\lib\site-packages\knack\invocation.py:111: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>self = &lt;azure.cli.core.commands.AzCliCommandInvoker object at 0x00000189C98C1F40&gt;<br/>ns = Namespace(_log_verbosity_verbose=False, _log_verbosity_debug=False, _log_verbosity_only_show_errors=False, _output_for...usage=None, description=&#x27;&#x27;, formatter_class=&lt;class &#x27;argparse.HelpFormatter&#x27;&gt;, conflict_handler=&#x27;error&#x27;, add_help=True))<br/>cmd_validator = &lt;function process_vm_create_namespace at 0x00000189C63D18B0&gt;<br/><br/>    def _validate_cmd_level(self, ns, cmd_validator):  # pylint: disable=no-self-use<br/>        if cmd_validator:<br/>&gt;           cmd_validator(**self._build_kwargs(cmd_validator, ns))<br/><br/>c:\code\azure-cli\src\azure-cli-core\azure\cli\core\commands\__init__.py:844: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>cmd = &lt;azure.cli.core.commands.AzCliCommand object at 0x00000189C97D9760&gt;<br/>namespace = Namespace(_log_verbosity_verbose=False, _log_verbosity_debug=False, _log_verbosity_only_show_errors=False, _output_for...usage=None, description=&#x27;&#x27;, formatter_class=&lt;class &#x27;argparse.HelpFormatter&#x27;&gt;, conflict_handler=&#x27;error&#x27;, add_help=True))<br/><br/>    def process_vm_create_namespace(cmd, namespace):<br/>        validate_tags(namespace)<br/>        _validate_location(cmd, namespace, namespace.zone, namespace.size)<br/>        validate_edge_zone(cmd, namespace)<br/>        if namespace.count is not None:<br/>            _validate_count(namespace)<br/>        validate_asg_names_or_ids(cmd, namespace)<br/>&gt;       _validate_vm_create_storage_profile(cmd, namespace)<br/><br/>c:\code\azure-cli\src\azure-cli\azure\cli\command_modules\vm\_validators.py:1293: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>cmd = &lt;azure.cli.core.commands.AzCliCommand object at 0x00000189C97D9760&gt;<br/>namespace = Namespace(_log_verbosity_verbose=False, _log_verbosity_debug=False, _log_verbosity_only_show_errors=False, _output_for...usage=None, description=&#x27;&#x27;, formatter_class=&lt;class &#x27;argparse.HelpFormatter&#x27;&gt;, conflict_handler=&#x27;error&#x27;, add_help=True))<br/>for_scale_set = False<br/><br/>    def _validate_vm_create_storage_profile(cmd, namespace, for_scale_set=False):<br/>        from msrestazure.tools import parse_resource_id<br/>    <br/>        _validate_vm_vmss_create_ephemeral_placement(namespace)<br/>    <br/>        # specialized is only for image<br/>        if getattr(namespace, &#x27;specialized&#x27;, None) is not None and namespace.image is None:<br/>            raise CLIError(&#x27;usage error: --specialized is only configurable when --image is specified.&#x27;)<br/>    <br/>        # use minimal parameters to resolve the expected storage profile<br/>        if getattr(namespace, &#x27;attach_os_disk&#x27;, None) and not namespace.image:<br/>            if namespace.use_unmanaged_disk:<br/>                # STORAGE PROFILE #3<br/>                namespace.storage_profile = StorageProfile.SASpecializedOSDisk<br/>            else:<br/>                # STORAGE PROFILE #6<br/>                namespace.storage_profile = StorageProfile.ManagedSpecializedOSDisk<br/>        elif namespace.image and not getattr(namespace, &#x27;attach_os_disk&#x27;, None):<br/>&gt;           image_type = _parse_image_argument(cmd, namespace)<br/><br/>c:\code\azure-cli\src\azure-cli\azure\cli\command_modules\vm\_validators.py:389: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>cmd = &lt;azure.cli.core.commands.AzCliCommand object at 0x00000189C97D9760&gt;<br/>namespace = Namespace(_log_verbosity_verbose=False, _log_verbosity_debug=False, _log_verbosity_only_show_errors=False, _output_for...usage=None, description=&#x27;&#x27;, formatter_class=&lt;class &#x27;argparse.HelpFormatter&#x27;&gt;, conflict_handler=&#x27;error&#x27;, add_help=True))<br/><br/>    def _parse_image_argument(cmd, namespace):<br/>        &quot;&quot;&quot; Systematically determines what type is supplied for the --image parameter. Updates the<br/>            namespace and returns the type for subsequent processing. &quot;&quot;&quot;<br/>        from msrestazure.tools import is_valid_resource_id<br/>        from msrestazure.azure_exceptions import CloudError<br/>        import re<br/>    <br/>        # 1 - check if a fully-qualified ID (assumes it is an image ID)<br/>        if is_valid_resource_id(namespace.image):<br/>            return &#x27;image_id&#x27;<br/>    <br/>        from ._vm_utils import is_shared_gallery_image_id<br/>        if is_shared_gallery_image_id(namespace.image):<br/>            return &#x27;shared_gallery_image_id&#x27;<br/>    <br/>        # 2 - attempt to match an URN pattern<br/>        urn_match = re.match(&#x27;([^:]*):([^:]*):([^:]*):([^:]*)&#x27;, namespace.image)<br/>        if urn_match:<br/>            namespace.os_publisher = urn_match.group(1)<br/>            namespace.os_offer = urn_match.group(2)<br/>            namespace.os_sku = urn_match.group(3)<br/>            namespace.os_version = urn_match.group(4)<br/>    <br/>            if not any([namespace.plan_name, namespace.plan_product, namespace.plan_publisher]):<br/>                image_plan = _get_image_plan_info_if_exists(cmd, namespace)<br/>                if image_plan:<br/>                    namespace.plan_name = image_plan.name<br/>                    namespace.plan_product = image_plan.product<br/>                    namespace.plan_publisher = image_plan.publisher<br/>    <br/>            return &#x27;urn&#x27;<br/>    <br/>        # 3 - unmanaged vhd based images?<br/>        if urlparse(namespace.image).scheme and &quot;://&quot; in namespace.image:<br/>            return &#x27;uri&#x27;<br/>    <br/>        # 4 - attempt to match an URN alias (most likely)<br/>        from azure.cli.command_modules.vm._actions import load_images_from_aliases_doc<br/>        import requests<br/>        try:<br/>            images = None<br/>            images = load_images_from_aliases_doc(cmd.cli_ctx)<br/>            matched = next((x for x in images if x[&#x27;urnAlias&#x27;].lower() == namespace.image.lower()), None)<br/>            if matched:<br/>                namespace.os_publisher = matched[&#x27;publisher&#x27;]<br/>                namespace.os_offer = matched[&#x27;offer&#x27;]<br/>                namespace.os_sku = matched[&#x27;sku&#x27;]<br/>                namespace.os_version = matched[&#x27;version&#x27;]<br/>                if not any([namespace.plan_name, namespace.plan_product, namespace.plan_publisher]):<br/>&gt;                   image_plan = _get_image_plan_info_if_exists(cmd, namespace)<br/><br/>c:\code\azure-cli\src\azure-cli\azure\cli\command_modules\vm\_validators.py:286: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>cmd = &lt;azure.cli.core.commands.AzCliCommand object at 0x00000189C97D9760&gt;<br/>namespace = Namespace(_log_verbosity_verbose=False, _log_verbosity_debug=False, _log_verbosity_only_show_errors=False, _output_for...usage=None, description=&#x27;&#x27;, formatter_class=&lt;class &#x27;argparse.HelpFormatter&#x27;&gt;, conflict_handler=&#x27;error&#x27;, add_help=True))<br/><br/>    def _get_image_plan_info_if_exists(cmd, namespace):<br/>        from msrestazure.azure_exceptions import CloudError<br/>        try:<br/>            compute_client = _compute_client_factory(cmd.cli_ctx)<br/>            if namespace.os_version.lower() == &#x27;latest&#x27;:<br/>&gt;               image_version = _get_latest_image_version(cmd.cli_ctx, namespace.location, namespace.os_publisher,<br/>                                                          namespace.os_offer, namespace.os_sku)<br/><br/>c:\code\azure-cli\src\azure-cli\azure\cli\command_modules\vm\_validators.py:319: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>cli_ctx = &lt;azure.cli.core.mock.DummyCli object at 0x00000189C97D9B50&gt;<br/>location = &#x27;westus&#x27;, publisher = &#x27;Canonical&#x27;, offer = &#x27;UbuntuServer&#x27;<br/>sku = &#x27;18.04-LTS&#x27;, edge_zone = None<br/><br/>    def _get_latest_image_version(cli_ctx, location, publisher, offer, sku, edge_zone=None):<br/>        from azure.cli.core.azclierror import InvalidArgumentValueError<br/>        if edge_zone is not None:<br/>            from azure.cli.core.commands.client_factory import get_mgmt_service_client<br/>            from azure.cli.core.profiles import ResourceType<br/>            edge_zone_client = get_mgmt_service_client(cli_ctx, ResourceType.MGMT_COMPUTE).virtual_machine_images_edge_zone<br/>            top_one = edge_zone_client.list(location, edge_zone, publisher, offer, sku, top=1, orderby=&#x27;name desc&#x27;)<br/>            if not top_one:<br/>                raise InvalidArgumentValueError(&quot;Can&#x27;t resolve the version of &#x27;{}:{}:{}:{}&#x27;&quot;<br/>                                                .format(publisher, offer, sku, edge_zone))<br/>        else:<br/>&gt;           top_one = _compute_client_factory(cli_ctx).virtual_machine_images.list(location,<br/>                                                                                   publisher,<br/>                                                                                   offer,<br/>                                                                                   sku,<br/>                                                                                   top=1,<br/>                                                                                   orderby=&#x27;name desc&#x27;)<br/><br/>c:\code\azure-cli\src\azure-cli\azure\cli\command_modules\vm\_actions.py:263: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>args = (&lt;azure.mgmt.compute.v2021_11_01.operations._virtual_machine_images_operations.VirtualMachineImagesOperations object at 0x00000189C82E1CA0&gt;, &#x27;westus&#x27;, &#x27;Canonical&#x27;, &#x27;UbuntuServer&#x27;, &#x27;18.04-LTS&#x27;)<br/>kwargs = {&#x27;orderby&#x27;: &#x27;name desc&#x27;, &#x27;top&#x27;: 1}, merge_span = False<br/>passed_in_parent = None, span_impl_type = None<br/><br/>    @functools.wraps(func)<br/>    def wrapper_use_tracer(*args, **kwargs):<br/>        # type: (*Any, **Any) -&gt; T<br/>        merge_span = kwargs.pop(&quot;merge_span&quot;, False)<br/>        passed_in_parent = kwargs.pop(&quot;parent_span&quot;, None)<br/>    <br/>        span_impl_type = settings.tracing_implementation()<br/>        if span_impl_type is None:<br/>&gt;           return func(*args, **kwargs)<br/><br/>C:\Code\azure-cli\env\lib\site-packages\azure\core\tracing\decorator.py:83: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>self = &lt;azure.mgmt.compute.v2021_11_01.operations._virtual_machine_images_operations.VirtualMachineImagesOperations object at 0x00000189C82E1CA0&gt;<br/>location = &#x27;westus&#x27;, publisher_name = &#x27;Canonical&#x27;, offer = &#x27;UbuntuServer&#x27;<br/>skus = &#x27;18.04-LTS&#x27;, expand = None, top = 1, orderby = &#x27;name desc&#x27;, kwargs = {}<br/>cls = None<br/>error_map = {401: &lt;class &#x27;azure.core.exceptions.ClientAuthenticationError&#x27;&gt;, 404: &lt;class &#x27;azure.core.exceptions.ResourceNotFoundError&#x27;&gt;, 409: &lt;class &#x27;azure.core.exceptions.ResourceExistsError&#x27;&gt;}<br/>request = &lt;HttpRequest [GET], url: &#x27;https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/providers/Mi.../artifacttypes/vmimage/offers/UbuntuServer/skus/18.04-LTS/versions?$top=1&amp;$orderby=name%20desc&amp;api-version=2021-11-01&#x27;&gt;<br/><br/>    @distributed_trace<br/>    def list(<br/>        self,<br/>        location: str,<br/>        publisher_name: str,<br/>        offer: str,<br/>        skus: str,<br/>        expand: Optional[str] = None,<br/>        top: Optional[int] = None,<br/>        orderby: Optional[str] = None,<br/>        **kwargs: Any<br/>    ) -&gt; List[&quot;_models.VirtualMachineImageResource&quot;]:<br/>        &quot;&quot;&quot;Gets a list of all virtual machine image versions for the specified location, publisher, offer,<br/>        and SKU.<br/>    <br/>        :param location: The name of a supported Azure region.<br/>        :type location: str<br/>        :param publisher_name: A valid image publisher.<br/>        :type publisher_name: str<br/>        :param offer: A valid image publisher offer.<br/>        :type offer: str<br/>        :param skus: A valid image SKU.<br/>        :type skus: str<br/>        :param expand: The expand expression to apply on the operation.<br/>        :type expand: str<br/>        :param top:<br/>        :type top: int<br/>        :param orderby:<br/>        :type orderby: str<br/>        :keyword callable cls: A custom type or function that will be passed the direct response<br/>        :return: list of VirtualMachineImageResource, or the result of cls(response)<br/>        :rtype: list[~azure.mgmt.compute.v2021_11_01.models.VirtualMachineImageResource]<br/>        :raises: ~azure.core.exceptions.HttpResponseError<br/>        &quot;&quot;&quot;<br/>        cls = kwargs.pop(&#x27;cls&#x27;, None)  # type: ClsType[List[&quot;_models.VirtualMachineImageResource&quot;]]<br/>        error_map = {<br/>            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError<br/>        }<br/>        error_map.update(kwargs.pop(&#x27;error_map&#x27;, {}))<br/>    <br/>    <br/>        request = build_list_request(<br/>            location=location,<br/>            publisher_name=publisher_name,<br/>            offer=offer,<br/>            skus=skus,<br/>            subscription_id=self._config.subscription_id,<br/>            expand=expand,<br/>            top=top,<br/>            orderby=orderby,<br/>            template_url=self.list.metadata[&#x27;url&#x27;],<br/>        )<br/>        request = _convert_request(request)<br/>        request.url = self._client.format_url(request.url)<br/>    <br/>&gt;       pipeline_response = self._client._pipeline.run(request, stream=False, **kwargs)<br/><br/>C:\Code\azure-cli\env\lib\site-packages\azure\mgmt\compute\v2021_11_01\operations\_virtual_machine_images_operations.py:362: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>self = &lt;azure.core.pipeline._base.Pipeline object at 0x00000189C82E1F70&gt;<br/>request = &lt;HttpRequest [GET], url: &#x27;https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/providers/Mi.../artifacttypes/vmimage/offers/UbuntuServer/skus/18.04-LTS/versions?$top=1&amp;$orderby=name%20desc&amp;api-version=2021-11-01&#x27;&gt;<br/>kwargs = {&#x27;stream&#x27;: False}, context = {&#x27;logging_enable&#x27;: True}<br/>pipeline_request = &lt;azure.core.pipeline.PipelineRequest object at 0x00000189C82E1BE0&gt;<br/>first_node = &lt;azure.core.pipeline._base._SansIOHTTPPolicyRunner object at 0x00000189C82E1B50&gt;<br/><br/>    def run(self, request, **kwargs):<br/>        # type: (HTTPRequestType, Any) -&gt; PipelineResponse<br/>        &quot;&quot;&quot;Runs the HTTP Request through the chained policies.<br/>    <br/>        :param request: The HTTP request object.<br/>        :type request: ~azure.core.pipeline.transport.HttpRequest<br/>        :return: The PipelineResponse object<br/>        :rtype: ~azure.core.pipeline.PipelineResponse<br/>        &quot;&quot;&quot;<br/>        self._prepare_multipart(request)<br/>        context = PipelineContext(self._transport, **kwargs)<br/>        pipeline_request = PipelineRequest(<br/>            request, context<br/>        )  # type: PipelineRequest[HTTPRequestType]<br/>        first_node = (<br/>            self._impl_policies[0]<br/>            if self._impl_policies<br/>            else _TransportRunner(self._transport)<br/>        )<br/>&gt;       return first_node.send(pipeline_request)  # type: ignore<br/><br/>C:\Code\azure-cli\env\lib\site-packages\azure\core\pipeline\_base.py:211: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>self = &lt;azure.core.pipeline._base._SansIOHTTPPolicyRunner object at 0x00000189C82E1B50&gt;<br/>request = &lt;azure.core.pipeline.PipelineRequest object at 0x00000189C82E1BE0&gt;<br/><br/>    def send(self, request):<br/>        # type: (PipelineRequest) -&gt; PipelineResponse<br/>        &quot;&quot;&quot;Modifies the request and sends to the next policy in the chain.<br/>    <br/>        :param request: The PipelineRequest object.<br/>        :type request: ~azure.core.pipeline.PipelineRequest<br/>        :return: The PipelineResponse object.<br/>        :rtype: ~azure.core.pipeline.PipelineResponse<br/>        &quot;&quot;&quot;<br/>        _await_result(self._policy.on_request, request)<br/>        try:<br/>&gt;           response = self.next.send(request)<br/><br/>C:\Code\azure-cli\env\lib\site-packages\azure\core\pipeline\_base.py:71: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>self = &lt;azure.core.pipeline._base._SansIOHTTPPolicyRunner object at 0x00000189C82E1A30&gt;<br/>request = &lt;azure.core.pipeline.PipelineRequest object at 0x00000189C82E1BE0&gt;<br/><br/>    def send(self, request):<br/>        # type: (PipelineRequest) -&gt; PipelineResponse<br/>        &quot;&quot;&quot;Modifies the request and sends to the next policy in the chain.<br/>    <br/>        :param request: The PipelineRequest object.<br/>        :type request: ~azure.core.pipeline.PipelineRequest<br/>        :return: The PipelineResponse object.<br/>        :rtype: ~azure.core.pipeline.PipelineResponse<br/>        &quot;&quot;&quot;<br/>        _await_result(self._policy.on_request, request)<br/>        try:<br/>&gt;           response = self.next.send(request)<br/><br/>C:\Code\azure-cli\env\lib\site-packages\azure\core\pipeline\_base.py:71: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>self = &lt;azure.core.pipeline._base._SansIOHTTPPolicyRunner object at 0x00000189C82E1490&gt;<br/>request = &lt;azure.core.pipeline.PipelineRequest object at 0x00000189C82E1BE0&gt;<br/><br/>    def send(self, request):<br/>        # type: (PipelineRequest) -&gt; PipelineResponse<br/>        &quot;&quot;&quot;Modifies the request and sends to the next policy in the chain.<br/>    <br/>        :param request: The PipelineRequest object.<br/>        :type request: ~azure.core.pipeline.PipelineRequest<br/>        :return: The PipelineResponse object.<br/>        :rtype: ~azure.core.pipeline.PipelineResponse<br/>        &quot;&quot;&quot;<br/>        _await_result(self._policy.on_request, request)<br/>        try:<br/>&gt;           response = self.next.send(request)<br/><br/>C:\Code\azure-cli\env\lib\site-packages\azure\core\pipeline\_base.py:71: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>self = &lt;azure.core.pipeline._base._SansIOHTTPPolicyRunner object at 0x00000189C82E1250&gt;<br/>request = &lt;azure.core.pipeline.PipelineRequest object at 0x00000189C82E1BE0&gt;<br/><br/>    def send(self, request):<br/>        # type: (PipelineRequest) -&gt; PipelineResponse<br/>        &quot;&quot;&quot;Modifies the request and sends to the next policy in the chain.<br/>    <br/>        :param request: The PipelineRequest object.<br/>        :type request: ~azure.core.pipeline.PipelineRequest<br/>        :return: The PipelineResponse object.<br/>        :rtype: ~azure.core.pipeline.PipelineResponse<br/>        &quot;&quot;&quot;<br/>        _await_result(self._policy.on_request, request)<br/>        try:<br/>&gt;           response = self.next.send(request)<br/><br/>C:\Code\azure-cli\env\lib\site-packages\azure\core\pipeline\_base.py:71: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>self = &lt;azure.core.pipeline._base._SansIOHTTPPolicyRunner object at 0x00000189C82E17F0&gt;<br/>request = &lt;azure.core.pipeline.PipelineRequest object at 0x00000189C82E1BE0&gt;<br/><br/>    def send(self, request):<br/>        # type: (PipelineRequest) -&gt; PipelineResponse<br/>        &quot;&quot;&quot;Modifies the request and sends to the next policy in the chain.<br/>    <br/>        :param request: The PipelineRequest object.<br/>        :type request: ~azure.core.pipeline.PipelineRequest<br/>        :return: The PipelineResponse object.<br/>        :rtype: ~azure.core.pipeline.PipelineResponse<br/>        &quot;&quot;&quot;<br/>        _await_result(self._policy.on_request, request)<br/>        try:<br/>&gt;           response = self.next.send(request)<br/><br/>C:\Code\azure-cli\env\lib\site-packages\azure\core\pipeline\_base.py:71: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>self = &lt;azure.mgmt.core.policies._base.ARMAutoResourceProviderRegistrationPolicy object at 0x00000189C8142520&gt;<br/>request = &lt;azure.core.pipeline.PipelineRequest object at 0x00000189C82E1BE0&gt;<br/><br/>    def send(self, request):<br/>        # type: (PipelineRequest[HTTPRequestType], Any) -&gt; PipelineResponse[HTTPRequestType, HTTPResponseType]<br/>        http_request = request.http_request<br/>&gt;       response = self.next.send(request)<br/><br/>C:\Code\azure-cli\env\lib\site-packages\azure\mgmt\core\policies\_base.py:47: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>self = &lt;azure.core.pipeline.policies._redirect.RedirectPolicy object at 0x00000189C8142A60&gt;<br/>request = &lt;azure.core.pipeline.PipelineRequest object at 0x00000189C82E1BE0&gt;<br/><br/>    def send(self, request):<br/>        &quot;&quot;&quot;Sends the PipelineRequest object to the next policy.<br/>        Uses redirect settings to send request to redirect endpoint if necessary.<br/>    <br/>        :param request: The PipelineRequest object<br/>        :type request: ~azure.core.pipeline.PipelineRequest<br/>        :return: Returns the PipelineResponse or raises error if maximum redirects exceeded.<br/>        :rtype: ~azure.core.pipeline.PipelineResponse<br/>        :raises: ~azure.core.exceptions.TooManyRedirectsError if maximum redirects exceeded.<br/>        &quot;&quot;&quot;<br/>        retryable = True<br/>        redirect_settings = self.configure_redirects(request.context.options)<br/>        while retryable:<br/>&gt;           response = self.next.send(request)<br/><br/>C:\Code\azure-cli\env\lib\site-packages\azure\core\pipeline\policies\_redirect.py:158: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>self = &lt;azure.core.pipeline.policies._retry.RetryPolicy object at 0x00000189C81427F0&gt;<br/>request = &lt;azure.core.pipeline.PipelineRequest object at 0x00000189C82E1BE0&gt;<br/><br/>    def send(self, request):<br/>        &quot;&quot;&quot;Sends the PipelineRequest object to the next policy. Uses retry settings if necessary.<br/>    <br/>        :param request: The PipelineRequest object<br/>        :type request: ~azure.core.pipeline.PipelineRequest<br/>        :return: Returns the PipelineResponse or raises error if maximum retries exceeded.<br/>        :rtype: ~azure.core.pipeline.PipelineResponse<br/>        :raises: ~azure.core.exceptions.AzureError if maximum retries exceeded.<br/>        :raises: ~azure.core.exceptions.ClientAuthenticationError if authentication<br/>        &quot;&quot;&quot;<br/>        retry_active = True<br/>        response = None<br/>        retry_settings = self.configure_retries(request.context.options)<br/>        self._configure_positions(request, retry_settings)<br/>    <br/>        absolute_timeout = retry_settings[&#x27;timeout&#x27;]<br/>        is_response_error = True<br/>    <br/>        while retry_active:<br/>            try:<br/>                start_time = time.time()<br/>                self._configure_timeout(request, absolute_timeout, is_response_error)<br/>&gt;               response = self.next.send(request)<br/><br/>C:\Code\azure-cli\env\lib\site-packages\azure\core\pipeline\policies\_retry.py:445: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>self = &lt;azure.core.pipeline.policies._authentication.BearerTokenCredentialPolicy object at 0x00000189C8142910&gt;<br/>request = &lt;azure.core.pipeline.PipelineRequest object at 0x00000189C82E1BE0&gt;<br/><br/>    def send(self, request):<br/>        # type: (PipelineRequest) -&gt; PipelineResponse<br/>        &quot;&quot;&quot;Authorize request with a bearer token and send it to the next policy<br/>    <br/>        :param request: The pipeline request object<br/>        :type request: ~azure.core.pipeline.PipelineRequest<br/>        &quot;&quot;&quot;<br/>        self.on_request(request)<br/>        try:<br/>&gt;           response = self.next.send(request)<br/><br/>C:\Code\azure-cli\env\lib\site-packages\azure\core\pipeline\policies\_authentication.py:119: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>self = &lt;azure.core.pipeline._base._SansIOHTTPPolicyRunner object at 0x00000189C82E1FA0&gt;<br/>request = &lt;azure.core.pipeline.PipelineRequest object at 0x00000189C82E1BE0&gt;<br/><br/>    def send(self, request):<br/>        # type: (PipelineRequest) -&gt; PipelineResponse<br/>        &quot;&quot;&quot;Modifies the request and sends to the next policy in the chain.<br/>    <br/>        :param request: The PipelineRequest object.<br/>        :type request: ~azure.core.pipeline.PipelineRequest<br/>        :return: The PipelineResponse object.<br/>        :rtype: ~azure.core.pipeline.PipelineResponse<br/>        &quot;&quot;&quot;<br/>        _await_result(self._policy.on_request, request)<br/>        try:<br/>&gt;           response = self.next.send(request)<br/><br/>C:\Code\azure-cli\env\lib\site-packages\azure\core\pipeline\_base.py:71: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>self = &lt;azure.core.pipeline._base._SansIOHTTPPolicyRunner object at 0x00000189C82E1E80&gt;<br/>request = &lt;azure.core.pipeline.PipelineRequest object at 0x00000189C82E1BE0&gt;<br/><br/>    def send(self, request):<br/>        # type: (PipelineRequest) -&gt; PipelineResponse<br/>        &quot;&quot;&quot;Modifies the request and sends to the next policy in the chain.<br/>    <br/>        :param request: The PipelineRequest object.<br/>        :type request: ~azure.core.pipeline.PipelineRequest<br/>        :return: The PipelineResponse object.<br/>        :rtype: ~azure.core.pipeline.PipelineResponse<br/>        &quot;&quot;&quot;<br/>        _await_result(self._policy.on_request, request)<br/>        try:<br/>&gt;           response = self.next.send(request)<br/><br/>C:\Code\azure-cli\env\lib\site-packages\azure\core\pipeline\_base.py:71: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>self = &lt;azure.core.pipeline._base._SansIOHTTPPolicyRunner object at 0x00000189C82E1F10&gt;<br/>request = &lt;azure.core.pipeline.PipelineRequest object at 0x00000189C82E1BE0&gt;<br/><br/>    def send(self, request):<br/>        # type: (PipelineRequest) -&gt; PipelineResponse<br/>        &quot;&quot;&quot;Modifies the request and sends to the next policy in the chain.<br/>    <br/>        :param request: The PipelineRequest object.<br/>        :type request: ~azure.core.pipeline.PipelineRequest<br/>        :return: The PipelineResponse object.<br/>        :rtype: ~azure.core.pipeline.PipelineResponse<br/>        &quot;&quot;&quot;<br/>        _await_result(self._policy.on_request, request)<br/>        try:<br/>&gt;           response = self.next.send(request)<br/><br/>C:\Code\azure-cli\env\lib\site-packages\azure\core\pipeline\_base.py:71: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>self = &lt;azure.core.pipeline._base._SansIOHTTPPolicyRunner object at 0x00000189C82E1EB0&gt;<br/>request = &lt;azure.core.pipeline.PipelineRequest object at 0x00000189C82E1BE0&gt;<br/><br/>    def send(self, request):<br/>        # type: (PipelineRequest) -&gt; PipelineResponse<br/>        &quot;&quot;&quot;Modifies the request and sends to the next policy in the chain.<br/>    <br/>        :param request: The PipelineRequest object.<br/>        :type request: ~azure.core.pipeline.PipelineRequest<br/>        :return: The PipelineResponse object.<br/>        :rtype: ~azure.core.pipeline.PipelineResponse<br/>        &quot;&quot;&quot;<br/>        _await_result(self._policy.on_request, request)<br/>        try:<br/>&gt;           response = self.next.send(request)<br/><br/>C:\Code\azure-cli\env\lib\site-packages\azure\core\pipeline\_base.py:71: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>self = &lt;azure.core.pipeline._base._TransportRunner object at 0x00000189C82E1CD0&gt;<br/>request = &lt;azure.core.pipeline.PipelineRequest object at 0x00000189C82E1BE0&gt;<br/><br/>    def send(self, request):<br/>        &quot;&quot;&quot;HTTP transport send method.<br/>    <br/>        :param request: The PipelineRequest object.<br/>        :type request: ~azure.core.pipeline.PipelineRequest<br/>        :return: The PipelineResponse object.<br/>        :rtype: ~azure.core.pipeline.PipelineResponse<br/>        &quot;&quot;&quot;<br/>        return PipelineResponse(<br/>            request.http_request,<br/>&gt;           self._sender.send(request.http_request, **request.context.options),<br/>            context=request.context,<br/>        )<br/><br/>C:\Code\azure-cli\env\lib\site-packages\azure\core\pipeline\_base.py:103: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>self = &lt;azure.core.pipeline.transport._requests_basic.RequestsTransport object at 0x00000189C8142AF0&gt;<br/>request = &lt;HttpRequest [GET], url: &#x27;https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/providers/Mi.../artifacttypes/vmimage/offers/UbuntuServer/skus/18.04-LTS/versions?$top=1&amp;$orderby=name%20desc&amp;api-version=2021-11-01&#x27;&gt;<br/>kwargs = {&#x27;stream&#x27;: False}, response = None, error = None<br/>connection_timeout = 300, timeout = (300, 300), read_timeout = 300<br/><br/>    def send(self, request, **kwargs): # type: ignore<br/>        &quot;&quot;&quot;Send request object according to configuration.<br/>    <br/>        :param request: The request object to be sent.<br/>        :type request: ~azure.core.pipeline.transport.HttpRequest<br/>        :return: An HTTPResponse object.<br/>        :rtype: ~azure.core.pipeline.transport.HttpResponse<br/>    <br/>        :keyword requests.Session session: will override the driver session and use yours.<br/>         Should NOT be done unless really required. Anything else is sent straight to requests.<br/>        :keyword dict proxies: will define the proxy to use. Proxy is a dict (protocol, url)<br/>        &quot;&quot;&quot;<br/>        self.open()<br/>        response = None<br/>        error = None    # type: Optional[AzureErrorUnion]<br/>    <br/>        try:<br/>            connection_timeout = kwargs.pop(&#x27;connection_timeout&#x27;, self.connection_config.timeout)<br/>    <br/>            if isinstance(connection_timeout, tuple):<br/>                if &#x27;read_timeout&#x27; in kwargs:<br/>                    raise ValueError(&#x27;Cannot set tuple connection_timeout and read_timeout together&#x27;)<br/>                _LOGGER.warning(&quot;Tuple timeout setting is deprecated&quot;)<br/>                timeout = connection_timeout<br/>            else:<br/>                read_timeout = kwargs.pop(&#x27;read_timeout&#x27;, self.connection_config.read_timeout)<br/>                timeout = (connection_timeout, read_timeout)<br/>&gt;           response = self.session.request(  # type: ignore<br/>                request.method,<br/>                request.url,<br/>                headers=request.headers,<br/>                data=request.data,<br/>                files=request.files,<br/>                verify=kwargs.pop(&#x27;connection_verify&#x27;, self.connection_config.verify),<br/>                timeout=timeout,<br/>                cert=kwargs.pop(&#x27;connection_cert&#x27;, self.connection_config.cert),<br/>                allow_redirects=False,<br/>                **kwargs)<br/><br/>C:\Code\azure-cli\env\lib\site-packages\azure\core\pipeline\transport\_requests_basic.py:327: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>self = &lt;requests.sessions.Session object at 0x00000189C82E1A00&gt;, method = &#x27;GET&#x27;<br/>url = &#x27;https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Compute/locations...l/artifacttypes/vmimage/offers/UbuntuServer/skus/18.04-LTS/versions?$top=1&amp;$orderby=name%20desc&amp;api-version=2021-11-01&#x27;<br/>params = None, data = None<br/>headers = {&#x27;Accept&#x27;: &#x27;application/json&#x27;, &#x27;x-ms-client-request-id&#x27;: &#x27;83105808-aa90-11ec-be16-ac74b19db060&#x27;, &#x27;CommandName&#x27;: &#x27;vm cr...zure-mgmt-compute/25.0.0 Python/3.9.5 (Windows-10-10.0.19044-SP0)&#x27;, &#x27;Authorization&#x27;: &#x27;Bearer top-secret-token-for-you&#x27;}<br/>cookies = None, files = None, auth = None, timeout = (300, 300)<br/>allow_redirects = False, proxies = {}, hooks = None, stream = False<br/>verify = True, cert = None, json = None<br/><br/>    def request(self, method, url,<br/>            params=None, data=None, headers=None, cookies=None, files=None,<br/>            auth=None, timeout=None, allow_redirects=True, proxies=None,<br/>            hooks=None, stream=None, verify=None, cert=None, json=None):<br/>        &quot;&quot;&quot;Constructs a :class:`Request &lt;Request&gt;`, prepares it and sends it.<br/>        Returns :class:`Response &lt;Response&gt;` object.<br/>    <br/>        :param method: method for the new :class:`Request` object.<br/>        :param url: URL for the new :class:`Request` object.<br/>        :param params: (optional) Dictionary or bytes to be sent in the query<br/>            string for the :class:`Request`.<br/>        :param data: (optional) Dictionary, list of tuples, bytes, or file-like<br/>            object to send in the body of the :class:`Request`.<br/>        :param json: (optional) json to send in the body of the<br/>            :class:`Request`.<br/>        :param headers: (optional) Dictionary of HTTP Headers to send with the<br/>            :class:`Request`.<br/>        :param cookies: (optional) Dict or CookieJar object to send with the<br/>            :class:`Request`.<br/>        :param files: (optional) Dictionary of ``&#x27;filename&#x27;: file-like-objects``<br/>            for multipart encoding upload.<br/>        :param auth: (optional) Auth tuple or callable to enable<br/>            Basic/Digest/Custom HTTP Auth.<br/>        :param timeout: (optional) How long to wait for the server to send<br/>            data before giving up, as a float, or a :ref:`(connect timeout,<br/>            read timeout) &lt;timeouts&gt;` tuple.<br/>        :type timeout: float or tuple<br/>        :param allow_redirects: (optional) Set to True by default.<br/>        :type allow_redirects: bool<br/>        :param proxies: (optional) Dictionary mapping protocol or protocol and<br/>            hostname to the URL of the proxy.<br/>        :param stream: (optional) whether to immediately download the response<br/>            content. Defaults to ``False``.<br/>        :param verify: (optional) Either a boolean, in which case it controls whether we verify<br/>            the server&#x27;s TLS certificate, or a string, in which case it must be a path<br/>            to a CA bundle to use. Defaults to ``True``. When set to<br/>            ``False``, requests will accept any TLS certificate presented by<br/>            the server, and will ignore hostname mismatches and/or expired<br/>            certificates, which will make your application vulnerable to<br/>            man-in-the-middle (MitM) attacks. Setting verify to ``False``<br/>            may be useful during local development or testing.<br/>        :param cert: (optional) if String, path to ssl client cert file (.pem).<br/>            If Tuple, (&#x27;cert&#x27;, &#x27;key&#x27;) pair.<br/>        :rtype: requests.Response<br/>        &quot;&quot;&quot;<br/>        # Create the Request.<br/>        req = Request(<br/>            method=method.upper(),<br/>            url=url,<br/>            headers=headers,<br/>            files=files,<br/>            data=data or {},<br/>            json=json,<br/>            params=params or {},<br/>            auth=auth,<br/>            cookies=cookies,<br/>            hooks=hooks,<br/>        )<br/>        prep = self.prepare_request(req)<br/>    <br/>        proxies = proxies or {}<br/>    <br/>        settings = self.merge_environment_settings(<br/>            prep.url, proxies, stream, verify, cert<br/>        )<br/>    <br/>        # Send the request.<br/>        send_kwargs = {<br/>            &#x27;timeout&#x27;: timeout,<br/>            &#x27;allow_redirects&#x27;: allow_redirects,<br/>        }<br/>        send_kwargs.update(settings)<br/>&gt;       resp = self.send(prep, **send_kwargs)<br/><br/>C:\Code\azure-cli\env\lib\site-packages\requests\sessions.py:542: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>self = &lt;requests.sessions.Session object at 0x00000189C82E1A00&gt;<br/>request = &lt;PreparedRequest [GET]&gt;<br/>kwargs = {&#x27;cert&#x27;: None, &#x27;proxies&#x27;: OrderedDict(), &#x27;stream&#x27;: False, &#x27;timeout&#x27;: (300, 300), ...}<br/>allow_redirects = False, stream = False, hooks = {&#x27;response&#x27;: []}<br/>adapter = &lt;azure.core.pipeline.transport._bigger_block_size_http_adapters.BiggerBlockSizeHTTPAdapter object at 0x00000189C82E1340&gt;<br/>start = 36.5076173<br/><br/>    def send(self, request, **kwargs):<br/>        &quot;&quot;&quot;Send a given PreparedRequest.<br/>    <br/>        :rtype: requests.Response<br/>        &quot;&quot;&quot;<br/>        # Set defaults that the hooks can utilize to ensure they always have<br/>        # the correct parameters to reproduce the previous request.<br/>        kwargs.setdefault(&#x27;stream&#x27;, self.stream)<br/>        kwargs.setdefault(&#x27;verify&#x27;, self.verify)<br/>        kwargs.setdefault(&#x27;cert&#x27;, self.cert)<br/>        kwargs.setdefault(&#x27;proxies&#x27;, self.rebuild_proxies(request, self.proxies))<br/>    <br/>        # It&#x27;s possible that users might accidentally send a Request object.<br/>        # Guard against that specific failure case.<br/>        if isinstance(request, Request):<br/>            raise ValueError(&#x27;You can only send PreparedRequests.&#x27;)<br/>    <br/>        # Set up variables needed for resolve_redirects and dispatching of hooks<br/>        allow_redirects = kwargs.pop(&#x27;allow_redirects&#x27;, True)<br/>        stream = kwargs.get(&#x27;stream&#x27;)<br/>        hooks = request.hooks<br/>    <br/>        # Get the appropriate adapter to use<br/>        adapter = self.get_adapter(url=request.url)<br/>    <br/>        # Start time (approximately) of the request<br/>        start = preferred_clock()<br/>    <br/>        # Send the request<br/>&gt;       r = adapter.send(request, **kwargs)<br/><br/>C:\Code\azure-cli\env\lib\site-packages\requests\sessions.py:655: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>self = &lt;azure.core.pipeline.transport._bigger_block_size_http_adapters.BiggerBlockSizeHTTPAdapter object at 0x00000189C82E1340&gt;<br/>request = &lt;PreparedRequest [GET]&gt;, stream = False<br/>timeout = Timeout(connect=300, read=300, total=None), verify = True, cert = None<br/>proxies = OrderedDict()<br/><br/>    def send(self, request, stream=False, timeout=None, verify=True, cert=None, proxies=None):<br/>        &quot;&quot;&quot;Sends PreparedRequest object. Returns Response object.<br/>    <br/>        :param request: The :class:`PreparedRequest &lt;PreparedRequest&gt;` being sent.<br/>        :param stream: (optional) Whether to stream the request content.<br/>        :param timeout: (optional) How long to wait for the server to send<br/>            data before giving up, as a float, or a :ref:`(connect timeout,<br/>            read timeout) &lt;timeouts&gt;` tuple.<br/>        :type timeout: float or tuple or urllib3 Timeout object<br/>        :param verify: (optional) Either a boolean, in which case it controls whether<br/>            we verify the server&#x27;s TLS certificate, or a string, in which case it<br/>            must be a path to a CA bundle to use<br/>        :param cert: (optional) Any user-provided SSL certificate to be trusted.<br/>        :param proxies: (optional) The proxies dictionary to apply to the request.<br/>        :rtype: requests.Response<br/>        &quot;&quot;&quot;<br/>    <br/>        try:<br/>            conn = self.get_connection(request.url, proxies)<br/>        except LocationValueError as e:<br/>            raise InvalidURL(e, request=request)<br/>    <br/>        self.cert_verify(conn, request.url, verify, cert)<br/>        url = self.request_url(request, proxies)<br/>        self.add_headers(request, stream=stream, timeout=timeout, verify=verify, cert=cert, proxies=proxies)<br/>    <br/>        chunked = not (request.body is None or &#x27;Content-Length&#x27; in request.headers)<br/>    <br/>        if isinstance(timeout, tuple):<br/>            try:<br/>                connect, read = timeout<br/>                timeout = TimeoutSauce(connect=connect, read=read)<br/>            except ValueError as e:<br/>                # this may raise a string formatting error.<br/>                err = (&quot;Invalid timeout {}. Pass a (connect, read) &quot;<br/>                       &quot;timeout tuple, or a single float to set &quot;<br/>                       &quot;both timeouts to the same value&quot;.format(timeout))<br/>                raise ValueError(err)<br/>        elif isinstance(timeout, TimeoutSauce):<br/>            pass<br/>        else:<br/>            timeout = TimeoutSauce(connect=timeout, read=timeout)<br/>    <br/>        try:<br/>            if not chunked:<br/>&gt;               resp = conn.urlopen(<br/>                    method=request.method,<br/>                    url=url,<br/>                    body=request.body,<br/>                    headers=request.headers,<br/>                    redirect=False,<br/>                    assert_same_host=False,<br/>                    preload_content=False,<br/>                    decode_content=False,<br/>                    retries=self.max_retries,<br/>                    timeout=timeout<br/>                )<br/><br/>C:\Code\azure-cli\env\lib\site-packages\requests\adapters.py:439: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>self = &lt;urllib3.connectionpool.HTTPSConnectionPool object at 0x00000189C82E11F0&gt;<br/>method = &#x27;GET&#x27;<br/>url = &#x27;/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Compute/locations/westus/publishers/Canonical/artifacttypes/vmimage/offers/UbuntuServer/skus/18.04-LTS/versions?$top=1&amp;$orderby=name%20desc&amp;api-version=2021-11-01&#x27;<br/>body = None<br/>headers = {&#x27;User-Agent&#x27;: &#x27;AZURECLI/2.34.1 azsdk-python-azure-mgmt-compute/25.0.0 Python/3.9.5 (Windows-10-10.0.19044-SP0)&#x27;, &#x27;Acc...n --image --admin-password --admin-username --authentication-type&#x27;, &#x27;Authorization&#x27;: &#x27;Bearer top-secret-token-for-you&#x27;}<br/>retries = Retry(total=False, connect=None, read=None, redirect=0, status=None)<br/>redirect = False, assert_same_host = False<br/>timeout = Timeout(connect=300, read=300, total=None), pool_timeout = None<br/>release_conn = False, chunked = False, body_pos = None<br/>response_kw = {&#x27;decode_content&#x27;: False, &#x27;preload_content&#x27;: False}<br/>parsed_url = Url(scheme=None, auth=None, host=None, port=None, path=&#x27;/subscriptions/00000000-0000-0000-0000-000000000000/providers/...ffers/UbuntuServer/skus/18.04-LTS/versions&#x27;, query=&#x27;$top=1&amp;$orderby=name%20desc&amp;api-version=2021-11-01&#x27;, fragment=None)<br/>destination_scheme = None, conn = None, release_this_conn = True<br/>http_tunnel_required = False, err = None, clean_exit = False<br/><br/>    def urlopen(<br/>        self,<br/>        method,<br/>        url,<br/>        body=None,<br/>        headers=None,<br/>        retries=None,<br/>        redirect=True,<br/>        assert_same_host=True,<br/>        timeout=_Default,<br/>        pool_timeout=None,<br/>        release_conn=None,<br/>        chunked=False,<br/>        body_pos=None,<br/>        **response_kw<br/>    ):<br/>        &quot;&quot;&quot;<br/>        Get a connection from the pool and perform an HTTP request. This is the<br/>        lowest level call for making a request, so you&#x27;ll need to specify all<br/>        the raw details.<br/>    <br/>        .. note::<br/>    <br/>           More commonly, it&#x27;s appropriate to use a convenience method provided<br/>           by :class:`.RequestMethods`, such as :meth:`request`.<br/>    <br/>        .. note::<br/>    <br/>           `release_conn` will only behave as expected if<br/>           `preload_content=False` because we want to make<br/>           `preload_content=False` the default behaviour someday soon without<br/>           breaking backwards compatibility.<br/>    <br/>        :param method:<br/>            HTTP request method (such as GET, POST, PUT, etc.)<br/>    <br/>        :param url:<br/>            The URL to perform the request on.<br/>    <br/>        :param body:<br/>            Data to send in the request body, either :class:`str`, :class:`bytes`,<br/>            an iterable of :class:`str`/:class:`bytes`, or a file-like object.<br/>    <br/>        :param headers:<br/>            Dictionary of custom headers to send, such as User-Agent,<br/>            If-None-Match, etc. If None, pool headers are used. If provided,<br/>            these headers completely replace any pool-specific headers.<br/>    <br/>        :param retries:<br/>            Configure the number of retries to allow before raising a<br/>            :class:`~urllib3.exceptions.MaxRetryError` exception.<br/>    <br/>            Pass ``None`` to retry until you receive a response. Pass a<br/>            :class:`~urllib3.util.retry.Retry` object for fine-grained control<br/>            over different types of retries.<br/>            Pass an integer number to retry connection errors that many times,<br/>            but no other types of errors. Pass zero to never retry.<br/>    <br/>            If ``False``, then retries are disabled and any exception is raised<br/>            immediately. Also, instead of raising a MaxRetryError on redirects,<br/>            the redirect response will be returned.<br/>    <br/>        :type retries: :class:`~urllib3.util.retry.Retry`, False, or an int.<br/>    <br/>        :param redirect:<br/>            If True, automatically handle redirects (status codes 301, 302,<br/>            303, 307, 308). Each redirect counts as a retry. Disabling retries<br/>            will disable redirect, too.<br/>    <br/>        :param assert_same_host:<br/>            If ``True``, will make sure that the host of the pool requests is<br/>            consistent else will raise HostChangedError. When ``False``, you can<br/>            use the pool on an HTTP proxy and request foreign hosts.<br/>    <br/>        :param timeout:<br/>            If specified, overrides the default timeout for this one<br/>            request. It may be a float (in seconds) or an instance of<br/>            :class:`urllib3.util.Timeout`.<br/>    <br/>        :param pool_timeout:<br/>            If set and the pool is set to block=True, then this method will<br/>            block for ``pool_timeout`` seconds and raise EmptyPoolError if no<br/>            connection is available within the time period.<br/>    <br/>        :param release_conn:<br/>            If False, then the urlopen call will not release the connection<br/>            back into the pool once a response is received (but will release if<br/>            you read the entire contents of the response such as when<br/>            `preload_content=True`). This is useful if you&#x27;re not preloading<br/>            the response&#x27;s content immediately. You will need to call<br/>            ``r.release_conn()`` on the response ``r`` to return the connection<br/>            back into the pool. If None, it takes the value of<br/>            ``response_kw.get(&#x27;preload_content&#x27;, True)``.<br/>    <br/>        :param chunked:<br/>            If True, urllib3 will send the body using chunked transfer<br/>            encoding. Otherwise, urllib3 will send the body using the standard<br/>            content-length form. Defaults to False.<br/>    <br/>        :param int body_pos:<br/>            Position to seek to in file-like body in the event of a retry or<br/>            redirect. Typically this won&#x27;t need to be set because urllib3 will<br/>            auto-populate the value when needed.<br/>    <br/>        :param \\**response_kw:<br/>            Additional parameters are passed to<br/>            :meth:`urllib3.response.HTTPResponse.from_httplib`<br/>        &quot;&quot;&quot;<br/>    <br/>        parsed_url = parse_url(url)<br/>        destination_scheme = parsed_url.scheme<br/>    <br/>        if headers is None:<br/>            headers = self.headers<br/>    <br/>        if not isinstance(retries, Retry):<br/>            retries = Retry.from_int(retries, redirect=redirect, default=self.retries)<br/>    <br/>        if release_conn is None:<br/>            release_conn = response_kw.get(&quot;preload_content&quot;, True)<br/>    <br/>        # Check host<br/>        if assert_same_host and not self.is_same_host(url):<br/>            raise HostChangedError(self, url, retries)<br/>    <br/>        # Ensure that the URL we&#x27;re connecting to is properly encoded<br/>        if url.startswith(&quot;/&quot;):<br/>            url = six.ensure_str(_encode_target(url))<br/>        else:<br/>            url = six.ensure_str(parsed_url.url)<br/>    <br/>        conn = None<br/>    <br/>        # Track whether `conn` needs to be released before<br/>        # returning/raising/recursing. Update this variable if necessary, and<br/>        # leave `release_conn` constant throughout the function. That way, if<br/>        # the function recurses, the original value of `release_conn` will be<br/>        # passed down into the recursive call, and its value will be respected.<br/>        #<br/>        # See issue #651 [1] for details.<br/>        #<br/>        # [1] &lt;https://github.com/urllib3/urllib3/issues/651&gt;<br/>        release_this_conn = release_conn<br/>    <br/>        http_tunnel_required = connection_requires_http_tunnel(<br/>            self.proxy, self.proxy_config, destination_scheme<br/>        )<br/>    <br/>        # Merge the proxy headers. Only done when not using HTTP CONNECT. We<br/>        # have to copy the headers dict so we can safely change it without those<br/>        # changes being reflected in anyone else&#x27;s copy.<br/>        if not http_tunnel_required:<br/>            headers = headers.copy()<br/>            headers.update(self.proxy_headers)<br/>    <br/>        # Must keep the exception bound to a separate variable or else Python 3<br/>        # complains about UnboundLocalError.<br/>        err = None<br/>    <br/>        # Keep track of whether we cleanly exited the except block. This<br/>        # ensures we do proper cleanup in finally.<br/>        clean_exit = False<br/>    <br/>        # Rewind body position, if needed. Record current position<br/>        # for future rewinds in the event of a redirect/retry.<br/>        body_pos = set_file_position(body, body_pos)<br/>    <br/>        try:<br/>            # Request a connection from the queue.<br/>            timeout_obj = self._get_timeout(timeout)<br/>            conn = self._get_conn(timeout=pool_timeout)<br/>    <br/>            conn.timeout = timeout_obj.connect_timeout<br/>    <br/>            is_new_proxy_conn = self.proxy is not None and not getattr(<br/>                conn, &quot;sock&quot;, None<br/>            )<br/>            if is_new_proxy_conn and http_tunnel_required:<br/>                self._prepare_proxy(conn)<br/>    <br/>            # Make the request on the httplib connection object.<br/>&gt;           httplib_response = self._make_request(<br/>                conn,<br/>                method,<br/>                url,<br/>                timeout=timeout_obj,<br/>                body=body,<br/>                headers=headers,<br/>                chunked=chunked,<br/>            )<br/><br/>C:\Code\azure-cli\env\lib\site-packages\urllib3\connectionpool.py:699: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>self = &lt;urllib3.connectionpool.HTTPSConnectionPool object at 0x00000189C82E11F0&gt;<br/>conn = &lt;vcr.patch.VCRRequestsHTTPSConnectionc:\code\azure-cli\src\azure-cli\azure\cli\command_modules\monitor\tests\latest\recordings\test_monitor_clone_vm_metric_alerts_scenario.yaml object at 0x00000189C81F3C40&gt;<br/>method = &#x27;GET&#x27;<br/>url = &#x27;/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Compute/locations/westus/publishers/Canonical/artifacttypes/vmimage/offers/UbuntuServer/skus/18.04-LTS/versions?$top=1&amp;$orderby=name%20desc&amp;api-version=2021-11-01&#x27;<br/>timeout = Timeout(connect=300, read=300, total=None), chunked = False<br/>httplib_request_kw = {&#x27;body&#x27;: None, &#x27;headers&#x27;: {&#x27;User-Agent&#x27;: &#x27;AZURECLI/2.34.1 azsdk-python-azure-mgmt-compute/25.0.0 Python/3.9.5 (Windows... --image --admin-password --admin-username --authentication-type&#x27;, &#x27;Authorization&#x27;: &#x27;Bearer top-secret-token-for-you&#x27;}}<br/>timeout_obj = Timeout(connect=300, read=300, total=None), read_timeout = 300<br/><br/>    def _make_request(<br/>        self, conn, method, url, timeout=_Default, chunked=False, **httplib_request_kw<br/>    ):<br/>        &quot;&quot;&quot;<br/>        Perform a request on a given urllib connection object taken from our<br/>        pool.<br/>    <br/>        :param conn:<br/>            a connection from one of our connection pools<br/>    <br/>        :param timeout:<br/>            Socket timeout in seconds for the request. This can be a<br/>            float or integer, which will set the same timeout value for<br/>            the socket connect and the socket read, or an instance of<br/>            :class:`urllib3.util.Timeout`, which gives you more fine-grained<br/>            control over your timeouts.<br/>        &quot;&quot;&quot;<br/>        self.num_requests += 1<br/>    <br/>        timeout_obj = self._get_timeout(timeout)<br/>        timeout_obj.start_connect()<br/>        conn.timeout = timeout_obj.connect_timeout<br/>    <br/>        # Trigger any extra validation we need to do.<br/>        try:<br/>            self._validate_conn(conn)<br/>        except (SocketTimeout, BaseSSLError) as e:<br/>            # Py2 raises this as a BaseSSLError, Py3 raises it as socket timeout.<br/>            self._raise_timeout(err=e, url=url, timeout_value=conn.timeout)<br/>            raise<br/>    <br/>        # conn.request() calls http.client.*.request, not the method in<br/>        # urllib3.request. It also calls makefile (recv) on the socket.<br/>        try:<br/>            if chunked:<br/>                conn.request_chunked(method, url, **httplib_request_kw)<br/>            else:<br/>                conn.request(method, url, **httplib_request_kw)<br/>    <br/>        # We are swallowing BrokenPipeError (errno.EPIPE) since the server is<br/>        # legitimately able to close the connection after sending a valid response.<br/>        # With this behaviour, the received response is still readable.<br/>        except BrokenPipeError:<br/>            # Python 3<br/>            pass<br/>        except IOError as e:<br/>            # Python 2 and macOS/Linux<br/>            # EPIPE and ESHUTDOWN are BrokenPipeError on Python 2, and EPROTOTYPE is needed on macOS<br/>            # https://erickt.github.io/blog/2014/11/19/adventures-in-debugging-a-potential-osx-kernel-bug/<br/>            if e.errno not in {<br/>                errno.EPIPE,<br/>                errno.ESHUTDOWN,<br/>                errno.EPROTOTYPE,<br/>            }:<br/>                raise<br/>    <br/>        # Reset the timeout for the recv() on the socket<br/>        read_timeout = timeout_obj.read_timeout<br/>    <br/>        # App Engine doesn&#x27;t have a sock attr<br/>        if getattr(conn, &quot;sock&quot;, None):<br/>            # In Python 3 socket.py will catch EAGAIN and return None when you<br/>            # try and read into the file pointer created by http.client, which<br/>            # instead raises a BadStatusLine exception. Instead of catching<br/>            # the exception and assuming all BadStatusLine exceptions are read<br/>            # timeouts, check for a zero timeout before making the request.<br/>            if read_timeout == 0:<br/>                raise ReadTimeoutError(<br/>                    self, url, &quot;Read timed out. (read timeout=%s)&quot; % read_timeout<br/>                )<br/>            if read_timeout is Timeout.DEFAULT_TIMEOUT:<br/>                conn.sock.settimeout(socket.getdefaulttimeout())<br/>            else:  # None or a value<br/>                conn.sock.settimeout(read_timeout)<br/>    <br/>        # Receive the response from the server<br/>        try:<br/>            try:<br/>                # Python 2.7, use buffering of HTTP responses<br/>&gt;               httplib_response = conn.getresponse(buffering=True)<br/><br/>C:\Code\azure-cli\env\lib\site-packages\urllib3\connectionpool.py:436: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>self = &lt;vcr.patch.VCRRequestsHTTPSConnectionc:\code\azure-cli\src\azure-cli\azure\cli\command_modules\monitor\tests\latest\recordings\test_monitor_clone_vm_metric_alerts_scenario.yaml object at 0x00000189C81F3C40&gt;<br/>_ = False, kwargs = {&#x27;buffering&#x27;: True}<br/><br/>    def getresponse(self, _=False, **kwargs):<br/>        &quot;&quot;&quot;Retrieve the response&quot;&quot;&quot;<br/>        # Check to see if the cassette has a response for this request. If so,<br/>        # then return it<br/>        if self.cassette.can_play_response_for(self._vcr_request):<br/>            log.info(&quot;Playing response for {} from cassette&quot;.format(self._vcr_request))<br/>            response = self.cassette.play_response(self._vcr_request)<br/>            return VCRHTTPResponse(response)<br/>        else:<br/>            if self.cassette.write_protected and self.cassette.filter_request(self._vcr_request):<br/>&gt;               raise CannotOverwriteExistingCassetteException(<br/>                    cassette=self.cassette, failed_request=self._vcr_request<br/>                )<br/><span class="error">E               vcr.errors.CannotOverwriteExistingCassetteException: Can&#x27;t overwrite existing cassette (&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\monitor\\tests\\latest\\recordings\\test_monitor_clone_vm_metric_alerts_scenario.yaml&#x27;) in your current record mode (&#x27;once&#x27;).</span><br/><span class="error">E               No match for the request (&lt;Request (GET) https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Compute/locations/westus/publishers/Canonical/artifacttypes/vmimage/offers/UbuntuServer/skus/18.04-LTS/versions?$top=1&amp;$orderby=name%20desc&amp;api-version=2021-11-01&gt;) was found.</span><br/><span class="error">E               Found 3 similar requests with 1 different matcher(s) :</span><br/><span class="error">E               </span><br/><span class="error">E               1 - (&lt;Request (GET) https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Compute/locations/eastus/publishers/Canonical/artifacttypes/vmimage/offers/UbuntuServer/skus/18.04-LTS/versions?$top=1&amp;$orderby=name%20desc&amp;api-version=2021-11-01&gt;).</span><br/><span class="error">E               Matchers succeeded : [&#x27;method&#x27;, &#x27;scheme&#x27;, &#x27;host&#x27;, &#x27;port&#x27;, &#x27;_custom_request_query_matcher&#x27;]</span><br/><span class="error">E               Matchers failed :</span><br/><span class="error">E               path - assertion failure :</span><br/><span class="error">E               /subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Compute/locations/westus/publishers/Canonical/artifacttypes/vmimage/offers/UbuntuServer/skus/18.04-LTS/versions != /subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Compute/locations/eastus/publishers/Canonical/artifacttypes/vmimage/offers/UbuntuServer/skus/18.04-LTS/versions</span><br/><span class="error">E               </span><br/><span class="error">E               2 - (&lt;Request (GET) https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Compute/locations/eastus/publishers/Canonical/artifacttypes/vmimage/offers/UbuntuServer/skus/18.04-LTS/versions?$top=1&amp;$orderby=name%20desc&amp;api-version=2021-11-01&gt;).</span><br/><span class="error">E               Matchers succeeded : [&#x27;method&#x27;, &#x27;scheme&#x27;, &#x27;host&#x27;, &#x27;port&#x27;, &#x27;_custom_request_query_matcher&#x27;]</span><br/><span class="error">E               Matchers failed :</span><br/><span class="error">E               path - assertion failure :</span><br/><span class="error">E               /subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Compute/locations/westus/publishers/Canonical/artifacttypes/vmimage/offers/UbuntuServer/skus/18.04-LTS/versions != /subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Compute/locations/eastus/publishers/Canonical/artifacttypes/vmimage/offers/UbuntuServer/skus/18.04-LTS/versions</span><br/><span class="error">E               </span><br/><span class="error">E               3 - (&lt;Request (GET) https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Compute/locations/eastus/publishers/Canonical/artifacttypes/vmimage/offers/UbuntuServer/skus/18.04-LTS/versions?$top=1&amp;$orderby=name%20desc&amp;api-version=2021-11-01&gt;).</span><br/><span class="error">E               Matchers succeeded : [&#x27;method&#x27;, &#x27;scheme&#x27;, &#x27;host&#x27;, &#x27;port&#x27;, &#x27;_custom_request_query_matcher&#x27;]</span><br/><span class="error">E               Matchers failed :</span><br/><span class="error">E               path - assertion failure :</span><br/><span class="error">E               /subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Compute/locations/westus/publishers/Canonical/artifacttypes/vmimage/offers/UbuntuServer/skus/18.04-LTS/versions != /subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Compute/locations/eastus/publishers/Canonical/artifacttypes/vmimage/offers/UbuntuServer/skus/18.04-LTS/versions</span><br/><br/>C:\Code\azure-cli\env\lib\site-packages\vcr\stubs\__init__.py:231: CannotOverwriteExistingCassetteException<br/><br/>During handling of the above exception, another exception occurred:<br/><br/>self = &lt;azure.cli.command_modules.monitor.tests.latest.test_monitor_general_operations.MonitorCloneVMScenarios testMethod=test_monitor_clone_vm_metric_alerts_scenario&gt;<br/>resource_group = &#x27;clitest.rg000001&#x27;<br/><br/>    @ResourceGroupPreparer(location=&#x27;eastus&#x27;)<br/>    def test_monitor_clone_vm_metric_alerts_scenario(self, resource_group):<br/>        self.kwargs.update({<br/>            &#x27;alert&#x27;: &#x27;alert1&#x27;,<br/>            &#x27;vm1&#x27;: &#x27;vm1&#x27;,<br/>            &#x27;vm2&#x27;: &#x27;vm2&#x27;,<br/>            &#x27;vm3&#x27;: &#x27;vm3&#x27;,<br/>            &#x27;ag1&#x27;: &#x27;ag1&#x27;,<br/>            &#x27;rg&#x27;: resource_group<br/>        })<br/>    <br/>&gt;       vm1_json = self.cmd(&#x27;vm create -g {rg} -n {vm1} --image UbuntuLTS --admin-password TestPassword11!! &#x27;<br/>                            &#x27;--admin-username testadmin --authentication-type password&#x27;).get_output_in_json()<br/><br/>c:\code\azure-cli\src\azure-cli\azure\cli\command_modules\monitor\tests\latest\test_monitor_general_operations.py:25: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/>c:\code\azure-cli\src\azure-cli-testsdk\azure\cli\testsdk\base.py:169: in cmd<br/>    return execute(self.cli_ctx, command, expect_failure=expect_failure).assert_with_checks(checks)<br/>c:\code\azure-cli\src\azure-cli-testsdk\azure\cli\testsdk\base.py:243: in __init__<br/>    self._in_process_execute(cli_ctx, command, expect_failure=expect_failure)<br/>c:\code\azure-cli\src\azure-cli-testsdk\azure\cli\testsdk\base.py:294: in _in_process_execute<br/>    self.exit_code = cli_ctx.invoke(shlex.split(command), out_file=stdout_buf) or 0<br/>C:\Code\azure-cli\env\lib\site-packages\knack\cli.py:248: in invoke<br/>    raise ex<br/>C:\Code\azure-cli\env\lib\site-packages\knack\cli.py:231: in invoke<br/>    cmd_result = self.invocation.execute(args)<br/>c:\code\azure-cli\src\azure-cli-core\azure\cli\core\commands\__init__.py:646: in execute<br/>    self._validation(expanded_arg)<br/>C:\Code\azure-cli\env\lib\site-packages\knack\invocation.py:118: in _validation<br/>    getattr(parsed_ns, &#x27;_parser&#x27;, self.parser).validation_error(str(err))<br/>c:\code\azure-cli\src\azure-cli-core\azure\cli\core\parser.py:153: in validation_error<br/>    self.exit(2)<br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>self = AzCliCommandParser(prog=&#x27;az vm create&#x27;, usage=None, description=&#x27;&#x27;, formatter_class=&lt;class &#x27;argparse.HelpFormatter&#x27;&gt;, conflict_handler=&#x27;error&#x27;, add_help=True)<br/>status = 2, message = None<br/><br/>    def exit(self, status=0, message=None):<br/>        if message:<br/>            self._print_message(message, _sys.stderr)<br/>&gt;       _sys.exit(status)<br/><span class="error">E       SystemExit: 2</span><br/><br/>C:\Users\zelinwang\AppData\Local\Programs\Python\Python39\lib\argparse.py:2562: SystemExit<br/> -------------------------------Captured log call-------------------------------- <br/>ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 Can&#x27;t overwrite existing cassette (&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\monitor\\tests\\latest\\recordings\\test_monitor_clone_vm_metric_alerts_scenario.yaml&#x27;) in your current record mode (&#x27;once&#x27;).
+No match for the request (&lt;Request (GET) https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Compute/locations/westus/publishers/Canonical/artifacttypes/vmimage/offers/UbuntuServer/skus/18.04-LTS/versions?$top=1&amp;$orderby=name%20desc&amp;api-version=2021-11-01&gt;) was found.
+Found 3 similar requests with 1 different matcher(s) :
+
+1 - (&lt;Request (GET) https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Compute/locations/eastus/publishers/Canonical/artifacttypes/vmimage/offers/UbuntuServer/skus/18.04-LTS/versions?$top=1&amp;$orderby=name%20desc&amp;api-version=2021-11-01&gt;).
+Matchers succeeded : [&#x27;method&#x27;, &#x27;scheme&#x27;, &#x27;host&#x27;, &#x27;port&#x27;, &#x27;_custom_request_query_matcher&#x27;]
+Matchers failed :
+path - assertion failure :
+/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Compute/locations/westus/publishers/Canonical/artifacttypes/vmimage/offers/UbuntuServer/skus/18.04-LTS/versions != /subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Compute/locations/eastus/publishers/Canonical/artifacttypes/vmimage/offers/UbuntuServer/skus/18.04-LTS/versions
+
+2 - (&lt;Request (GET) https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Compute/locations/eastus/publishers/Canonical/artifacttypes/vmimage/offers/UbuntuServer/skus/18.04-LTS/versions?$top=1&amp;$orderby=name%20desc&amp;api-version=2021-11-01&gt;).
+Matchers succeeded : [&#x27;method&#x27;, &#x27;scheme&#x27;, &#x27;host&#x27;, &#x27;port&#x27;, &#x27;_custom_request_query_matcher&#x27;]
+Matchers failed :
+path - assertion failure :
+/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Compute/locations/westus/publishers/Canonical/artifacttypes/vmimage/offers/UbuntuServer/skus/18.04-LTS/versions != /subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Compute/locations/eastus/publishers/Canonical/artifacttypes/vmimage/offers/UbuntuServer/skus/18.04-LTS/versions
+
+3 - (&lt;Request (GET) https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Compute/locations/eastus/publishers/Canonical/artifacttypes/vmimage/offers/UbuntuServer/skus/18.04-LTS/versions?$top=1&amp;$orderby=name%20desc&amp;api-version=2021-11-01&gt;).
+Matchers succeeded : [&#x27;method&#x27;, &#x27;scheme&#x27;, &#x27;host&#x27;, &#x27;port&#x27;, &#x27;_custom_request_query_matcher&#x27;]
+Matchers failed :
+path - assertion failure :
+/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Compute/locations/westus/publishers/Canonical/artifacttypes/vmimage/offers/UbuntuServer/skus/18.04-LTS/versions != /subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Compute/locations/eastus/publishers/Canonical/artifacttypes/vmimage/offers/UbuntuServer/skus/18.04-LTS/versions
+
+ERROR    az_command_data_logger:azlogging.py:213 Can&#x27;t overwrite existing cassette (&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\monitor\\tests\\latest\\recordings\\test_monitor_clone_vm_metric_alerts_scenario.yaml&#x27;) in your current record mode (&#x27;once&#x27;).
+No match for the request (&lt;Request (GET) https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Compute/locations/westus/publishers/Canonical/artifacttypes/vmimage/offers/UbuntuServer/skus/18.04-LTS/versions?$top=1&amp;$orderby=name%20desc&amp;api-version=2021-11-01&gt;) was found.
+Found 3 similar requests with 1 different matcher(s) :
+
+1 - (&lt;Request (GET) https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Compute/locations/eastus/publishers/Canonical/artifacttypes/vmimage/offers/UbuntuServer/skus/18.04-LTS/versions?$top=1&amp;$orderby=name%20desc&amp;api-version=2021-11-01&gt;).
+Matchers succeeded : [&#x27;method&#x27;, &#x27;scheme&#x27;, &#x27;host&#x27;, &#x27;port&#x27;, &#x27;_custom_request_query_matcher&#x27;]
+Matchers failed :
+path - assertion failure :
+/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Compute/locations/westus/publishers/Canonical/artifacttypes/vmimage/offers/UbuntuServer/skus/18.04-LTS/versions != /subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Compute/locations/eastus/publishers/Canonical/artifacttypes/vmimage/offers/UbuntuServer/skus/18.04-LTS/versions
+
+2 - (&lt;Request (GET) https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Compute/locations/eastus/publishers/Canonical/artifacttypes/vmimage/offers/UbuntuServer/skus/18.04-LTS/versions?$top=1&amp;$orderby=name%20desc&amp;api-version=2021-11-01&gt;).
+Matchers succeeded : [&#x27;method&#x27;, &#x27;scheme&#x27;, &#x27;host&#x27;, &#x27;port&#x27;, &#x27;_custom_request_query_matcher&#x27;]
+Matchers failed :
+path - assertion failure :
+/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Compute/locations/westus/publishers/Canonical/artifacttypes/vmimage/offers/UbuntuServer/skus/18.04-LTS/versions != /subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Compute/locations/eastus/publishers/Canonical/artifacttypes/vmimage/offers/UbuntuServer/skus/18.04-LTS/versions
+
+3 - (&lt;Request (GET) https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Compute/locations/eastus/publishers/Canonical/artifacttypes/vmimage/offers/UbuntuServer/skus/18.04-LTS/versions?$top=1&amp;$orderby=name%20desc&amp;api-version=2021-11-01&gt;).
+Matchers succeeded : [&#x27;method&#x27;, &#x27;scheme&#x27;, &#x27;host&#x27;, &#x27;port&#x27;, &#x27;_custom_request_query_matcher&#x27;]
+Matchers failed :
+path - assertion failure :
+/subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Compute/locations/westus/publishers/Canonical/artifacttypes/vmimage/offers/UbuntuServer/skus/18.04-LTS/versions != /subscriptions/00000000-0000-0000-0000-000000000000/providers/Microsoft.Compute/locations/eastus/publishers/Canonical/artifacttypes/vmimage/offers/UbuntuServer/skus/18.04-LTS/versions<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_autoscale.py::TestMonitorAutoscaleTimezones::test_monitor_autoscale_timezones</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\monitor\\tests\\latest\\test_monitor_autoscale.py&#x27;, 315, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_autoscale.py::TestMonitorAutoscaleComplexRules::test_monitor_autoscale_rule_for_spring_cloud</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\monitor\\tests\\latest\\test_monitor_autoscale.py&#x27;, 336, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_general_operations.py::MonitorCloneStorageAccountAcrossSubsScenarios::test_monitor_clone_storage_metric_alerts_across_subs_scenario</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\monitor\\tests\\latest\\test_monitor_general_operations.py&#x27;, 198, &#x27;Skipped: Accross subs are not supported now.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_metric_alert_scenarios.py::MonitorTests::test_metric_alert_basic_scenarios</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\monitor\\tests\\latest\\test_monitor_metric_alert_scenarios.py&#x27;, 138, &#x27;Skipped: skip&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_private_link_scope.py::TestMonitorPrivateLinkScope::test_monitor_private_link_scope_scenario</td>
+          <td class="col-duration">0.06</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\monitor\\tests\\latest\\test_monitor_private_link_scope.py&#x27;, 17, &#x27;Skipped: If it cannot run, how to record_only, how yaml file is created&#x27;)<br/> -------------------------------Captured log setup------------------------------- <br/>WARNING  cli.azure.cli.core.extension.operations:operations.py:315 Extension &#x27;application-insights&#x27; is already installed.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_activity_log_scenario.py::TestActivityLogScenarios::test_activity_log_list_scenario</td>
+          <td class="col-duration">0.36</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_action_groups.py::TestActionGroupScenarios::test_monitor_action_group_basic_scenario</td>
+          <td class="col-duration">0.56</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_activity_log_alert.py::TestMonitorActivityLogAlert::test_monitor_activity_log_alert_update_action</td>
+          <td class="col-duration">7.07</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 (ResourceNotFound) The Resource &#x27;microsoft.insights/activityLogAlerts/clialert000005&#x27; under resource group &#x27;clitest.rg000001&#x27; was not found. For more details please go to https://aka.ms/ARMResourceNotFoundFix
+Code: ResourceNotFound
+Message: The Resource &#x27;microsoft.insights/activityLogAlerts/clialert000005&#x27; under resource group &#x27;clitest.rg000001&#x27; was not found. For more details please go to https://aka.ms/ARMResourceNotFoundFix
+ERROR    az_command_data_logger:azlogging.py:213 (ResourceNotFound) The Resource &#x27;microsoft.insights/activityLogAlerts/clialert000005&#x27; under resource group &#x27;clitest.rg000001&#x27; was not found. For more details please go to https://aka.ms/ARMResourceNotFoundFix
+Code: ResourceNotFound
+Message: The Resource &#x27;microsoft.insights/activityLogAlerts/clialert000005&#x27; under resource group &#x27;clitest.rg000001&#x27; was not found. For more details please go to https://aka.ms/ARMResourceNotFoundFix<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_activity_log_alert.py::TestMonitorActivityLogAlert::test_monitor_activity_log_alert_update_condition</td>
+          <td class="col-duration">6.35</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_activity_log_alert.py::TestMonitorActivityLogAlert::test_monitor_activity_log_alert_update_scope</td>
+          <td class="col-duration">6.47</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_activity_log_alert.py::TestMonitorActivityLogAlert::test_monitor_create_default_activity_log_alert</td>
+          <td class="col-duration">6.24</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_activity_log_alert.py::TestMonitorActivityLogAlert::test_monitor_create_disabled_activity_log_alert</td>
+          <td class="col-duration">0.09</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_activity_log_alert.py::TestMonitorActivityLogAlert::test_monitor_create_full_fledged_activity_log_alert</td>
+          <td class="col-duration">0.30</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_autoscale.py::TestMonitorAutoscaleScenario::test_monitor_autoscale_basic</td>
+          <td class="col-duration">1.33</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  msrest.serialization:serialization.py:185 autoscale_setting_resource_name is not a known attribute of class &lt;class &#x27;azure.mgmt.monitor.v2021_05_01_preview.models._models_py3.AutoscaleSettingResource&#x27;&gt; and will be ignored<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_autoscale.py::TestMonitorAutoscaleScenario::test_monitor_autoscale_fixed</td>
+          <td class="col-duration">0.94</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  msrest.serialization:serialization.py:185 autoscale_setting_resource_name is not a known attribute of class &lt;class &#x27;azure.mgmt.monitor.v2021_05_01_preview.models._models_py3.AutoscaleSettingResource&#x27;&gt; and will be ignored
+WARNING  msrest.serialization:serialization.py:1115 Datetime with no tzinfo will be considered UTC.
+WARNING  msrest.serialization:serialization.py:1115 Datetime with no tzinfo will be considered UTC.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_autoscale.py::TestMonitorAutoscaleScenario::test_monitor_autoscale_recurring</td>
+          <td class="col-duration">1.18</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  msrest.serialization:serialization.py:185 autoscale_setting_resource_name is not a known attribute of class &lt;class &#x27;azure.mgmt.monitor.v2021_05_01_preview.models._models_py3.AutoscaleSettingResource&#x27;&gt; and will be ignored<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_autoscale.py::TestMonitorAutoscaleScenario::test_monitor_autoscale_rule_with_dimensions</td>
+          <td class="col-duration">0.92</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  msrest.serialization:serialization.py:185 autoscale_setting_resource_name is not a known attribute of class &lt;class &#x27;azure.mgmt.monitor.v2021_05_01_preview.models._models_py3.AutoscaleSettingResource&#x27;&gt; and will be ignored
+WARNING  cli.azure.cli.command_modules.monitor.operations.autoscale_settings:autoscale_settings.py:75 Follow up with `az monitor autoscale rule create` to add scaling rules.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_autoscale.py::TestMonitorAutoscaleScenario::test_monitor_autoscale_rules</td>
+          <td class="col-duration">2.09</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  msrest.serialization:serialization.py:185 autoscale_setting_resource_name is not a known attribute of class &lt;class &#x27;azure.mgmt.monitor.v2021_05_01_preview.models._models_py3.AutoscaleSettingResource&#x27;&gt; and will be ignored
+WARNING  cli.azure.cli.command_modules.monitor.operations.autoscale_settings:autoscale_settings.py:75 Follow up with `az monitor autoscale rule create` to add scaling rules.
+WARNING  cli.azure.cli.command_modules.monitor.operations.autoscale_settings:autoscale_settings.py:354 Profile &#x27;default&#x27; has rules to scale in but none to scale out. Recommend creating at least 1 scale out rule.
+WARNING  cli.azure.cli.command_modules.monitor.operations.autoscale_settings:autoscale_settings.py:354 Profile &#x27;default&#x27; has rules to scale in but none to scale out. Recommend creating at least 1 scale out rule.
+WARNING  msrest.serialization:serialization.py:1115 Datetime with no tzinfo will be considered UTC.
+WARNING  msrest.serialization:serialization.py:1115 Datetime with no tzinfo will be considered UTC.
+WARNING  msrest.serialization:serialization.py:1115 Datetime with no tzinfo will be considered UTC.
+WARNING  msrest.serialization:serialization.py:1115 Datetime with no tzinfo will be considered UTC.
+WARNING  msrest.serialization:serialization.py:1115 Datetime with no tzinfo will be considered UTC.
+WARNING  msrest.serialization:serialization.py:1115 Datetime with no tzinfo will be considered UTC.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_diagnostic_settings.py::TestMonitorDiagnosticSettings::test_monitor_diagnostic_settings_scenario</td>
+          <td class="col-duration">0.92</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_general_operations.py::MonitorCloneStorageAccountScenarios::test_monitor_clone_storage_metric_alerts_scenario</td>
+          <td class="col-duration">0.29</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: This command is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_general_operations.py::MonitorCloneStorageAccountAlwaysScenarios::test_monitor_clone_storage_metric_alerts_always_scenario</td>
+          <td class="col-duration">0.28</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: This command is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_general_operations.py::MonitorClonePublicIpScenarios::test_monitor_clone_public_ip_metric_alerts_scenario</td>
+          <td class="col-duration">0.55</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: This command is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_log_analytics_cluster.py::TestClusterScenarios::test_monitor_log_analytics_cluster_default</td>
+          <td class="col-duration">11.62</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 (ResourceNotFound) The Resource &#x27;Microsoft.OperationalInsights/clusters/clitest-cluster-000002&#x27; under resource group &#x27;cli_test_monitor_log_analytics_cluster_c000001&#x27; was not found. For more details please go to https://aka.ms/ARMResourceNotFoundFix
+Code: ResourceNotFound
+Message: The Resource &#x27;Microsoft.OperationalInsights/clusters/clitest-cluster-000002&#x27; under resource group &#x27;cli_test_monitor_log_analytics_cluster_c000001&#x27; was not found. For more details please go to https://aka.ms/ARMResourceNotFoundFix
+ERROR    az_command_data_logger:azlogging.py:213 (ResourceNotFound) The Resource &#x27;Microsoft.OperationalInsights/clusters/clitest-cluster-000002&#x27; under resource group &#x27;cli_test_monitor_log_analytics_cluster_c000001&#x27; was not found. For more details please go to https://aka.ms/ARMResourceNotFoundFix
+Code: ResourceNotFound
+Message: The Resource &#x27;Microsoft.OperationalInsights/clusters/clitest-cluster-000002&#x27; under resource group &#x27;cli_test_monitor_log_analytics_cluster_c000001&#x27; was not found. For more details please go to https://aka.ms/ARMResourceNotFoundFix<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_log_analytics_cluster.py::TestClusterScenarios::test_monitor_log_analytics_cluster_update_key</td>
+          <td class="col-duration">0.34</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_log_analytics_workspace.py::TestLogProfileScenarios::test_monitor_log_analytics_workspace_data_collection_rules</td>
+          <td class="col-duration">0.15</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_log_analytics_workspace.py::TestLogProfileScenarios::test_monitor_log_analytics_workspace_data_export</td>
+          <td class="col-duration">1.34</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  msrest.serialization:serialization.py:185 data_export_type is not a known attribute of class &lt;class &#x27;azure.mgmt.loganalytics.models._models_py3.DataExport&#x27;&gt; and will be ignored
+WARNING  msrest.serialization:serialization.py:185 data_export_type is not a known attribute of class &lt;class &#x27;azure.mgmt.loganalytics.models._models_py3.DataExport&#x27;&gt; and will be ignored
+WARNING  msrest.serialization:serialization.py:185 data_export_type is not a known attribute of class &lt;class &#x27;azure.mgmt.loganalytics.models._models_py3.DataExport&#x27;&gt; and will be ignored
+WARNING  msrest.serialization:serialization.py:185 data_export_type is not a known attribute of class &lt;class &#x27;azure.mgmt.loganalytics.models._models_py3.DataExport&#x27;&gt; and will be ignored
+WARNING  msrest.serialization:serialization.py:185 data_export_type is not a known attribute of class &lt;class &#x27;azure.mgmt.loganalytics.models._models_py3.DataExport&#x27;&gt; and will be ignored
+WARNING  msrest.serialization:serialization.py:185 data_export_type is not a known attribute of class &lt;class &#x27;azure.mgmt.loganalytics.models._models_py3.DataExport&#x27;&gt; and will be ignored
+ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 Operation returned an invalid status &#x27;Not Found&#x27;
+ERROR    az_command_data_logger:azlogging.py:213 Operation returned an invalid status &#x27;Not Found&#x27;<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_log_analytics_workspace.py::TestLogProfileScenarios::test_monitor_log_analytics_workspace_default</td>
+          <td class="col-duration">1.31</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_log_analytics_workspace.py::TestLogProfileScenarios::test_monitor_log_analytics_workspace_linked_service_common_scenario</td>
+          <td class="col-duration">0.76</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_log_analytics_workspace.py::TestLogProfileScenarios::test_monitor_log_analytics_workspace_linked_storage</td>
+          <td class="col-duration">1.03</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_log_analytics_workspace.py::TestLogProfileScenarios::test_monitor_log_analytics_workspace_public_access</td>
+          <td class="col-duration">0.39</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_log_analytics_workspace.py::TestLogProfileScenarios::test_monitor_log_analytics_workspace_recover</td>
+          <td class="col-duration">0.69</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Command group &#x27;monitor log-analytics workspace table&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/> -------------------------------Captured log call-------------------------------- <br/>ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 (ResourceNotFound) The Resource &#x27;Microsoft.OperationalInsights/workspaces/clitest000002&#x27; under resource group &#x27;cli_test_monitor_workspace_recover000001&#x27; was not found. For more details please go to https://aka.ms/ARMResourceNotFoundFix
+Code: ResourceNotFound
+Message: The Resource &#x27;Microsoft.OperationalInsights/workspaces/clitest000002&#x27; under resource group &#x27;cli_test_monitor_workspace_recover000001&#x27; was not found. For more details please go to https://aka.ms/ARMResourceNotFoundFix
+ERROR    az_command_data_logger:azlogging.py:213 (ResourceNotFound) The Resource &#x27;Microsoft.OperationalInsights/workspaces/clitest000002&#x27; under resource group &#x27;cli_test_monitor_workspace_recover000001&#x27; was not found. For more details please go to https://aka.ms/ARMResourceNotFoundFix
+Code: ResourceNotFound
+Message: The Resource &#x27;Microsoft.OperationalInsights/workspaces/clitest000002&#x27; under resource group &#x27;cli_test_monitor_workspace_recover000001&#x27; was not found. For more details please go to https://aka.ms/ARMResourceNotFoundFix<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_log_analytics_workspace.py::TestLogProfileScenarios::test_monitor_log_analytics_workspace_saved_search</td>
+          <td class="col-duration">0.76</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 (SavedSearchNotFound) Saved search &#x27;clitest&#x27; could not be found.
+Code: SavedSearchNotFound
+Message: Saved search &#x27;clitest&#x27; could not be found.
+ERROR    az_command_data_logger:azlogging.py:213 (SavedSearchNotFound) Saved search &#x27;clitest&#x27; could not be found.
+Code: SavedSearchNotFound
+Message: Saved search &#x27;clitest&#x27; could not be found.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_log_analytics_workspace.py::TestLogProfileScenarios::test_monitor_log_analytics_workspace_table</td>
+          <td class="col-duration">1.66</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Command group &#x27;monitor log-analytics workspace table&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;monitor log-analytics workspace table&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;monitor log-analytics workspace table&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;monitor log-analytics workspace table&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;monitor log-analytics workspace table search-job&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_log_profile.py::TestLogProfileScenarios::test_monitor_create_log_profile</td>
+          <td class="col-duration">0.56</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_metric_alert_scenarios.py::MonitorTests::test_dynamic_metric_alert_basic</td>
+          <td class="col-duration">0.81</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.vm.custom:custom.py:801 It is recommended to use parameter &quot;--public-ip-sku Standard&quot; to create new VM with Standard public IP. Please note that the default public IP used for VM creation will be changed from Basic to Standard in the future.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_metric_alert_scenarios.py::MonitorTests::test_dynamic_metric_alert_multiple_scopes</td>
+          <td class="col-duration">2.11</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.vm.custom:custom.py:801 It is recommended to use parameter &quot;--public-ip-sku Standard&quot; to create new VM with Standard public IP. Please note that the default public IP used for VM creation will be changed from Basic to Standard in the future.
+WARNING  cli.azure.cli.command_modules.vm.custom:custom.py:801 It is recommended to use parameter &quot;--public-ip-sku Standard&quot; to create new VM with Standard public IP. Please note that the default public IP used for VM creation will be changed from Basic to Standard in the future.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_metric_alert_scenarios.py::MonitorTests::test_metric_alert_condition_create</td>
+          <td class="col-duration">1.72</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: This command is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: This command is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: This command is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: This command is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.vm.custom:custom.py:801 It is recommended to use parameter &quot;--public-ip-sku Standard&quot; to create new VM with Standard public IP. Please note that the default public IP used for VM creation will be changed from Basic to Standard in the future.
+WARNING  cli.azure.cli.command_modules.vm.custom:custom.py:801 It is recommended to use parameter &quot;--public-ip-sku Standard&quot; to create new VM with Standard public IP. Please note that the default public IP used for VM creation will be changed from Basic to Standard in the future.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_metric_alert_scenarios.py::MonitorTests::test_metric_alert_for_rg_and_sub</td>
+          <td class="col-duration">1.61</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.vm.custom:custom.py:801 It is recommended to use parameter &quot;--public-ip-sku Standard&quot; to create new VM with Standard public IP. Please note that the default public IP used for VM creation will be changed from Basic to Standard in the future.
+WARNING  cli.azure.cli.command_modules.vm.custom:custom.py:801 It is recommended to use parameter &quot;--public-ip-sku Standard&quot; to create new VM with Standard public IP. Please note that the default public IP used for VM creation will be changed from Basic to Standard in the future.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_metric_alert_scenarios.py::MonitorTests::test_metric_alert_for_sql_database_scope</td>
+          <td class="col-duration">1.33</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>None
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_metric_alert_scenarios.py::MonitorTests::test_metric_alert_multiple_scopes</td>
+          <td class="col-duration">1.54</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.vm.custom:custom.py:801 It is recommended to use parameter &quot;--public-ip-sku Standard&quot; to create new VM with Standard public IP. Please note that the default public IP used for VM creation will be changed from Basic to Standard in the future.
+WARNING  cli.azure.cli.command_modules.vm.custom:custom.py:801 It is recommended to use parameter &quot;--public-ip-sku Standard&quot; to create new VM with Standard public IP. Please note that the default public IP used for VM creation will be changed from Basic to Standard in the future.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_metric_alert_scenarios.py::MonitorTests::test_metric_alert_single_scope</td>
+          <td class="col-duration">0.89</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.vm.custom:custom.py:801 It is recommended to use parameter &quot;--public-ip-sku Standard&quot; to create new VM with Standard public IP. Please note that the default public IP used for VM creation will be changed from Basic to Standard in the future.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_metric_alert_scenarios.py::MonitorTests::test_metric_alert_skip_metric_validation</td>
+          <td class="col-duration">0.16</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_metric_alert_scenarios.py::MonitorTests::test_metric_alert_special_char_scenario</td>
+          <td class="col-duration">2.59</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_metric_alert_scenarios.py::MonitorTests::test_metric_alert_v2_scenario</td>
+          <td class="col-duration">2.41</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  msrest.serialization:serialization.py:187 Readonly attribute name will be ignored in class &lt;class &#x27;azure.mgmt.web.v2021_03_01.models._models_py3.AppServicePlan&#x27;&gt;<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_metric_alert_scenarios.py::MonitorTests::test_metrics_alert_metric_name_with_special_characters</td>
+          <td class="col-duration">0.26</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_metrics.py::TestMonitorMetrics::test_monitor_metrics_scenario</td>
+          <td class="col-duration">0.54</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: This command is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_subscription_diagnostic_settings.py::TestDiagnosticSettingsSubscriptionScenarios::test_monitor_diagnostic_settings_subscription</td>
+          <td class="col-duration">0.83</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  msrest.serialization:serialization.py:185 location is not a known attribute of class &lt;class &#x27;azure.mgmt.monitor.v2021_05_01_preview.models._models_py3.SubscriptionDiagnosticSettingsResource&#x27;&gt; and will be ignored<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_unittest.py::FilterBuilderTests::test_scaffold_autoscale_settings_parameters</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_unittest.py::MonitorNameOrIdTest::test_monitor_resource_id</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_unittest.py::MonitorMetricAlertActionTest::test_monitor_metric_alert_condition_action</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>line 1:8 no viable alternative at input &#x27;blah&quot;&#x27;
+line 1:7 token recognition error at: &#x27;!!&#x27;
+line 1:12 mismatched input &#x27;*&#x27; expecting OPERATOR
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/monitor/tests/latest/test_monitor_unittest.py::MonitorAutoscaleActionTest::test_monitor_autoscale_condition_action</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody></table></body></html>

@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title>Test Report</title>
+    <link href="assets/style.css" rel="stylesheet" type="text/css"/></head>
+  <body onLoad="init()">
+    <script>/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+function toArray(iter) {
+    if (iter === null) {
+        return null;
+    }
+    return Array.prototype.slice.call(iter);
+}
+
+function find(selector, elem) { // eslint-disable-line no-redeclare
+    if (!elem) {
+        elem = document;
+    }
+    return elem.querySelector(selector);
+}
+
+function findAll(selector, elem) {
+    if (!elem) {
+        elem = document;
+    }
+    return toArray(elem.querySelectorAll(selector));
+}
+
+function sortColumn(elem) {
+    toggleSortStates(elem);
+    const colIndex = toArray(elem.parentNode.childNodes).indexOf(elem);
+    let key;
+    if (elem.classList.contains('result')) {
+        key = keyResult;
+    } else if (elem.classList.contains('links')) {
+        key = keyLink;
+    } else if (elem.classList.contains('float')) {
+        key = keyFloat;
+    } else {
+        key = keyAlpha;
+    }
+    sortTable(elem, key(colIndex));
+}
+
+function showAllExtras() { // eslint-disable-line no-unused-vars
+    findAll('.col-result').forEach(showExtras);
+}
+
+function hideAllExtras() { // eslint-disable-line no-unused-vars
+    findAll('.col-result').forEach(hideExtras);
+}
+
+function showExtras(colresultElem) {
+    const extras = colresultElem.parentNode.nextElementSibling;
+    const expandcollapse = colresultElem.firstElementChild;
+    extras.classList.remove('collapsed');
+    expandcollapse.classList.remove('expander');
+    expandcollapse.classList.add('collapser');
+}
+
+function hideExtras(colresultElem) {
+    const extras = colresultElem.parentNode.nextElementSibling;
+    const expandcollapse = colresultElem.firstElementChild;
+    extras.classList.add('collapsed');
+    expandcollapse.classList.remove('collapser');
+    expandcollapse.classList.add('expander');
+}
+
+function showFilters() {
+    const filterItems = document.getElementsByClassName('filter');
+    for (let i = 0; i < filterItems.length; i++)
+        filterItems[i].hidden = false;
+}
+
+function addCollapse() {
+    // Add links for show/hide all
+    const resulttable = find('table#results-table');
+    const showhideall = document.createElement('p');
+    showhideall.innerHTML = '<a href="javascript:showAllExtras()">Show all details</a> / ' +
+                            '<a href="javascript:hideAllExtras()">Hide all details</a>';
+    resulttable.parentElement.insertBefore(showhideall, resulttable);
+
+    // Add show/hide link to each result
+    findAll('.col-result').forEach(function(elem) {
+        const collapsed = getQueryParameter('collapsed') || 'Passed';
+        const extras = elem.parentNode.nextElementSibling;
+        const expandcollapse = document.createElement('span');
+        if (extras.classList.contains('collapsed')) {
+            expandcollapse.classList.add('expander');
+        } else if (collapsed.includes(elem.innerHTML)) {
+            extras.classList.add('collapsed');
+            expandcollapse.classList.add('expander');
+        } else {
+            expandcollapse.classList.add('collapser');
+        }
+        elem.appendChild(expandcollapse);
+
+        elem.addEventListener('click', function(event) {
+            if (event.currentTarget.parentNode.nextElementSibling.classList.contains('collapsed')) {
+                showExtras(event.currentTarget);
+            } else {
+                hideExtras(event.currentTarget);
+            }
+        });
+    });
+}
+
+function getQueryParameter(name) {
+    const match = RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
+    return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
+}
+
+function init () { // eslint-disable-line no-unused-vars
+    resetSortHeaders();
+
+    addCollapse();
+
+    showFilters();
+
+    sortColumn(find('.initial-sort'));
+
+    findAll('.sortable').forEach(function(elem) {
+        elem.addEventListener('click',
+            function() {
+                sortColumn(elem);
+            }, false);
+    });
+}
+
+function sortTable(clicked, keyFunc) {
+    const rows = findAll('.results-table-row');
+    const reversed = !clicked.classList.contains('asc');
+    const sortedRows = sort(rows, keyFunc, reversed);
+    /* Whole table is removed here because browsers acts much slower
+     * when appending existing elements.
+     */
+    const thead = document.getElementById('results-table-head');
+    document.getElementById('results-table').remove();
+    const parent = document.createElement('table');
+    parent.id = 'results-table';
+    parent.appendChild(thead);
+    sortedRows.forEach(function(elem) {
+        parent.appendChild(elem);
+    });
+    document.getElementsByTagName('BODY')[0].appendChild(parent);
+}
+
+function sort(items, keyFunc, reversed) {
+    const sortArray = items.map(function(item, i) {
+        return [keyFunc(item), i];
+    });
+
+    sortArray.sort(function(a, b) {
+        const keyA = a[0];
+        const keyB = b[0];
+
+        if (keyA == keyB) return 0;
+
+        if (reversed) {
+            return keyA < keyB ? 1 : -1;
+        } else {
+            return keyA > keyB ? 1 : -1;
+        }
+    });
+
+    return sortArray.map(function(item) {
+        const index = item[1];
+        return items[index];
+    });
+}
+
+function keyAlpha(colIndex) {
+    return function(elem) {
+        return elem.childNodes[1].childNodes[colIndex].firstChild.data.toLowerCase();
+    };
+}
+
+function keyFloat(colIndex) {
+    return function(elem) {
+        return Number(elem.childNodes[1].childNodes[colIndex].firstChild.data);
+    };
+}
+
+function keyLink(colIndex) {
+    return function(elem) {
+        const dataCell = elem.childNodes[1].childNodes[colIndex].firstChild;
+        return dataCell == null ? '' : dataCell.innerText.toLowerCase();
+    };
+}
+
+function keyResult(colIndex) {
+    return function(elem) {
+        const strings = ['Error', 'Failed', 'Rerun', 'XFailed', 'XPassed',
+            'Skipped', 'Passed'];
+        return strings.indexOf(elem.childNodes[1].childNodes[colIndex].firstChild.data);
+    };
+}
+
+function resetSortHeaders() {
+    findAll('.sort-icon').forEach(function(elem) {
+        elem.parentNode.removeChild(elem);
+    });
+    findAll('.sortable').forEach(function(elem) {
+        const icon = document.createElement('div');
+        icon.className = 'sort-icon';
+        icon.textContent = 'vvv';
+        elem.insertBefore(icon, elem.firstChild);
+        elem.classList.remove('desc', 'active');
+        elem.classList.add('asc', 'inactive');
+    });
+}
+
+function toggleSortStates(elem) {
+    //if active, toggle between asc and desc
+    if (elem.classList.contains('active')) {
+        elem.classList.toggle('asc');
+        elem.classList.toggle('desc');
+    }
+
+    //if inactive, reset all other functions and add ascending active
+    if (elem.classList.contains('inactive')) {
+        resetSortHeaders();
+        elem.classList.remove('inactive');
+        elem.classList.add('active');
+    }
+}
+
+function isAllRowsHidden(value) {
+    return value.hidden == false;
+}
+
+function filterTable(elem) { // eslint-disable-line no-unused-vars
+    const outcomeAtt = 'data-test-result';
+    const outcome = elem.getAttribute(outcomeAtt);
+    const classOutcome = outcome + ' results-table-row';
+    const outcomeRows = document.getElementsByClassName(classOutcome);
+
+    for(let i = 0; i < outcomeRows.length; i++){
+        outcomeRows[i].hidden = !elem.checked;
+    }
+
+    const rows = findAll('.results-table-row').filter(isAllRowsHidden);
+    const allRowsHidden = rows.length == 0 ? true : false;
+    const notFoundMessage = document.getElementById('not-found-message');
+    notFoundMessage.hidden = !allRowsHidden;
+}
+</script>
+    <h1>role.report.parallel.html</h1>
+    <p>Report generated on 23-Mar-2022 at 18:44:10 by <a href="https://pypi.python.org/pypi/pytest-html">pytest-html</a> v3.1.1</p>
+    <h2>Summary</h2>
+    <p>49 tests ran in 40.36 seconds. </p>
+    <p class="filter" hidden="true">(Un)check the boxes to filter the results.</p><input checked="true" class="filter" data-test-result="passed" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="passed">49 passed</span>, <input checked="true" class="filter" data-test-result="skipped" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="skipped">1 skipped</span>, <input checked="true" class="filter" data-test-result="failed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="failed">0 failed</span>, <input checked="true" class="filter" data-test-result="error" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="error">0 errors</span>, <input checked="true" class="filter" data-test-result="xfailed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="xfailed">0 expected failures</span>, <input checked="true" class="filter" data-test-result="xpassed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="xpassed">0 unexpected passes</span>
+    <h2>Results</h2>
+    <table id="results-table">
+      <thead id="results-table-head">
+        <tr>
+          <th class="sortable result initial-sort" col="result">Result</th>
+          <th class="sortable" col="name">Test</th>
+          <th class="sortable float" col="duration">Duration</th>
+          <th class="sortable links" col="links">Links</th></tr>
+        <tr hidden="true" id="not-found-message">
+          <th colspan="4">No results found. Try to check the filters</th></tr></thead>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_role.py::RoleAssignmentScenarioTest::test_role_assignment_mgmt_grp</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\role\\tests\\latest\\test_role.py&#x27;, 574, &#x27;Skipped: Known service random 403 issue&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_graph.py::ServicePrincipalExpressCreateScenarioTest::test_app_create_idempotent</td>
+          <td class="col-duration">0.32</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:802 Found an existing application instance of &quot;4c7aa4b1-654c-4e69-adc5-f8f7cf4a6b1f&quot;. We will patch it
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_graph.py::ServicePrincipalExpressCreateScenarioTest::test_native_app_create_scenario</td>
+          <td class="col-duration">0.34</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:802 Found an existing application instance of &quot;2ce18ca7-7583-4f8e-b2a5-13361b8ebd62&quot;. We will patch it
+WARNING  msrest.serialization:serialization.py:1115 Datetime with no tzinfo will be considered UTC.
+WARNING  msrest.serialization:serialization.py:1115 Datetime with no tzinfo will be considered UTC.
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_graph.py::ServicePrincipalExpressCreateScenarioTest::test_sp_create_scenario</td>
+          <td class="col-duration">0.91</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Option &#x27;--skip-assignment&#x27; has been deprecated and will be removed in a future release.
+<br/> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:1494 The output includes credentials that you must protect. Be sure that you do not include these credentials in your code or check the credentials into your source control. For more information, see https://aka.ms/azadsp-cli
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:605 The result is not complete. You can still use &#x27;--all&#x27; to get all of them with long latency expected, or provide a filter through command arguments
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:1759 The output includes credentials that you must protect. Be sure that you do not include these credentials in your code or check the credentials into your source control. For more information, see https://aka.ms/azadsp-cli
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:649 The result is not complete. You can still use &#x27;--all&#x27; to get all of them with long latency expected, or provide a filter through command arguments
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_graph.py::ServicePrincipalExpressCreateScenarioTest::test_sp_show_exit_code</td>
+          <td class="col-duration">0.06</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 Service principal &#x27;non-exist-sp-name&#x27; doesn&#x27;t exist
+ERROR    az_command_data_logger:azlogging.py:213 Service principal &#x27;non-exist-sp-name&#x27; doesn&#x27;t exist<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_graph.py::ServicePrincipalExpressCreateScenarioTest::test_web_app_no_identifier_uris_other_tenants_create_scenario</td>
+          <td class="col-duration">0.08</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_graph.py::ApplicationSetScenarioTest::test_app_show_exit_code</td>
+          <td class="col-duration">0.07</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 Application &#x27;non-exist-identifierUris&#x27; doesn&#x27;t exist
+ERROR    az_command_data_logger:azlogging.py:213 Application &#x27;non-exist-identifierUris&#x27; doesn&#x27;t exist<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_graph.py::ApplicationSetScenarioTest::test_application_optional_claims</td>
+          <td class="col-duration">0.38</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_graph.py::ApplicationSetScenarioTest::test_application_set_scenario</td>
+          <td class="col-duration">1.84</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:1759 The output includes credentials that you must protect. Be sure that you do not include these credentials in your code or check the credentials into your source control. For more information, see https://aka.ms/azadsp-cli
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_graph.py::CreateForRbacScenarioTest::test_create_for_rbac_idempotent</td>
+          <td class="col-duration">0.64</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:1494 The output includes credentials that you must protect. Be sure that you do not include these credentials in your code or check the credentials into your source control. For more information, see https://aka.ms/azadsp-cli
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:802 Found an existing application instance of &quot;f1535150-afab-4650-ba0f-42571f0ff889&quot;. We will patch it
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:1494 The output includes credentials that you must protect. Be sure that you do not include these credentials in your code or check the credentials into your source control. For more information, see https://aka.ms/azadsp-cli
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:1258 Removing role assignments<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_graph.py::CreateForRbacScenarioTest::test_create_for_rbac_no_role_assignment</td>
+          <td class="col-duration">0.57</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:1494 The output includes credentials that you must protect. Be sure that you do not include these credentials in your code or check the credentials into your source control. For more information, see https://aka.ms/azadsp-cli
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_graph.py::CreateForRbacScenarioTest::test_create_for_rbac_with_role_assignment</td>
+          <td class="col-duration">0.91</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:1470 Creating &#x27;Reader&#x27; role assignment under scope &#x27;/subscriptions/00000000-0000-0000-0000-000000000000&#x27;
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:1494 The output includes credentials that you must protect. Be sure that you do not include these credentials in your code or check the credentials into your source control. For more information, see https://aka.ms/azadsp-cli
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:1258 Removing role assignments
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_graph.py::GraphGroupScenarioTest::test_graph_group_idempotent</td>
+          <td class="col-duration">0.33</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:727 A group with the same display name and mail nickname already exists, returning.
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_graph.py::GraphGroupScenarioTest::test_graph_group_scenario</td>
+          <td class="col-duration">1.61</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Option &#x27;--upn-or-object-id&#x27; has been deprecated and will be removed in a future release. Use &#x27;--id&#x27; instead.
+WARNING: Option &#x27;--upn-or-object-id&#x27; has been deprecated and will be removed in a future release. Use &#x27;--id&#x27; instead.
+WARNING: Option &#x27;--upn-or-object-id&#x27; has been deprecated and will be removed in a future release. Use &#x27;--id&#x27; instead.
+WARNING: Option &#x27;--upn-or-object-id&#x27; has been deprecated and will be removed in a future release. Use &#x27;--id&#x27; instead.
+<br/> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_graph.py::GraphGroupScenarioTest::test_graph_group_show</td>
+          <td class="col-duration">0.73</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_graph.py::GraphOwnerScenarioTest::test_graph_application_ownership</td>
+          <td class="col-duration">0.68</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Option &#x27;--upn-or-object-id&#x27; has been deprecated and will be removed in a future release. Use &#x27;--id&#x27; instead.
+WARNING: Option &#x27;--skip-assignment&#x27; has been deprecated and will be removed in a future release.
+<br/> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:1494 The output includes credentials that you must protect. Be sure that you do not include these credentials in your code or check the credentials into your source control. For more information, see https://aka.ms/azadsp-cli
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_graph.py::GraphOwnerScenarioTest::test_graph_group_ownership</td>
+          <td class="col-duration">0.38</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Option &#x27;--upn-or-object-id&#x27; has been deprecated and will be removed in a future release. Use &#x27;--id&#x27; instead.
+<br/> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_graph.py::GraphAppCredsScenarioTest::test_graph_app_cred_e2e</td>
+          <td class="col-duration">2.09</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Option &#x27;--skip-assignment&#x27; has been deprecated and will be removed in a future release.
+WARNING: Option &#x27;--skip-assignment&#x27; has been deprecated and will be removed in a future release.
+<br/> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:1494 The output includes credentials that you must protect. Be sure that you do not include these credentials in your code or check the credentials into your source control. For more information, see https://aka.ms/azadsp-cli
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:1759 The output includes credentials that you must protect. Be sure that you do not include these credentials in your code or check the credentials into your source control. For more information, see https://aka.ms/azadsp-cli
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:1759 The output includes credentials that you must protect. Be sure that you do not include these credentials in your code or check the credentials into your source control. For more information, see https://aka.ms/azadsp-cli
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:1759 The output includes credentials that you must protect. Be sure that you do not include these credentials in your code or check the credentials into your source control. For more information, see https://aka.ms/azadsp-cli
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:1759 The output includes credentials that you must protect. Be sure that you do not include these credentials in your code or check the credentials into your source control. For more information, see https://aka.ms/azadsp-cli
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:1494 The output includes credentials that you must protect. Be sure that you do not include these credentials in your code or check the credentials into your source control. For more information, see https://aka.ms/azadsp-cli
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_graph.py::GraphAppRequiredAccessScenarioTest::test_graph_permission</td>
+          <td class="col-duration">2.27</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Option &#x27;--skip-assignment&#x27; has been deprecated and will be removed in a future release.
+<br/> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:1494 The output includes credentials that you must protect. Be sure that you do not include these credentials in your code or check the credentials into your source control. For more information, see https://aka.ms/azadsp-cli
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:938 Invoking &quot;az ad app permission grant --id 066d25bf-13d9-4e34-b031-a24f1f196f8a --api 00000002-0000-0000-c000-000000000000&quot; is needed to make the change effective
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:938 Invoking &quot;az ad app permission grant --id 066d25bf-13d9-4e34-b031-a24f1f196f8a --api 00000003-0000-0000-c000-000000000000&quot; is needed to make the change effective
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:938 Invoking &quot;az ad app permission grant --id 066d25bf-13d9-4e34-b031-a24f1f196f8a --api 00000003-0000-0000-c000-000000000000&quot; is needed to make the change effective
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:959 App 066d25bf-13d9-4e34-b031-a24f1f196f8a doesn&#x27;t require access to API 11111111-0000-0000-c000-000000000000.
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:959 App 066d25bf-13d9-4e34-b031-a24f1f196f8a doesn&#x27;t require access to API 11111111-0000-0000-c000-000000000000.
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:938 Invoking &quot;az ad app permission grant --id 066d25bf-13d9-4e34-b031-a24f1f196f8a --api 00000003-0000-0000-c000-000000000000&quot; is needed to make the change effective
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:967 App 066d25bf-13d9-4e34-b031-a24f1f196f8a doesn&#x27;t require access to API 00000003-0000-0000-c000-000000000000&#x27;s permission 22222222-0000-0000-c000-000000000000.
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_graph.py::GraphAppRequiredAccessScenarioTest::test_graph_required_access_e2e</td>
+          <td class="col-duration">1.06</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Option &#x27;--skip-assignment&#x27; has been deprecated and will be removed in a future release.
+<br/> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:1494 The output includes credentials that you must protect. Be sure that you do not include these credentials in your code or check the credentials into your source control. For more information, see https://aka.ms/azadsp-cli
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:938 Invoking &quot;az ad app permission grant --id e2322d30-1da0-4f6a-ab73-d0233521feea --api 00000002-0000-0000-c000-000000000000&quot; is needed to make the change effective
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:938 Invoking &quot;az ad app permission grant --id e2322d30-1da0-4f6a-ab73-d0233521feea --api 00000002-0000-0000-c000-000000000000&quot; is needed to make the change effective
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_role.py::RbacSPSecretScenarioTest::test_create_for_rbac_argument_error</td>
+          <td class="col-duration">0.09</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_role.py::RbacSPSecretScenarioTest::test_create_for_rbac_with_right_display_name</td>
+          <td class="col-duration">0.33</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:1494 The output includes credentials that you must protect. Be sure that you do not include these credentials in your code or check the credentials into your source control. For more information, see https://aka.ms/azadsp-cli
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  msrest.serialization:serialization.py:1115 Datetime with no tzinfo will be considered UTC.
+WARNING  msrest.serialization:serialization.py:1115 Datetime with no tzinfo will be considered UTC.
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_role.py::RbacSPSecretScenarioTest::test_create_for_rbac_with_secret_no_assignment</td>
+          <td class="col-duration">0.17</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:1494 The output includes credentials that you must protect. Be sure that you do not include these credentials in your code or check the credentials into your source control. For more information, see https://aka.ms/azadsp-cli
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_role.py::RbacSPSecretScenarioTest::test_create_for_rbac_with_secret_with_assignment</td>
+          <td class="col-duration">0.47</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:1470 Creating &#x27;Reader&#x27; role assignment under scope &#x27;/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/cli_create_rbac_sp_with_password000001&#x27;
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:1494 The output includes credentials that you must protect. Be sure that you do not include these credentials in your code or check the credentials into your source control. For more information, see https://aka.ms/azadsp-cli
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_role.py::RbacSPCertScenarioTest::test_create_for_rbac_with_cert_no_assignment</td>
+          <td class="col-duration">0.52</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:1494 The output includes credentials that you must protect. Be sure that you do not include these credentials in your code or check the credentials into your source control. For more information, see https://aka.ms/azadsp-cli
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:1512 Please copy C:\Users\zelinwang\tmpr9yd4nfi.pem to a safe place. When you run &#x27;az login&#x27;, provide the file path in the --password argument
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:1759 The output includes credentials that you must protect. Be sure that you do not include these credentials in your code or check the credentials into your source control. For more information, see https://aka.ms/azadsp-cli
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_role.py::RbacSPKeyVaultScenarioTest2::test_create_for_rbac_with_new_kv_cert</td>
+          <td class="col-duration">0.92</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:1390 Certificate expires 2023-03-17 05:24:44+00:00. Adjusting SP end date to match.
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:1494 The output includes credentials that you must protect. Be sure that you do not include these credentials in your code or check the credentials into your source control. For more information, see https://aka.ms/azadsp-cli
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:1390 Certificate expires 2023-03-17 05:24:57+00:00. Adjusting SP end date to match.
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:1759 The output includes credentials that you must protect. Be sure that you do not include these credentials in your code or check the credentials into your source control. For more information, see https://aka.ms/azadsp-cli
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_role.py::RbacSPKeyVaultScenarioTest::test_create_for_rbac_with_existing_kv_cert</td>
+          <td class="col-duration">1.67</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:1494 The output includes credentials that you must protect. Be sure that you do not include these credentials in your code or check the credentials into your source control. For more information, see https://aka.ms/azadsp-cli
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:1759 The output includes credentials that you must protect. Be sure that you do not include these credentials in your code or check the credentials into your source control. For more information, see https://aka.ms/azadsp-cli
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:1390 Certificate expires 2022-08-17 05:26:51+00:00. Adjusting SP end date to match.
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:1494 The output includes credentials that you must protect. Be sure that you do not include these credentials in your code or check the credentials into your source control. For more information, see https://aka.ms/azadsp-cli
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:1390 Certificate expires 2022-08-17 05:26:51+00:00. Adjusting SP end date to match.
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:1759 The output includes credentials that you must protect. Be sure that you do not include these credentials in your code or check the credentials into your source control. For more information, see https://aka.ms/azadsp-cli
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_role.py::RoleCreateScenarioTest::test_role_create_scenario</td>
+          <td class="col-duration">2.09</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  msrest.serialization:serialization.py:187 Readonly attribute type will be ignored in class &lt;class &#x27;azure.mgmt.authorization.v2018_01_01_preview.models._models_py3.RoleDefinition&#x27;&gt;
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  msrest.serialization:serialization.py:187 Readonly attribute type will be ignored in class &lt;class &#x27;azure.mgmt.authorization.v2018_01_01_preview.models._models_py3.RoleDefinition&#x27;&gt;
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_role.py::RoleAssignmentScenarioTest::test_role_assignment_audits</td>
+          <td class="col-duration">1.23</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Option &#x27;--upn-or-object-id&#x27; has been deprecated and will be removed in a future release. Use &#x27;--id&#x27; instead.
+<br/> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_role.py::RoleAssignmentScenarioTest::test_role_assignment_create_update</td>
+          <td class="col-duration">1.34</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Argument &#x27;--description&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Argument &#x27;--condition&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Argument &#x27;--condition-version&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Argument &#x27;--description&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Argument &#x27;--condition&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Argument &#x27;--condition-version&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Argument &#x27;--description&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Argument &#x27;--condition&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Argument &#x27;--condition-version&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Option &#x27;--upn-or-object-id&#x27; has been deprecated and will be removed in a future release. Use &#x27;--id&#x27; instead.
+<br/> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_role.py::RoleAssignmentScenarioTest::test_role_assignment_create_using_principal_type</td>
+          <td class="col-duration">6.69</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Option &#x27;--upn-or-object-id&#x27; has been deprecated and will be removed in a future release. Use &#x27;--id&#x27; instead.
+<br/> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:161 RBAC service might reject creating role assignment without --assignee-principal-type in the future. Better to specify --assignee-principal-type manually.
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:161 RBAC service might reject creating role assignment without --assignee-principal-type in the future. Better to specify --assignee-principal-type manually.
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:161 RBAC service might reject creating role assignment without --assignee-principal-type in the future. Better to specify --assignee-principal-type manually.
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:161 RBAC service might reject creating role assignment without --assignee-principal-type in the future. Better to specify --assignee-principal-type manually.
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:1494 The output includes credentials that you must protect. Be sure that you do not include these credentials in your code or check the credentials into your source control. For more information, see https://aka.ms/azadsp-cli
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:161 RBAC service might reject creating role assignment without --assignee-principal-type in the future. Better to specify --assignee-principal-type manually.
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:161 RBAC service might reject creating role assignment without --assignee-principal-type in the future. Better to specify --assignee-principal-type manually.
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_role.py::RoleAssignmentScenarioTest::test_role_assignment_e2e</td>
+          <td class="col-duration">6.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Option &#x27;--upn-or-object-id&#x27; has been deprecated and will be removed in a future release. Use &#x27;--id&#x27; instead.
+<br/> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_role.py::RoleAssignmentScenarioTest::test_role_assignment_empty_string_args</td>
+          <td class="col-duration">0.32</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_role.py::RoleAssignmentScenarioTest::test_role_assignment_handle_conflicted_assignments</td>
+          <td class="col-duration">1.42</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Option &#x27;--upn-or-object-id&#x27; has been deprecated and will be removed in a future release. Use &#x27;--id&#x27; instead.
+<br/> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_role.py::RoleAssignmentListScenarioTest::test_assignments_for_co_admins</td>
+          <td class="col-duration">0.79</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_role_commands_thru_mock.py::TestRoleMocked::test_create_for_rbac_failed_with_polished_error_if_due_to_permission</td>
+          <td class="col-duration">0.01</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_role_commands_thru_mock.py::TestRoleMocked::test_create_for_rbac_failed_with_regular_error</td>
+          <td class="col-duration">0.01</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_role_commands_thru_mock.py::TestRoleMocked::test_create_for_rbac_password_plumbed_through</td>
+          <td class="col-duration">0.02</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.role.custom:custom.py:1494 The output includes credentials that you must protect. Be sure that you do not include these credentials in your code or check the credentials into your source control. For more information, see https://aka.ms/azadsp-cli<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_role_commands_thru_mock.py::TestRoleMocked::test_create_for_rbac_retry</td>
+          <td class="col-duration">0.01</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.role.custom:custom.py:1457 Creating service principal failed with error &#x27;The appId &#x27;00000000-0000-0000-0000-000000000000&#x27; of the service principal does not reference a valid application object.&#x27;. Retrying: 1/36
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:1457 Creating service principal failed with error &#x27;When using this permission, the backing application of the service principal being created must in the local tenant&#x27;. Retrying: 2/36
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:1494 The output includes credentials that you must protect. Be sure that you do not include these credentials in your code or check the credentials into your source control. For more information, see https://aka.ms/azadsp-cli<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_role_commands_thru_mock.py::TestRoleMocked::test_create_for_rbac_use_cert_date</td>
+          <td class="col-duration">0.03</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_role_commands_thru_mock.py::TestRoleMocked::test_create_role_definition</td>
+          <td class="col-duration">0.02</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  msrest.serialization:serialization.py:187 Readonly attribute type will be ignored in class &lt;class &#x27;azure.mgmt.authorization.v2018_01_01_preview.models._models_py3.RoleDefinition&#x27;&gt;<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_role_commands_thru_mock.py::TestRoleMocked::test_get_object_stubs</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_role_commands_thru_mock.py::TestRoleMocked::test_list_sp_owner</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_role_commands_thru_mock.py::TestRoleMocked::test_reset_credentials_certificate_append_option</td>
+          <td class="col-duration">0.01</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.role.custom:custom.py:1390 Certificate expires 2018-11-13 21:24:24+00:00. Adjusting SP end date to match.
+WARNING  cli.azure.cli.command_modules.role.custom:custom.py:1759 The output includes credentials that you must protect. Be sure that you do not include these credentials in your code or check the credentials into your source control. For more information, see https://aka.ms/azadsp-cli<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_role_commands_thru_mock.py::TestRoleMocked::test_reset_credentials_password</td>
+          <td class="col-duration">0.01</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.role.custom:custom.py:1759 The output includes credentials that you must protect. Be sure that you do not include these credentials in your code or check the credentials into your source control. For more information, see https://aka.ms/azadsp-cli<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_role_commands_thru_mock.py::TestRoleMocked::test_role_assignment_delete_prompt</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_role_commands_thru_mock.py::TestRoleMocked::test_role_list_app_owner</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_role_commands_thru_mock.py::TestRoleMocked::test_update_application_to_be_single_tenant</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_role_commands_thru_mock.py::TestRoleMocked::test_update_role_definition</td>
+          <td class="col-duration">0.01</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.role.custom:custom.py:80 Role &quot;id&quot; is missing. Look for the role in the current subscription...
+WARNING  msrest.serialization:serialization.py:187 Readonly attribute type will be ignored in class &lt;class &#x27;azure.mgmt.authorization.v2018_01_01_preview.models._models_py3.RoleDefinition&#x27;&gt;<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/role/tests/latest/test_role_custom.py::TestRoleCustomCommands::test_resolve_role_id</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody></table></body></html>

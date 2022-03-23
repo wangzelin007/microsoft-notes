@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title>Test Report</title>
+    <link href="assets/style.css" rel="stylesheet" type="text/css"/></head>
+  <body onLoad="init()">
+    <script>/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+function toArray(iter) {
+    if (iter === null) {
+        return null;
+    }
+    return Array.prototype.slice.call(iter);
+}
+
+function find(selector, elem) { // eslint-disable-line no-redeclare
+    if (!elem) {
+        elem = document;
+    }
+    return elem.querySelector(selector);
+}
+
+function findAll(selector, elem) {
+    if (!elem) {
+        elem = document;
+    }
+    return toArray(elem.querySelectorAll(selector));
+}
+
+function sortColumn(elem) {
+    toggleSortStates(elem);
+    const colIndex = toArray(elem.parentNode.childNodes).indexOf(elem);
+    let key;
+    if (elem.classList.contains('result')) {
+        key = keyResult;
+    } else if (elem.classList.contains('links')) {
+        key = keyLink;
+    } else if (elem.classList.contains('float')) {
+        key = keyFloat;
+    } else {
+        key = keyAlpha;
+    }
+    sortTable(elem, key(colIndex));
+}
+
+function showAllExtras() { // eslint-disable-line no-unused-vars
+    findAll('.col-result').forEach(showExtras);
+}
+
+function hideAllExtras() { // eslint-disable-line no-unused-vars
+    findAll('.col-result').forEach(hideExtras);
+}
+
+function showExtras(colresultElem) {
+    const extras = colresultElem.parentNode.nextElementSibling;
+    const expandcollapse = colresultElem.firstElementChild;
+    extras.classList.remove('collapsed');
+    expandcollapse.classList.remove('expander');
+    expandcollapse.classList.add('collapser');
+}
+
+function hideExtras(colresultElem) {
+    const extras = colresultElem.parentNode.nextElementSibling;
+    const expandcollapse = colresultElem.firstElementChild;
+    extras.classList.add('collapsed');
+    expandcollapse.classList.remove('collapser');
+    expandcollapse.classList.add('expander');
+}
+
+function showFilters() {
+    const filterItems = document.getElementsByClassName('filter');
+    for (let i = 0; i < filterItems.length; i++)
+        filterItems[i].hidden = false;
+}
+
+function addCollapse() {
+    // Add links for show/hide all
+    const resulttable = find('table#results-table');
+    const showhideall = document.createElement('p');
+    showhideall.innerHTML = '<a href="javascript:showAllExtras()">Show all details</a> / ' +
+                            '<a href="javascript:hideAllExtras()">Hide all details</a>';
+    resulttable.parentElement.insertBefore(showhideall, resulttable);
+
+    // Add show/hide link to each result
+    findAll('.col-result').forEach(function(elem) {
+        const collapsed = getQueryParameter('collapsed') || 'Passed';
+        const extras = elem.parentNode.nextElementSibling;
+        const expandcollapse = document.createElement('span');
+        if (extras.classList.contains('collapsed')) {
+            expandcollapse.classList.add('expander');
+        } else if (collapsed.includes(elem.innerHTML)) {
+            extras.classList.add('collapsed');
+            expandcollapse.classList.add('expander');
+        } else {
+            expandcollapse.classList.add('collapser');
+        }
+        elem.appendChild(expandcollapse);
+
+        elem.addEventListener('click', function(event) {
+            if (event.currentTarget.parentNode.nextElementSibling.classList.contains('collapsed')) {
+                showExtras(event.currentTarget);
+            } else {
+                hideExtras(event.currentTarget);
+            }
+        });
+    });
+}
+
+function getQueryParameter(name) {
+    const match = RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
+    return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
+}
+
+function init () { // eslint-disable-line no-unused-vars
+    resetSortHeaders();
+
+    addCollapse();
+
+    showFilters();
+
+    sortColumn(find('.initial-sort'));
+
+    findAll('.sortable').forEach(function(elem) {
+        elem.addEventListener('click',
+            function() {
+                sortColumn(elem);
+            }, false);
+    });
+}
+
+function sortTable(clicked, keyFunc) {
+    const rows = findAll('.results-table-row');
+    const reversed = !clicked.classList.contains('asc');
+    const sortedRows = sort(rows, keyFunc, reversed);
+    /* Whole table is removed here because browsers acts much slower
+     * when appending existing elements.
+     */
+    const thead = document.getElementById('results-table-head');
+    document.getElementById('results-table').remove();
+    const parent = document.createElement('table');
+    parent.id = 'results-table';
+    parent.appendChild(thead);
+    sortedRows.forEach(function(elem) {
+        parent.appendChild(elem);
+    });
+    document.getElementsByTagName('BODY')[0].appendChild(parent);
+}
+
+function sort(items, keyFunc, reversed) {
+    const sortArray = items.map(function(item, i) {
+        return [keyFunc(item), i];
+    });
+
+    sortArray.sort(function(a, b) {
+        const keyA = a[0];
+        const keyB = b[0];
+
+        if (keyA == keyB) return 0;
+
+        if (reversed) {
+            return keyA < keyB ? 1 : -1;
+        } else {
+            return keyA > keyB ? 1 : -1;
+        }
+    });
+
+    return sortArray.map(function(item) {
+        const index = item[1];
+        return items[index];
+    });
+}
+
+function keyAlpha(colIndex) {
+    return function(elem) {
+        return elem.childNodes[1].childNodes[colIndex].firstChild.data.toLowerCase();
+    };
+}
+
+function keyFloat(colIndex) {
+    return function(elem) {
+        return Number(elem.childNodes[1].childNodes[colIndex].firstChild.data);
+    };
+}
+
+function keyLink(colIndex) {
+    return function(elem) {
+        const dataCell = elem.childNodes[1].childNodes[colIndex].firstChild;
+        return dataCell == null ? '' : dataCell.innerText.toLowerCase();
+    };
+}
+
+function keyResult(colIndex) {
+    return function(elem) {
+        const strings = ['Error', 'Failed', 'Rerun', 'XFailed', 'XPassed',
+            'Skipped', 'Passed'];
+        return strings.indexOf(elem.childNodes[1].childNodes[colIndex].firstChild.data);
+    };
+}
+
+function resetSortHeaders() {
+    findAll('.sort-icon').forEach(function(elem) {
+        elem.parentNode.removeChild(elem);
+    });
+    findAll('.sortable').forEach(function(elem) {
+        const icon = document.createElement('div');
+        icon.className = 'sort-icon';
+        icon.textContent = 'vvv';
+        elem.insertBefore(icon, elem.firstChild);
+        elem.classList.remove('desc', 'active');
+        elem.classList.add('asc', 'inactive');
+    });
+}
+
+function toggleSortStates(elem) {
+    //if active, toggle between asc and desc
+    if (elem.classList.contains('active')) {
+        elem.classList.toggle('asc');
+        elem.classList.toggle('desc');
+    }
+
+    //if inactive, reset all other functions and add ascending active
+    if (elem.classList.contains('inactive')) {
+        resetSortHeaders();
+        elem.classList.remove('inactive');
+        elem.classList.add('active');
+    }
+}
+
+function isAllRowsHidden(value) {
+    return value.hidden == false;
+}
+
+function filterTable(elem) { // eslint-disable-line no-unused-vars
+    const outcomeAtt = 'data-test-result';
+    const outcome = elem.getAttribute(outcomeAtt);
+    const classOutcome = outcome + ' results-table-row';
+    const outcomeRows = document.getElementsByClassName(classOutcome);
+
+    for(let i = 0; i < outcomeRows.length; i++){
+        outcomeRows[i].hidden = !elem.checked;
+    }
+
+    const rows = findAll('.results-table-row').filter(isAllRowsHidden);
+    const allRowsHidden = rows.length == 0 ? true : false;
+    const notFoundMessage = document.getElementById('not-found-message');
+    notFoundMessage.hidden = !allRowsHidden;
+}
+</script>
+    <h1>ams.report.parallel.html</h1>
+    <p>Report generated on 23-Mar-2022 at 17:40:37 by <a href="https://pypi.python.org/pypi/pytest-html">pytest-html</a> v3.1.1</p>
+    <h2>Summary</h2>
+    <p>70 tests ran in 240.30 seconds. </p>
+    <p class="filter" hidden="true">(Un)check the boxes to filter the results.</p><input checked="true" class="filter" data-test-result="passed" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="passed">70 passed</span>, <input checked="true" class="filter" data-test-result="skipped" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="skipped">1 skipped</span>, <input checked="true" class="filter" data-test-result="failed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="failed">0 failed</span>, <input checked="true" class="filter" data-test-result="error" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="error">0 errors</span>, <input checked="true" class="filter" data-test-result="xfailed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="xfailed">0 expected failures</span>, <input checked="true" class="filter" data-test-result="xpassed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="xpassed">0 unexpected passes</span>
+    <h2>Results</h2>
+    <table id="results-table">
+      <thead id="results-table-head">
+        <tr>
+          <th class="sortable result initial-sort" col="result">Result</th>
+          <th class="sortable" col="name">Test</th>
+          <th class="sortable float" col="duration">Duration</th>
+          <th class="sortable links" col="links">Links</th></tr>
+        <tr hidden="true" id="not-found-message">
+          <th colspan="4">No results found. Try to check the filters</th></tr></thead>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_account_mru_scenarios.py::AmsMruTests::test_ams_mru</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\ams\\tests\\latest\\test_ams_account_mru_scenarios.py&#x27;, 11, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_account_encryption_scenarios.py::AmsEncryptionTests::test_ams_encryption_set_show</td>
+          <td class="col-duration">0.77</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  msrest.serialization:serialization.py:187 Readonly attribute current_key_identifier will be ignored in class &lt;class &#x27;azure.mgmt.media.models._models_py3.KeyVaultProperties&#x27;&gt;<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_account_filter_scenarios.py::AmsAccountFilterTests::test_ams_account_filter_create_and_show</td>
+          <td class="col-duration">0.20</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>ERROR    cli.azure.cli.command_modules.ams._utils:azlogging.py:212 The Resource &#x27;Microsoft.Media/mediaServices/ams000003/accountFilters/filter000005&#x27; under resource group &#x27;clitest.rg000001&#x27; was not found.
+ERROR    az_command_data_logger:azlogging.py:213 The Resource &#x27;Microsoft.Media/mediaServices/ams000003/accountFilters/filter000005&#x27; under resource group &#x27;clitest.rg000001&#x27; was not found.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_account_filter_scenarios.py::AmsAccountFilterTests::test_ams_account_filter_list_and_delete</td>
+          <td class="col-duration">0.38</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Option &#x27;--bitrate&#x27; has been deprecated and will be removed in a future release. Use &#x27;--first-quality&#x27; instead.
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_account_filter_scenarios.py::AmsAccountFilterTests::test_ams_account_filter_update</td>
+          <td class="col-duration">0.20</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Option &#x27;--bitrate&#x27; has been deprecated and will be removed in a future release. Use &#x27;--first-quality&#x27; instead.
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_account_scenarios.py::AmsAccountTests::test_ams_check_name</td>
+          <td class="col-duration">0.23</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_account_scenarios.py::AmsAccountTests::test_ams_create_show</td>
+          <td class="col-duration">0.23</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_account_scenarios.py::AmsAccountTests::test_ams_storage_add_remove</td>
+          <td class="col-duration">0.15</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_account_scenarios.py::AmsAccountTests::test_ams_sync_storage_keys</td>
+          <td class="col-duration">0.15</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_asset_filter_scenarios.py::AmsAssetFilterTests::test_ams_asset_filter_create</td>
+          <td class="col-duration">0.19</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_asset_filter_scenarios.py::AmsAssetFilterTests::test_ams_asset_filter_list_and_delete</td>
+          <td class="col-duration">0.48</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Option &#x27;--bitrate&#x27; has been deprecated and will be removed in a future release. Use &#x27;--first-quality&#x27; instead.
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_asset_filter_scenarios.py::AmsAssetFilterTests::test_ams_asset_filter_show</td>
+          <td class="col-duration">0.30</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>ERROR    cli.azure.cli.command_modules.ams._utils:azlogging.py:212 The Resource &#x27;Microsoft.Media/mediaServices/assets/asset000005/assetFilters/asset-filter000009/clitest.rg000001&#x27; under resource group &#x27;ams000003&#x27; was not found.
+ERROR    az_command_data_logger:azlogging.py:213 The Resource &#x27;Microsoft.Media/mediaServices/assets/asset000005/assetFilters/asset-filter000009/clitest.rg000001&#x27; under resource group &#x27;ams000003&#x27; was not found.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_asset_filter_scenarios.py::AmsAssetFilterTests::test_ams_asset_filter_update</td>
+          <td class="col-duration">0.30</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Option &#x27;--bitrate&#x27; has been deprecated and will be removed in a future release. Use &#x27;--first-quality&#x27; instead.
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_asset_scenarios.py::AmsAssetTests::test_ams_asset</td>
+          <td class="col-duration">0.38</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>ERROR    cli.azure.cli.command_modules.ams._utils:azlogging.py:212 The Resource &#x27;Microsoft.Media/mediaServices/ams000004/assets/asset000009&#x27; under resource group &#x27;clitest.rg000001&#x27; was not found.
+ERROR    az_command_data_logger:azlogging.py:213 The Resource &#x27;Microsoft.Media/mediaServices/ams000004/assets/asset000009&#x27; under resource group &#x27;clitest.rg000001&#x27; was not found.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_asset_scenarios.py::AmsAssetTests::test_ams_asset_get_encryption_key</td>
+          <td class="col-duration">0.15</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_asset_scenarios.py::AmsAssetTests::test_ams_asset_get_sas_urls</td>
+          <td class="col-duration">0.15</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  msrest.serialization:serialization.py:1115 Datetime with no tzinfo will be considered UTC.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_asset_scenarios.py::AmsAssetTests::test_ams_asset_list_streaming_locators</td>
+          <td class="col-duration">0.18</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_content_key_policy_scenarios.py::AmsContentKeyPolicyTests::test_content_key_policy_create_basic</td>
+          <td class="col-duration">0.14</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_content_key_policy_scenarios.py::AmsContentKeyPolicyTests::test_content_key_policy_create_with_fairplay</td>
+          <td class="col-duration">0.10</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_content_key_policy_scenarios.py::AmsContentKeyPolicyTests::test_content_key_policy_create_with_fairplay_offline</td>
+          <td class="col-duration">0.10</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_content_key_policy_scenarios.py::AmsContentKeyPolicyTests::test_content_key_policy_create_with_playready_fail</td>
+          <td class="col-duration">0.11</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_content_key_policy_scenarios.py::AmsContentKeyPolicyTests::test_content_key_policy_create_with_playready_success</td>
+          <td class="col-duration">0.10</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_content_key_policy_scenarios.py::AmsContentKeyPolicyTests::test_content_key_policy_create_with_token</td>
+          <td class="col-duration">0.14</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_content_key_policy_scenarios.py::AmsContentKeyPolicyTests::test_content_key_policy_create_with_widevine</td>
+          <td class="col-duration">0.10</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_content_key_policy_scenarios.py::AmsContentKeyPolicyTests::test_content_key_policy_delete_list</td>
+          <td class="col-duration">0.22</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_content_key_policy_scenarios.py::AmsContentKeyPolicyTests::test_content_key_policy_show_basic</td>
+          <td class="col-duration">0.14</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_content_key_policy_scenarios.py::AmsContentKeyPolicyTests::test_content_key_policy_show_with_secrets</td>
+          <td class="col-duration">0.19</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_content_key_policy_scenarios.py::AmsContentKeyPolicyTests::test_content_key_policy_update</td>
+          <td class="col-duration">0.15</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_job_scenarios.py::AmsJobTests::test_ams_job</td>
+          <td class="col-duration">0.75</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>ERROR    cli.azure.cli.command_modules.ams._utils:azlogging.py:212 The Resource &#x27;Microsoft.Media/mediaServices/transforms/tra000006/jobs/job000008/clitest.rg000001&#x27; under resource group &#x27;ams000003&#x27; was not found.
+ERROR    az_command_data_logger:azlogging.py:213 The Resource &#x27;Microsoft.Media/mediaServices/transforms/tra000006/jobs/job000008/clitest.rg000001&#x27; under resource group &#x27;ams000003&#x27; was not found.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_live_event_scenarios.py::AmsLiveEventTests::test_live_event_create</td>
+          <td class="col-duration">0.87</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  msrest.serialization:serialization.py:187 Readonly attribute system_data will be ignored in class &lt;class &#x27;azure.mgmt.media.models._models_py3.LiveEvent&#x27;&gt;<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_live_event_scenarios.py::AmsLiveEventTests::test_live_event_delete</td>
+          <td class="col-duration">0.81</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  msrest.serialization:serialization.py:187 Readonly attribute system_data will be ignored in class &lt;class &#x27;azure.mgmt.media.models._models_py3.LiveEvent&#x27;&gt;
+WARNING  msrest.serialization:serialization.py:187 Readonly attribute system_data will be ignored in class &lt;class &#x27;azure.mgmt.media.models._models_py3.LiveEvent&#x27;&gt;<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_live_event_scenarios.py::AmsLiveEventTests::test_live_event_list</td>
+          <td class="col-duration">0.54</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  msrest.serialization:serialization.py:187 Readonly attribute system_data will be ignored in class &lt;class &#x27;azure.mgmt.media.models._models_py3.LiveEvent&#x27;&gt;
+WARNING  msrest.serialization:serialization.py:187 Readonly attribute system_data will be ignored in class &lt;class &#x27;azure.mgmt.media.models._models_py3.LiveEvent&#x27;&gt;<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_live_event_scenarios.py::AmsLiveEventTests::test_live_event_reset</td>
+          <td class="col-duration">0.39</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  msrest.serialization:serialization.py:187 Readonly attribute system_data will be ignored in class &lt;class &#x27;azure.mgmt.media.models._models_py3.LiveEvent&#x27;&gt;<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_live_event_scenarios.py::AmsLiveEventTests::test_live_event_show</td>
+          <td class="col-duration">0.51</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  msrest.serialization:serialization.py:187 Readonly attribute system_data will be ignored in class &lt;class &#x27;azure.mgmt.media.models._models_py3.LiveEvent&#x27;&gt;
+ERROR    cli.azure.cli.command_modules.ams._utils:azlogging.py:212 The Resource &#x27;Microsoft.Media/mediaServices/ams000003/liveEvents/live-event000005&#x27; under resource group &#x27;clitest.rg000001&#x27; was not found.
+ERROR    az_command_data_logger:azlogging.py:213 The Resource &#x27;Microsoft.Media/mediaServices/ams000003/liveEvents/live-event000005&#x27; under resource group &#x27;clitest.rg000001&#x27; was not found.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_live_event_scenarios.py::AmsLiveEventTests::test_live_event_standby</td>
+          <td class="col-duration">0.50</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  msrest.serialization:serialization.py:187 Readonly attribute system_data will be ignored in class &lt;class &#x27;azure.mgmt.media.models._models_py3.LiveEvent&#x27;&gt;<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_live_event_scenarios.py::AmsLiveEventTests::test_live_event_start</td>
+          <td class="col-duration">0.53</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  msrest.serialization:serialization.py:187 Readonly attribute system_data will be ignored in class &lt;class &#x27;azure.mgmt.media.models._models_py3.LiveEvent&#x27;&gt;<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_live_event_scenarios.py::AmsLiveEventTests::test_live_event_stop</td>
+          <td class="col-duration">0.45</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  msrest.serialization:serialization.py:187 Readonly attribute system_data will be ignored in class &lt;class &#x27;azure.mgmt.media.models._models_py3.LiveEvent&#x27;&gt;<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_live_event_scenarios.py::AmsLiveEventTests::test_live_event_stop_and_remove_outputs</td>
+          <td class="col-duration">1.06</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  msrest.serialization:serialization.py:187 Readonly attribute system_data will be ignored in class &lt;class &#x27;azure.mgmt.media.models._models_py3.LiveEvent&#x27;&gt;<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_live_event_scenarios.py::AmsLiveEventTests::test_live_event_update</td>
+          <td class="col-duration">0.33</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  msrest.serialization:serialization.py:187 Readonly attribute system_data will be ignored in class &lt;class &#x27;azure.mgmt.media.models._models_py3.LiveEvent&#x27;&gt;<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_live_output_scenarios.py::AmsLiveOutputTests::test_live_output_create</td>
+          <td class="col-duration">0.40</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  msrest.serialization:serialization.py:187 Readonly attribute system_data will be ignored in class &lt;class &#x27;azure.mgmt.media.models._models_py3.LiveEvent&#x27;&gt;<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_live_output_scenarios.py::AmsLiveOutputTests::test_live_output_delete</td>
+          <td class="col-duration">0.90</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  msrest.serialization:serialization.py:187 Readonly attribute system_data will be ignored in class &lt;class &#x27;azure.mgmt.media.models._models_py3.LiveEvent&#x27;&gt;<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_live_output_scenarios.py::AmsLiveOutputTests::test_live_output_list</td>
+          <td class="col-duration">0.55</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  msrest.serialization:serialization.py:187 Readonly attribute system_data will be ignored in class &lt;class &#x27;azure.mgmt.media.models._models_py3.LiveEvent&#x27;&gt;<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_live_output_scenarios.py::AmsLiveOutputTests::test_live_output_show</td>
+          <td class="col-duration">0.58</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  msrest.serialization:serialization.py:187 Readonly attribute system_data will be ignored in class &lt;class &#x27;azure.mgmt.media.models._models_py3.LiveEvent&#x27;&gt;
+ERROR    cli.azure.cli.command_modules.ams._utils:azlogging.py:212 The Resource &#x27;Microsoft.Media/mediaServices/liveEvents/live-output000008/liveEventOutputs/lo000006/clitest.rg000001&#x27; under resource group &#x27;ams000003&#x27; was not found.
+ERROR    az_command_data_logger:azlogging.py:213 The Resource &#x27;Microsoft.Media/mediaServices/liveEvents/live-output000008/liveEventOutputs/lo000006/clitest.rg000001&#x27; under resource group &#x27;ams000003&#x27; was not found.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_sp_scenarios.py::AmsSpTests::test_ams_sp_create_reset</td>
+          <td class="col-duration">0.46</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.ams.operations.sp:sp.py:334 Retrying role assignment creation: 1/36
+WARNING  cli.azure.cli.command_modules.ams.operations.sp:sp.py:334 Retrying role assignment creation: 2/36
+WARNING  cli.azure.cli.command_modules.ams.operations.sp:sp.py:334 Retrying role assignment creation: 3/36
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_streaming_endpoint_scenarios.py::AmsStreamingEndpointsTests::test_ams_streaming_endpoint_create</td>
+          <td class="col-duration">0.50</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_streaming_endpoint_scenarios.py::AmsStreamingEndpointsTests::test_ams_streaming_endpoint_create_with_akamai</td>
+          <td class="col-duration">0.45</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_streaming_endpoint_scenarios.py::AmsStreamingEndpointsTests::test_ams_streaming_endpoint_create_with_akamai_without_ips</td>
+          <td class="col-duration">0.46</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_streaming_endpoint_scenarios.py::AmsStreamingEndpointsTests::test_ams_streaming_endpoint_delete</td>
+          <td class="col-duration">0.64</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_streaming_endpoint_scenarios.py::AmsStreamingEndpointsTests::test_ams_streaming_endpoint_list</td>
+          <td class="col-duration">0.24</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_streaming_endpoint_scenarios.py::AmsStreamingEndpointsTests::test_ams_streaming_endpoint_scale</td>
+          <td class="col-duration">0.89</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_streaming_endpoint_scenarios.py::AmsStreamingEndpointsTests::test_ams_streaming_endpoint_show</td>
+          <td class="col-duration">0.78</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>ERROR    cli.azure.cli.command_modules.ams._utils:azlogging.py:212 The Resource &#x27;Microsoft.Media/mediaServices/ams000003/streamingEndpoints/se000005&#x27; under resource group &#x27;clitest.rg000001&#x27; was not found.
+ERROR    az_command_data_logger:azlogging.py:213 The Resource &#x27;Microsoft.Media/mediaServices/ams000003/streamingEndpoints/se000005&#x27; under resource group &#x27;clitest.rg000001&#x27; was not found.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_streaming_endpoint_scenarios.py::AmsStreamingEndpointsTests::test_ams_streaming_endpoint_start</td>
+          <td class="col-duration">56.11</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_streaming_endpoint_scenarios.py::AmsStreamingEndpointsTests::test_ams_streaming_endpoint_start_async</td>
+          <td class="col-duration">0.35</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_streaming_endpoint_scenarios.py::AmsStreamingEndpointsTests::test_ams_streaming_endpoint_stop</td>
+          <td class="col-duration">82.96</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_streaming_endpoint_scenarios.py::AmsStreamingEndpointsTests::test_ams_streaming_endpoint_stop_async</td>
+          <td class="col-duration">75.76</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_streaming_endpoint_scenarios.py::AmsStreamingEndpointsTests::test_ams_streaming_endpoint_update</td>
+          <td class="col-duration">0.78</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_streaming_locator_scenarios.py::AmsStreamingLocatorTests::test_ams_streaming_locator</td>
+          <td class="col-duration">0.39</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  msrest.serialization:serialization.py:1115 Datetime with no tzinfo will be considered UTC.
+WARNING  msrest.serialization:serialization.py:1115 Datetime with no tzinfo will be considered UTC.
+ERROR    cli.azure.cli.command_modules.ams._utils:azlogging.py:212 The Resource &#x27;Microsoft.Media/mediaServices/ams000003/streamingLocators/sl000007&#x27; under resource group &#x27;clitest.rg000001&#x27; was not found.
+ERROR    az_command_data_logger:azlogging.py:213 The Resource &#x27;Microsoft.Media/mediaServices/ams000003/streamingLocators/sl000007&#x27; under resource group &#x27;clitest.rg000001&#x27; was not found.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_streaming_locator_scenarios.py::AmsStreamingLocatorTests::test_ams_streaming_locator_list_content_keys</td>
+          <td class="col-duration">0.22</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_streaming_locator_scenarios.py::AmsStreamingLocatorTests::test_ams_streaming_locator_with_content_keys</td>
+          <td class="col-duration">0.35</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  msrest.serialization:serialization.py:1115 Datetime with no tzinfo will be considered UTC.
+WARNING  msrest.serialization:serialization.py:1115 Datetime with no tzinfo will be considered UTC.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_streaming_locator_scenarios.py::AmsStreamingLocatorTests::test_ams_streaming_locator_with_filters</td>
+          <td class="col-duration">0.39</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  msrest.serialization:serialization.py:1115 Datetime with no tzinfo will be considered UTC.
+WARNING  msrest.serialization:serialization.py:1115 Datetime with no tzinfo will be considered UTC.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_streaming_policy_scenarios.py::AmsStreamingPolicyTests::test_ams_streaming_policy</td>
+          <td class="col-duration">0.23</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_streaming_policy_scenarios.py::AmsStreamingPolicyTests::test_ams_streaming_policy_cbcs</td>
+          <td class="col-duration">0.10</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_streaming_policy_scenarios.py::AmsStreamingPolicyTests::test_ams_streaming_policy_cbcs_default_drm</td>
+          <td class="col-duration">0.17</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_streaming_policy_scenarios.py::AmsStreamingPolicyTests::test_ams_streaming_policy_cenc</td>
+          <td class="col-duration">0.20</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  msrest.serialization:serialization.py:185 policyName is not a known attribute of class &lt;class &#x27;azure.mgmt.media.models._models_py3.StreamingPolicyContentKey&#x27;&gt; and will be ignored
+WARNING  msrest.serialization:serialization.py:185 policyName is not a known attribute of class &lt;class &#x27;azure.mgmt.media.models._models_py3.StreamingPolicyContentKey&#x27;&gt; and will be ignored<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_streaming_policy_scenarios.py::AmsStreamingPolicyTests::test_ams_streaming_policy_cenc_default_drm</td>
+          <td class="col-duration">0.19</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  msrest.serialization:serialization.py:185 policyName is not a known attribute of class &lt;class &#x27;azure.mgmt.media.models._models_py3.StreamingPolicyContentKey&#x27;&gt; and will be ignored
+WARNING  msrest.serialization:serialization.py:185 policyName is not a known attribute of class &lt;class &#x27;azure.mgmt.media.models._models_py3.StreamingPolicyContentKey&#x27;&gt; and will be ignored<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_streaming_policy_scenarios.py::AmsStreamingPolicyTests::test_ams_streaming_policy_cenc_disable_widevine</td>
+          <td class="col-duration">0.18</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  msrest.serialization:serialization.py:185 policyName is not a known attribute of class &lt;class &#x27;azure.mgmt.media.models._models_py3.StreamingPolicyContentKey&#x27;&gt; and will be ignored
+WARNING  msrest.serialization:serialization.py:185 policyName is not a known attribute of class &lt;class &#x27;azure.mgmt.media.models._models_py3.StreamingPolicyContentKey&#x27;&gt; and will be ignored<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_streaming_policy_scenarios.py::AmsStreamingPolicyTests::test_ams_streaming_policy_envelope</td>
+          <td class="col-duration">0.10</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_transform_scenarios.py::AmsTransformTests::test_ams_transform</td>
+          <td class="col-duration">0.42</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>ERROR    cli.azure.cli.command_modules.ams._utils:azlogging.py:212 The Resource &#x27;Microsoft.Media/mediaServices/ams000003/transforms/transform000005&#x27; under resource group &#x27;clitest.rg000001&#x27; was not found.
+ERROR    az_command_data_logger:azlogging.py:213 The Resource &#x27;Microsoft.Media/mediaServices/ams000003/transforms/transform000005&#x27; under resource group &#x27;clitest.rg000001&#x27; was not found.
+WARNING  msrest.serialization:serialization.py:185 @odata.type is not a known attribute of class &lt;class &#x27;azure.mgmt.media.models._models_py3.StandardEncoderPreset&#x27;&gt; and will be ignored<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_transform_scenarios.py::AmsTransformTests::test_ams_transform_create_custom_preset</td>
+          <td class="col-duration">0.10</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  msrest.serialization:serialization.py:185 @odata.type is not a known attribute of class &lt;class &#x27;azure.mgmt.media.models._models_py3.StandardEncoderPreset&#x27;&gt; and will be ignored<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_transform_scenarios.py::AmsTransformTests::test_ams_transform_create_custom_preset_invalid</td>
+          <td class="col-duration">0.09</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/ams/tests/latest/test_ams_transform_scenarios.py::AmsTransformTests::test_ams_transform_output_add</td>
+          <td class="col-duration">0.30</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  msrest.serialization:serialization.py:185 @odata.type is not a known attribute of class &lt;class &#x27;azure.mgmt.media.models._models_py3.StandardEncoderPreset&#x27;&gt; and will be ignored<br/></div></td></tr></tbody></table></body></html>

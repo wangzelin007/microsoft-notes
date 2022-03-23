@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title>Test Report</title>
+    <link href="assets/style.css" rel="stylesheet" type="text/css"/></head>
+  <body onLoad="init()">
+    <script>/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+function toArray(iter) {
+    if (iter === null) {
+        return null;
+    }
+    return Array.prototype.slice.call(iter);
+}
+
+function find(selector, elem) { // eslint-disable-line no-redeclare
+    if (!elem) {
+        elem = document;
+    }
+    return elem.querySelector(selector);
+}
+
+function findAll(selector, elem) {
+    if (!elem) {
+        elem = document;
+    }
+    return toArray(elem.querySelectorAll(selector));
+}
+
+function sortColumn(elem) {
+    toggleSortStates(elem);
+    const colIndex = toArray(elem.parentNode.childNodes).indexOf(elem);
+    let key;
+    if (elem.classList.contains('result')) {
+        key = keyResult;
+    } else if (elem.classList.contains('links')) {
+        key = keyLink;
+    } else if (elem.classList.contains('float')) {
+        key = keyFloat;
+    } else {
+        key = keyAlpha;
+    }
+    sortTable(elem, key(colIndex));
+}
+
+function showAllExtras() { // eslint-disable-line no-unused-vars
+    findAll('.col-result').forEach(showExtras);
+}
+
+function hideAllExtras() { // eslint-disable-line no-unused-vars
+    findAll('.col-result').forEach(hideExtras);
+}
+
+function showExtras(colresultElem) {
+    const extras = colresultElem.parentNode.nextElementSibling;
+    const expandcollapse = colresultElem.firstElementChild;
+    extras.classList.remove('collapsed');
+    expandcollapse.classList.remove('expander');
+    expandcollapse.classList.add('collapser');
+}
+
+function hideExtras(colresultElem) {
+    const extras = colresultElem.parentNode.nextElementSibling;
+    const expandcollapse = colresultElem.firstElementChild;
+    extras.classList.add('collapsed');
+    expandcollapse.classList.remove('collapser');
+    expandcollapse.classList.add('expander');
+}
+
+function showFilters() {
+    const filterItems = document.getElementsByClassName('filter');
+    for (let i = 0; i < filterItems.length; i++)
+        filterItems[i].hidden = false;
+}
+
+function addCollapse() {
+    // Add links for show/hide all
+    const resulttable = find('table#results-table');
+    const showhideall = document.createElement('p');
+    showhideall.innerHTML = '<a href="javascript:showAllExtras()">Show all details</a> / ' +
+                            '<a href="javascript:hideAllExtras()">Hide all details</a>';
+    resulttable.parentElement.insertBefore(showhideall, resulttable);
+
+    // Add show/hide link to each result
+    findAll('.col-result').forEach(function(elem) {
+        const collapsed = getQueryParameter('collapsed') || 'Passed';
+        const extras = elem.parentNode.nextElementSibling;
+        const expandcollapse = document.createElement('span');
+        if (extras.classList.contains('collapsed')) {
+            expandcollapse.classList.add('expander');
+        } else if (collapsed.includes(elem.innerHTML)) {
+            extras.classList.add('collapsed');
+            expandcollapse.classList.add('expander');
+        } else {
+            expandcollapse.classList.add('collapser');
+        }
+        elem.appendChild(expandcollapse);
+
+        elem.addEventListener('click', function(event) {
+            if (event.currentTarget.parentNode.nextElementSibling.classList.contains('collapsed')) {
+                showExtras(event.currentTarget);
+            } else {
+                hideExtras(event.currentTarget);
+            }
+        });
+    });
+}
+
+function getQueryParameter(name) {
+    const match = RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
+    return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
+}
+
+function init () { // eslint-disable-line no-unused-vars
+    resetSortHeaders();
+
+    addCollapse();
+
+    showFilters();
+
+    sortColumn(find('.initial-sort'));
+
+    findAll('.sortable').forEach(function(elem) {
+        elem.addEventListener('click',
+            function() {
+                sortColumn(elem);
+            }, false);
+    });
+}
+
+function sortTable(clicked, keyFunc) {
+    const rows = findAll('.results-table-row');
+    const reversed = !clicked.classList.contains('asc');
+    const sortedRows = sort(rows, keyFunc, reversed);
+    /* Whole table is removed here because browsers acts much slower
+     * when appending existing elements.
+     */
+    const thead = document.getElementById('results-table-head');
+    document.getElementById('results-table').remove();
+    const parent = document.createElement('table');
+    parent.id = 'results-table';
+    parent.appendChild(thead);
+    sortedRows.forEach(function(elem) {
+        parent.appendChild(elem);
+    });
+    document.getElementsByTagName('BODY')[0].appendChild(parent);
+}
+
+function sort(items, keyFunc, reversed) {
+    const sortArray = items.map(function(item, i) {
+        return [keyFunc(item), i];
+    });
+
+    sortArray.sort(function(a, b) {
+        const keyA = a[0];
+        const keyB = b[0];
+
+        if (keyA == keyB) return 0;
+
+        if (reversed) {
+            return keyA < keyB ? 1 : -1;
+        } else {
+            return keyA > keyB ? 1 : -1;
+        }
+    });
+
+    return sortArray.map(function(item) {
+        const index = item[1];
+        return items[index];
+    });
+}
+
+function keyAlpha(colIndex) {
+    return function(elem) {
+        return elem.childNodes[1].childNodes[colIndex].firstChild.data.toLowerCase();
+    };
+}
+
+function keyFloat(colIndex) {
+    return function(elem) {
+        return Number(elem.childNodes[1].childNodes[colIndex].firstChild.data);
+    };
+}
+
+function keyLink(colIndex) {
+    return function(elem) {
+        const dataCell = elem.childNodes[1].childNodes[colIndex].firstChild;
+        return dataCell == null ? '' : dataCell.innerText.toLowerCase();
+    };
+}
+
+function keyResult(colIndex) {
+    return function(elem) {
+        const strings = ['Error', 'Failed', 'Rerun', 'XFailed', 'XPassed',
+            'Skipped', 'Passed'];
+        return strings.indexOf(elem.childNodes[1].childNodes[colIndex].firstChild.data);
+    };
+}
+
+function resetSortHeaders() {
+    findAll('.sort-icon').forEach(function(elem) {
+        elem.parentNode.removeChild(elem);
+    });
+    findAll('.sortable').forEach(function(elem) {
+        const icon = document.createElement('div');
+        icon.className = 'sort-icon';
+        icon.textContent = 'vvv';
+        elem.insertBefore(icon, elem.firstChild);
+        elem.classList.remove('desc', 'active');
+        elem.classList.add('asc', 'inactive');
+    });
+}
+
+function toggleSortStates(elem) {
+    //if active, toggle between asc and desc
+    if (elem.classList.contains('active')) {
+        elem.classList.toggle('asc');
+        elem.classList.toggle('desc');
+    }
+
+    //if inactive, reset all other functions and add ascending active
+    if (elem.classList.contains('inactive')) {
+        resetSortHeaders();
+        elem.classList.remove('inactive');
+        elem.classList.add('active');
+    }
+}
+
+function isAllRowsHidden(value) {
+    return value.hidden == false;
+}
+
+function filterTable(elem) { // eslint-disable-line no-unused-vars
+    const outcomeAtt = 'data-test-result';
+    const outcome = elem.getAttribute(outcomeAtt);
+    const classOutcome = outcome + ' results-table-row';
+    const outcomeRows = document.getElementsByClassName(classOutcome);
+
+    for(let i = 0; i < outcomeRows.length; i++){
+        outcomeRows[i].hidden = !elem.checked;
+    }
+
+    const rows = findAll('.results-table-row').filter(isAllRowsHidden);
+    const allRowsHidden = rows.length == 0 ? true : false;
+    const notFoundMessage = document.getElementById('not-found-message');
+    notFoundMessage.hidden = !allRowsHidden;
+}
+</script>
+    <h1>batchai.report.parallel.html</h1>
+    <p>Report generated on 23-Mar-2022 at 17:47:56 by <a href="https://pypi.python.org/pypi/pytest-html">pytest-html</a> v3.1.1</p>
+    <h2>Summary</h2>
+    <p>79 tests ran in 8.36 seconds. </p>
+    <p class="filter" hidden="true">(Un)check the boxes to filter the results.</p><input checked="true" class="filter" data-test-result="passed" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="passed">79 passed</span>, <input checked="true" class="filter" data-test-result="skipped" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="skipped">1 skipped</span>, <input checked="true" class="filter" data-test-result="failed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="failed">0 failed</span>, <input checked="true" class="filter" data-test-result="error" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="error">0 errors</span>, <input checked="true" class="filter" data-test-result="xfailed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="xfailed">0 expected failures</span>, <input checked="true" class="filter" data-test-result="xpassed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="xpassed">0 unexpected passes</span>
+    <h2>Results</h2>
+    <table id="results-table">
+      <thead id="results-table-head">
+        <tr>
+          <th class="sortable result initial-sort" col="result">Result</th>
+          <th class="sortable" col="name">Test</th>
+          <th class="sortable float" col="duration">Duration</th>
+          <th class="sortable links" col="links">Links</th></tr>
+        <tr hidden="true" id="not-found-message">
+          <th colspan="4">No results found. Try to check the filters</th></tr></thead>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_live.py::BatchAILiveScenariosTests::test_cluster_job_node_exec</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\batchai\\tests\\latest\\test_batchai_live.py&#x27;, 20, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_batchai_add_azure_container_mount_volumes_account_and_key_via_cmd_line_args</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_batchai_add_azure_container_mount_volumes_account_and_key_via_env_variables</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_batchai_add_azure_container_mount_volumes_account_via_cmd_line_args</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_batchai_add_azure_container_mount_volumes_no_account</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_batchai_add_azure_container_mount_volumes_no_relative_path</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_batchai_add_azure_container_to_absent_mount_volumes</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_batchai_add_azure_file_share_to_absent_mount_volumes</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_batchai_add_azure_file_share_to_mount_volumes_account_and_key_via_command_line_args</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_batchai_add_azure_file_share_to_mount_volumes_account_and_key_via_env_variables</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_batchai_add_azure_file_share_to_mount_volumes_account_via_command_line_args</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_batchai_add_azure_file_share_to_mount_volumes_no_account_info</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_batchai_add_azure_file_share_to_mount_volumes_no_relative_mount_path</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_batchai_add_nfs_to_absent_mount_volumes</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_batchai_add_nfs_to_empty_mount_volumes</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_batchai_add_nfs_to_mount_volumes_no_relative_mount_path</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_batchai_add_nfs_to_non_empty_mount_volumes</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_batchai_patch_mount_volumes_empty_volumes</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_batchai_patch_mount_volumes_ill_formed_azure_file_url</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_batchai_patch_mount_volumes_no_azure_file_url</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_batchai_patch_mount_volumes_no_volumes</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_batchai_patch_mount_volumes_when_no_patching_required</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_batchai_patch_mount_volumes_with_credentials</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_batchai_patch_mount_volumes_with_credentials_no_account_found</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_batchai_patch_mount_volumes_with_credentials_no_account_given</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_batchai_patch_mount_volumes_with_templates_via_command_line_args</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_batchai_patch_mount_volumes_with_templates_via_env_variables</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_batchai_update_cluster_user_account_settings_using_command_line</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_batchai_update_cluster_user_account_settings_using_command_line_overriding_config</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_batchai_update_cluster_user_account_settings_using_command_line_when_key_is_path</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_batchai_update_cluster_user_account_settings_using_command_line_when_key_is_wrong</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_batchai_update_cluster_user_account_settings_using_config</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_batchai_update_cluster_user_account_settings_using_current_user</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_batchai_update_cluster_user_account_settings_using_current_user_and_default_ssh_key</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_batchai_update_file_server_user_account_settings_using_command_line</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_batchai_update_file_server_user_account_settings_using_command_line_overriding_config</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_batchai_update_file_server_user_account_settings_using_command_line_when_key_is_path</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_batchai_update_file_server_user_account_settings_using_config</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_batchai_update_file_server_user_account_settings_using_current_user</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_batchai_update_file_server_user_account_settings_using_current_user_and_default_ssh_key</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_batchai_update_fileserver_user_account_settings_using_command_line_when_key_is_wrong</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_batchai_update_nodes_information</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  msrest.serialization:serialization.py:185 location is not a known attribute of class &lt;class &#x27;azure.mgmt.batchai.models._models_py3.ClusterCreateParameters&#x27;&gt; and will be ignored<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_generate_auto_storage_account_name</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_get_effective_resource_parameters_when_name_given</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_get_effective_resource_parameters_when_none_given</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_get_effective_resource_parameters_when_resource_id_given</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_get_image_or_die_supported_aliases</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_get_image_or_die_unsupported_alias</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_get_image_or_die_with_custom_image_but_without_image</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_get_image_or_die_with_custom_image_with_version</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_get_image_or_die_with_custom_image_without_version</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_get_image_or_die_with_invalid_custom_image</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_get_image_or_die_with_invalid_spec</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_get_image_or_die_with_valid_spec</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_is_on_mount_point_no</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_is_on_mount_point_yes</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_list_setup_task_files_for_cluster_when_cluster_doesnt_support_suffix</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_list_setup_task_files_for_cluster_when_cluster_has_not_mount_volumes</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_list_setup_task_files_for_cluster_when_no_node_setup</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_list_setup_task_files_for_cluster_when_output_not_on_afs_or_bfs</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  msrest.serialization:serialization.py:185 mount_volumes is not a known attribute of class &lt;class &#x27;azure.mgmt.batchai.models._models_py3.Cluster&#x27;&gt; and will be ignored<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_list_setup_task_files_for_cluster_when_output_not_on_mounts_root</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_list_setup_task_files_for_cluster_when_output_on_afs</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_list_setup_task_files_for_cluster_when_output_on_bfs</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_setup_task_added_to_cluster_without_node_setup</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  msrest.serialization:serialization.py:185 run_elevated is not a known attribute of class &lt;class &#x27;azure.mgmt.batchai.models._models_py3.SetupTask&#x27;&gt; and will be ignored
+WARNING  msrest.serialization:serialization.py:185 run_elevated is not a known attribute of class &lt;class &#x27;azure.mgmt.batchai.models._models_py3.SetupTask&#x27;&gt; and will be ignored<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_setup_task_added_to_cluster_without_setup_task</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  msrest.serialization:serialization.py:185 run_elevated is not a known attribute of class &lt;class &#x27;azure.mgmt.batchai.models._models_py3.SetupTask&#x27;&gt; and will be ignored
+WARNING  msrest.serialization:serialization.py:185 run_elevated is not a known attribute of class &lt;class &#x27;azure.mgmt.batchai.models._models_py3.SetupTask&#x27;&gt; and will be ignored<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_setup_task_no_output</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_setup_task_overwrite</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  msrest.serialization:serialization.py:185 run_elevated is not a known attribute of class &lt;class &#x27;azure.mgmt.batchai.models._models_py3.SetupTask&#x27;&gt; and will be ignored
+WARNING  msrest.serialization:serialization.py:185 run_elevated is not a known attribute of class &lt;class &#x27;azure.mgmt.batchai.models._models_py3.SetupTask&#x27;&gt; and will be ignored<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_validate_subnet_no_conflicts</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_validate_subnet_no_nfs</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_validate_subnet_no_subnet</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_validate_subnet_when_conflict</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_custom.py::TestBatchAICustom::test_validate_subnet_wrong_resource_id</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_scenario.py::BatchAIEndToEndScenariosTest::test_batchai_auto_scale_scenario</td>
+          <td class="col-duration">1.21</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+<br/> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.batchai.custom:custom.py:929 Job submitted at 2020-11-11 05:48:36.631000+00:00
+WARNING  cli.azure.cli.command_modules.batchai.custom:custom.py:938 Job state: queued
+WARNING  cli.azure.cli.command_modules.batchai.custom:custom.py:935 Job started execution at 2020-11-11 05:52:47.195000+00:00
+WARNING  cli.azure.cli.command_modules.batchai.custom:custom.py:938 Job state: running
+WARNING  cli.azure.cli.command_modules.batchai.custom:custom.py:938 Job state: succeeded
+WARNING  cli.azure.cli.command_modules.batchai.custom:custom.py:941 Job completed at 2020-11-11 05:58:45+00:00; execution took 0:05:57.805000<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_scenario.py::BatchAIEndToEndScenariosTest::test_batchai_cluster_with_auto_storage</td>
+          <td class="col-duration">0.42</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+<br/> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.batchai.custom:custom.py:530 BatchAI will use existing clitest.rg000001 resource group for auto-storage account
+WARNING  cli.azure.cli.command_modules.batchai.custom:custom.py:541 Using existing bai000002 storage account as an auto-storage account<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_scenario.py::BatchAIEndToEndScenariosTest::test_batchai_cluster_with_file_systems</td>
+          <td class="col-duration">0.41</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_scenario.py::BatchAIEndToEndScenariosTest::test_batchai_cluster_with_setup_command</td>
+          <td class="col-duration">0.38</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+<br/> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.batchai.custom:custom.py:530 BatchAI will use existing clitest.rg000001 resource group for auto-storage account
+WARNING  cli.azure.cli.command_modules.batchai.custom:custom.py:541 Using existing bai000002 storage account as an auto-storage account
+WARNING  msrest.serialization:serialization.py:185 run_elevated is not a known attribute of class &lt;class &#x27;azure.mgmt.batchai.models._models_py3.SetupTask&#x27;&gt; and will be ignored<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_scenario.py::BatchAIEndToEndScenariosTest::test_batchai_config_less_cluster_with_file_systems</td>
+          <td class="col-duration">0.54</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_scenario.py::BatchAIEndToEndScenariosTest::test_batchai_job_level_mounting_scenario</td>
+          <td class="col-duration">1.32</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+<br/> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.batchai.custom:custom.py:929 Job submitted at 2021-02-22 11:08:36.205000+00:00
+WARNING  cli.azure.cli.command_modules.batchai.custom:custom.py:938 Job state: queued
+WARNING  cli.azure.cli.command_modules.batchai.custom:custom.py:935 Job started execution at 2021-02-22 11:10:38+00:00
+WARNING  cli.azure.cli.command_modules.batchai.custom:custom.py:938 Job state: running
+WARNING  cli.azure.cli.command_modules.batchai.custom:custom.py:938 Job state: succeeded
+WARNING  cli.azure.cli.command_modules.batchai.custom:custom.py:941 Job completed at 2021-02-22 11:16:37+00:00; execution took 0:05:59
+WARNING  cli.azure.cli.command_modules.batchai.custom:custom.py:929 Job submitted at 2021-02-22 11:16:49.592000+00:00
+WARNING  cli.azure.cli.command_modules.batchai.custom:custom.py:935 Job started execution at 2021-02-22 11:16:57+00:00
+WARNING  cli.azure.cli.command_modules.batchai.custom:custom.py:938 Job state: running
+WARNING  cli.azure.cli.command_modules.batchai.custom:custom.py:938 Job state: succeeded
+WARNING  cli.azure.cli.command_modules.batchai.custom:custom.py:941 Job completed at 2021-02-22 11:22:48+00:00; execution took 0:05:51<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_scenario.py::BatchAIEndToEndScenariosTest::test_batchai_manual_scale_scenario</td>
+          <td class="col-duration">2.94</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+<br/> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.batchai.custom:custom.py:929 Job submitted at 2021-02-22 10:24:31.478000+00:00
+WARNING  cli.azure.cli.command_modules.batchai.custom:custom.py:938 Job state: queued
+WARNING  cli.azure.cli.command_modules.batchai.custom:custom.py:935 Job started execution at 2021-02-22 10:26:57+00:00
+WARNING  cli.azure.cli.command_modules.batchai.custom:custom.py:938 Job state: running
+WARNING  cli.azure.cli.command_modules.batchai.custom:custom.py:938 Job state: succeeded
+WARNING  cli.azure.cli.command_modules.batchai.custom:custom.py:941 Job completed at 2021-02-22 10:32:52+00:00; execution took 0:05:55
+WARNING  cli.azure.cli.command_modules.batchai.custom:custom.py:929 Job submitted at 2021-02-22 10:43:14.362000+00:00
+WARNING  cli.azure.cli.command_modules.batchai.custom:custom.py:938 Job state: queued
+WARNING  cli.azure.cli.command_modules.batchai.custom:custom.py:935 Job started execution at 2021-02-22 10:45:43+00:00
+WARNING  cli.azure.cli.command_modules.batchai.custom:custom.py:938 Job state: running
+WARNING  cli.azure.cli.command_modules.batchai.custom:custom.py:938 Job state: succeeded
+WARNING  cli.azure.cli.command_modules.batchai.custom:custom.py:941 Job completed at 2021-02-22 10:51:40+00:00; execution took 0:05:57<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/batchai/tests/latest/test_batchai_scenario.py::BatchAIEndToEndScenariosTest::test_batchai_usages</td>
+          <td class="col-duration">0.24</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+WARNING: This command is implicitly deprecated because command group &#x27;batchai&#x27; is deprecated and will be removed in a future release.
+<br/></div></td></tr></tbody></table></body></html>

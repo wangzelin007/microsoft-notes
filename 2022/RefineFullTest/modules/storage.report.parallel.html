@@ -1,0 +1,2487 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title>Test Report</title>
+    <link href="assets/style.css" rel="stylesheet" type="text/css"/></head>
+  <body onLoad="init()">
+    <script>/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+function toArray(iter) {
+    if (iter === null) {
+        return null;
+    }
+    return Array.prototype.slice.call(iter);
+}
+
+function find(selector, elem) { // eslint-disable-line no-redeclare
+    if (!elem) {
+        elem = document;
+    }
+    return elem.querySelector(selector);
+}
+
+function findAll(selector, elem) {
+    if (!elem) {
+        elem = document;
+    }
+    return toArray(elem.querySelectorAll(selector));
+}
+
+function sortColumn(elem) {
+    toggleSortStates(elem);
+    const colIndex = toArray(elem.parentNode.childNodes).indexOf(elem);
+    let key;
+    if (elem.classList.contains('result')) {
+        key = keyResult;
+    } else if (elem.classList.contains('links')) {
+        key = keyLink;
+    } else if (elem.classList.contains('float')) {
+        key = keyFloat;
+    } else {
+        key = keyAlpha;
+    }
+    sortTable(elem, key(colIndex));
+}
+
+function showAllExtras() { // eslint-disable-line no-unused-vars
+    findAll('.col-result').forEach(showExtras);
+}
+
+function hideAllExtras() { // eslint-disable-line no-unused-vars
+    findAll('.col-result').forEach(hideExtras);
+}
+
+function showExtras(colresultElem) {
+    const extras = colresultElem.parentNode.nextElementSibling;
+    const expandcollapse = colresultElem.firstElementChild;
+    extras.classList.remove('collapsed');
+    expandcollapse.classList.remove('expander');
+    expandcollapse.classList.add('collapser');
+}
+
+function hideExtras(colresultElem) {
+    const extras = colresultElem.parentNode.nextElementSibling;
+    const expandcollapse = colresultElem.firstElementChild;
+    extras.classList.add('collapsed');
+    expandcollapse.classList.remove('collapser');
+    expandcollapse.classList.add('expander');
+}
+
+function showFilters() {
+    const filterItems = document.getElementsByClassName('filter');
+    for (let i = 0; i < filterItems.length; i++)
+        filterItems[i].hidden = false;
+}
+
+function addCollapse() {
+    // Add links for show/hide all
+    const resulttable = find('table#results-table');
+    const showhideall = document.createElement('p');
+    showhideall.innerHTML = '<a href="javascript:showAllExtras()">Show all details</a> / ' +
+                            '<a href="javascript:hideAllExtras()">Hide all details</a>';
+    resulttable.parentElement.insertBefore(showhideall, resulttable);
+
+    // Add show/hide link to each result
+    findAll('.col-result').forEach(function(elem) {
+        const collapsed = getQueryParameter('collapsed') || 'Passed';
+        const extras = elem.parentNode.nextElementSibling;
+        const expandcollapse = document.createElement('span');
+        if (extras.classList.contains('collapsed')) {
+            expandcollapse.classList.add('expander');
+        } else if (collapsed.includes(elem.innerHTML)) {
+            extras.classList.add('collapsed');
+            expandcollapse.classList.add('expander');
+        } else {
+            expandcollapse.classList.add('collapser');
+        }
+        elem.appendChild(expandcollapse);
+
+        elem.addEventListener('click', function(event) {
+            if (event.currentTarget.parentNode.nextElementSibling.classList.contains('collapsed')) {
+                showExtras(event.currentTarget);
+            } else {
+                hideExtras(event.currentTarget);
+            }
+        });
+    });
+}
+
+function getQueryParameter(name) {
+    const match = RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
+    return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
+}
+
+function init () { // eslint-disable-line no-unused-vars
+    resetSortHeaders();
+
+    addCollapse();
+
+    showFilters();
+
+    sortColumn(find('.initial-sort'));
+
+    findAll('.sortable').forEach(function(elem) {
+        elem.addEventListener('click',
+            function() {
+                sortColumn(elem);
+            }, false);
+    });
+}
+
+function sortTable(clicked, keyFunc) {
+    const rows = findAll('.results-table-row');
+    const reversed = !clicked.classList.contains('asc');
+    const sortedRows = sort(rows, keyFunc, reversed);
+    /* Whole table is removed here because browsers acts much slower
+     * when appending existing elements.
+     */
+    const thead = document.getElementById('results-table-head');
+    document.getElementById('results-table').remove();
+    const parent = document.createElement('table');
+    parent.id = 'results-table';
+    parent.appendChild(thead);
+    sortedRows.forEach(function(elem) {
+        parent.appendChild(elem);
+    });
+    document.getElementsByTagName('BODY')[0].appendChild(parent);
+}
+
+function sort(items, keyFunc, reversed) {
+    const sortArray = items.map(function(item, i) {
+        return [keyFunc(item), i];
+    });
+
+    sortArray.sort(function(a, b) {
+        const keyA = a[0];
+        const keyB = b[0];
+
+        if (keyA == keyB) return 0;
+
+        if (reversed) {
+            return keyA < keyB ? 1 : -1;
+        } else {
+            return keyA > keyB ? 1 : -1;
+        }
+    });
+
+    return sortArray.map(function(item) {
+        const index = item[1];
+        return items[index];
+    });
+}
+
+function keyAlpha(colIndex) {
+    return function(elem) {
+        return elem.childNodes[1].childNodes[colIndex].firstChild.data.toLowerCase();
+    };
+}
+
+function keyFloat(colIndex) {
+    return function(elem) {
+        return Number(elem.childNodes[1].childNodes[colIndex].firstChild.data);
+    };
+}
+
+function keyLink(colIndex) {
+    return function(elem) {
+        const dataCell = elem.childNodes[1].childNodes[colIndex].firstChild;
+        return dataCell == null ? '' : dataCell.innerText.toLowerCase();
+    };
+}
+
+function keyResult(colIndex) {
+    return function(elem) {
+        const strings = ['Error', 'Failed', 'Rerun', 'XFailed', 'XPassed',
+            'Skipped', 'Passed'];
+        return strings.indexOf(elem.childNodes[1].childNodes[colIndex].firstChild.data);
+    };
+}
+
+function resetSortHeaders() {
+    findAll('.sort-icon').forEach(function(elem) {
+        elem.parentNode.removeChild(elem);
+    });
+    findAll('.sortable').forEach(function(elem) {
+        const icon = document.createElement('div');
+        icon.className = 'sort-icon';
+        icon.textContent = 'vvv';
+        elem.insertBefore(icon, elem.firstChild);
+        elem.classList.remove('desc', 'active');
+        elem.classList.add('asc', 'inactive');
+    });
+}
+
+function toggleSortStates(elem) {
+    //if active, toggle between asc and desc
+    if (elem.classList.contains('active')) {
+        elem.classList.toggle('asc');
+        elem.classList.toggle('desc');
+    }
+
+    //if inactive, reset all other functions and add ascending active
+    if (elem.classList.contains('inactive')) {
+        resetSortHeaders();
+        elem.classList.remove('inactive');
+        elem.classList.add('active');
+    }
+}
+
+function isAllRowsHidden(value) {
+    return value.hidden == false;
+}
+
+function filterTable(elem) { // eslint-disable-line no-unused-vars
+    const outcomeAtt = 'data-test-result';
+    const outcome = elem.getAttribute(outcomeAtt);
+    const classOutcome = outcome + ' results-table-row';
+    const outcomeRows = document.getElementsByClassName(classOutcome);
+
+    for(let i = 0; i < outcomeRows.length; i++){
+        outcomeRows[i].hidden = !elem.checked;
+    }
+
+    const rows = findAll('.results-table-row').filter(isAllRowsHidden);
+    const allRowsHidden = rows.length == 0 ? true : false;
+    const notFoundMessage = document.getElementById('not-found-message');
+    notFoundMessage.hidden = !allRowsHidden;
+}
+</script>
+    <h1>storage.report.parallel.html</h1>
+    <p>Report generated on 23-Mar-2022 at 19:05:04 by <a href="https://pypi.python.org/pypi/pytest-html">pytest-html</a> v3.1.1</p>
+    <h2>Summary</h2>
+    <p>164 tests ran in 154.31 seconds. </p>
+    <p class="filter" hidden="true">(Un)check the boxes to filter the results.</p><input checked="true" class="filter" data-test-result="passed" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="passed">164 passed</span>, <input checked="true" class="filter" data-test-result="skipped" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="skipped">51 skipped</span>, <input checked="true" class="filter" data-test-result="failed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="failed">0 failed</span>, <input checked="true" class="filter" data-test-result="error" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="error">0 errors</span>, <input checked="true" class="filter" data-test-result="xfailed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="xfailed">0 expected failures</span>, <input checked="true" class="filter" data-test-result="xpassed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="xpassed">0 unexpected passes</span>
+    <h2>Results</h2>
+    <table id="results-table">
+      <thead id="results-table-head">
+        <tr>
+          <th class="sortable result initial-sort" col="result">Result</th>
+          <th class="sortable" col="name">Test</th>
+          <th class="sortable float" col="duration">Duration</th>
+          <th class="sortable links" col="links">Links</th></tr>
+        <tr hidden="true" id="not-found-message">
+          <th colspan="4">No results found. Try to check the filters</th></tr></thead>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_logging_error_operations</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_account_scenarios.py&#x27;, 691, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::RevokeStorageAccountTests::test_storage_account_revoke_delegation_keys</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_account_scenarios.py&#x27;, 1543, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountSkuScenarioTest::test_storage_account_sku</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_account_scenarios.py&#x27;, 1980, &#x27;Skipped: Storage account type Standard_ZRS cannot be changed to Standard_GZRS&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_adls_gen2_scenarios.py::StorageADLSGen2Tests::test_adls_access_recursive_scenarios</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_adls_gen2_scenarios.py&#x27;, 54, &#x27;Skipped: AssertionError: 0 != 1&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_adls_gen2_scenarios.py::StorageADLSGen2LiveTests::test_adls_directory_download</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_adls_gen2_scenarios.py&#x27;, 566, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_adls_gen2_scenarios.py::StorageADLSGen2LiveTests::test_adls_directory_upload</td>
+          <td class="col-duration">0.01</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_adls_gen2_scenarios.py&#x27;, 505, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_adls_upload_scenarios.py::StorageADLSUploadLiveTests::test_storage_file_upload_2G_file</td>
+          <td class="col-duration">0.01</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_adls_upload_scenarios.py&#x27;, 17, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_azcopy_scenarios.py::StorageAzcopyTests::test_storage_azcopy_blob_account</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_azcopy_scenarios.py&#x27;, 477, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_azcopy_scenarios.py::StorageAzcopyTests::test_storage_azcopy_blob_source_with_credential</td>
+          <td class="col-duration">0.01</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_azcopy_scenarios.py&#x27;, 571, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_azcopy_scenarios.py::StorageAzcopyTests::test_storage_azcopy_blob_url</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_azcopy_scenarios.py&#x27;, 381, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_azcopy_scenarios.py::StorageAzcopyTests::test_storage_azcopy_file_account</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_azcopy_scenarios.py&#x27;, 693, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_azcopy_scenarios.py::StorageAzcopyTests::test_storage_azcopy_file_url</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_azcopy_scenarios.py&#x27;, 645, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_azcopy_scenarios.py::StorageAzcopyTests::test_storage_azcopy_remove_sas</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_azcopy_scenarios.py&#x27;, 338, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_azcopy_scenarios.py::StorageAzcopyTests::test_storage_blob_azcopy_remove</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_azcopy_scenarios.py&#x27;, 213, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_azcopy_scenarios.py::StorageAzcopyTests::test_storage_blob_azcopy_sync</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_azcopy_scenarios.py&#x27;, 16, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_azcopy_scenarios.py::StorageAzcopyTests::test_storage_blob_azcopy_sync_oauth</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_azcopy_scenarios.py&#x27;, 103, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_azcopy_scenarios.py::StorageAzcopyTests::test_storage_blob_azcopy_sync_sas</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_azcopy_scenarios.py&#x27;, 190, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_azcopy_scenarios.py::StorageAzcopyTests::test_storage_file_azcopy_remove</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_azcopy_scenarios.py&#x27;, 297, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_batch_operations.py::StorageBatchOperationScenarios::test_storage_blob_batch_copy</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_batch_operations.py&#x27;, 249, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_batch_operations.py::StorageBatchOperationScenarios::test_storage_blob_batch_delete_scenarios</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_batch_operations.py&#x27;, 397, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_batch_operations.py::StorageBatchOperationScenarios::test_storage_blob_batch_download_scenarios</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_batch_operations.py&#x27;, 14, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_batch_operations.py::StorageBatchOperationScenarios::test_storage_blob_batch_sas_scenarios</td>
+          <td class="col-duration">0.01</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_batch_operations.py&#x27;, 513, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_batch_operations.py::StorageBatchOperationScenarios::test_storage_blob_batch_upload_scenarios</td>
+          <td class="col-duration">0.01</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_batch_operations.py&#x27;, 80, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_batch_operations.py::StorageBatchOperationScenarios::test_storage_file_batch_copy</td>
+          <td class="col-duration">0.01</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_batch_operations.py&#x27;, 328, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_batch_operations.py::StorageBatchOperationScenarios::test_storage_file_batch_delete_scenarios</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_batch_operations.py&#x27;, 460, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_batch_operations.py::StorageBatchOperationScenarios::test_storage_file_batch_download_scenarios</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_batch_operations.py&#x27;, 145, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_batch_operations.py::StorageBatchOperationScenarios::test_storage_file_batch_upload_scenarios</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_batch_operations.py&#x27;, 200, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_blob_copy_scenarios.py::StorageBlobCopyTests::test_storage_blob_copy_requires_sync</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_blob_copy_scenarios.py&#x27;, 136, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_blob_copy_scenarios.py::StorageBlobCopyTests::test_storage_blob_copy_same_account_sas</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_blob_copy_scenarios.py&#x27;, 66, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_blob_copy_scenarios.py::StorageBlobCopyTests::test_storage_blob_copy_with_sas_and_snapshot</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_blob_copy_scenarios.py&#x27;, 11, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_blob_live_scenarios.py::StorageBlobUploadLiveTests::test_storage_blob_upload</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_blob_live_scenarios.py&#x27;, 99, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_blob_live_scenarios.py::StorageBlobUploadLiveTests::test_storage_blob_upload_10G_file</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_blob_live_scenarios.py&#x27;, 48, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_blob_live_scenarios.py::StorageBlobUploadLiveTests::test_storage_blob_upload_128mb_file</td>
+          <td class="col-duration">0.01</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_blob_live_scenarios.py&#x27;, 17, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_blob_live_scenarios.py::StorageBlobUploadLiveTests::test_storage_blob_upload_1G_file</td>
+          <td class="col-duration">0.01</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_blob_live_scenarios.py&#x27;, 35, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_blob_live_scenarios.py::StorageBlobUploadLiveTests::test_storage_blob_upload_256mb_file</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_blob_live_scenarios.py&#x27;, 29, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_blob_live_scenarios.py::StorageBlobUploadLiveTests::test_storage_blob_upload_2G_file</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_blob_live_scenarios.py&#x27;, 41, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_blob_live_scenarios.py::StorageBlobUploadLiveTests::test_storage_blob_upload_64mb_file</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_blob_live_scenarios.py&#x27;, 23, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_blob_live_scenarios.py::StorageBlobUploadLiveTests::test_storage_page_blob_upload_10G_file</td>
+          <td class="col-duration">0.01</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_blob_live_scenarios.py&#x27;, 55, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_blob_live_scenarios.py::StorageBlobQueryTests::test_storage_blob_query_scenario</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_blob_live_scenarios.py&#x27;, 134, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_blob_rewrite_scenarios.py::StorageBlobRewriteTests::test_storage_blob_rewrite_encryption_scope</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_blob_rewrite_scenarios.py&#x27;, 28, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_blob_rewrite_scenarios.py::StorageBlobRewriteTests::test_storage_blob_rewrite_encryption_scope_64mb</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_blob_rewrite_scenarios.py&#x27;, 16, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_blob_rewrite_scenarios.py::StorageBlobRewriteTests::test_storage_blob_rewrite_encryption_scope_6G</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_blob_rewrite_scenarios.py&#x27;, 22, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_sas_scenarios.py::StorageSASScenario::test_storage_account_sas_scenario</td>
+          <td class="col-duration">0.01</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_sas_scenarios.py&#x27;, 136, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_sas_scenarios.py::StorageSASScenario::test_storage_blob_sas_scenario</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_sas_scenarios.py&#x27;, 66, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_sas_scenarios.py::StorageSASScenario::test_storage_file_sas_scenario</td>
+          <td class="col-duration">0.01</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_sas_scenarios.py&#x27;, 13, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_sas_scenarios.py::StorageSASScenario::test_storage_fs_sas_scenario</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_sas_scenarios.py&#x27;, 155, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_sas_scenarios.py::StorageSASScenario::test_storage_queue_sas_scenario</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_sas_scenarios.py&#x27;, 118, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_sas_tokan_url_scenarios.py::StorageFileShareScenarios::test_storage_file_url_sas_token_scenario</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_sas_tokan_url_scenarios.py&#x27;, 15, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_sas_tokan_url_scenarios.py::StorageBlobShareScenarios::test_storage_blob_url_sas_token_scenario</td>
+          <td class="col-duration">0.01</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_sas_tokan_url_scenarios.py&#x27;, 44, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_scenarios_non_ascii_chars.py::StorageCopyTests::test_storage_blob_copy_non_ascii</td>
+          <td class="col-duration">0.01</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_scenarios_non_ascii_chars.py&#x27;, 13, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_scenarios_non_ascii_chars.py::StorageCopyTests::test_storage_file_copy_non_ascii</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\storage\\tests\\latest\\test_storage_scenarios_non_ascii_chars.py&#x27;, 39, &#x27;Skipped: This is a live only test. A live test will bypass all vcrpy components.&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_create_account_sas</td>
+          <td class="col-duration">0.73</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_create_storage_account</td>
+          <td class="col-duration">1.79</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_create_storage_account_v2</td>
+          <td class="col-duration">0.29</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_create_storage_account_with_assigned_identity</td>
+          <td class="col-duration">0.24</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_create_storage_account_with_double_encryption</td>
+          <td class="col-duration">0.31</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_create_storage_account_with_files_aadds</td>
+          <td class="col-duration">0.19</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_create_storage_account_with_files_aadds_false</td>
+          <td class="col-duration">0.18</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_create_storage_account_with_files_aadds_true</td>
+          <td class="col-duration">0.24</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_create_storage_account_with_files_adds</td>
+          <td class="col-duration">0.32</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_create_storage_account_with_files_adds_false</td>
+          <td class="col-duration">0.35</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_create_storage_account_with_files_adds_true</td>
+          <td class="col-duration">0.20</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_create_storage_account_with_public_network_access</td>
+          <td class="col-duration">0.42</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_customer_managed_key</td>
+          <td class="col-duration">1.66</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_list_locations</td>
+          <td class="col-duration">0.10</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_list_storage_accounts</td>
+          <td class="col-duration">0.24</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_logging_operations</td>
+          <td class="col-duration">1.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: This command is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_management_policy</td>
+          <td class="col-duration">0.64</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 (ManagementPolicyNotFound) No ManagementPolicy found for account clitest000002
+Code: ManagementPolicyNotFound
+Message: No ManagementPolicy found for account clitest000002
+ERROR    az_command_data_logger:azlogging.py:213 (ManagementPolicyNotFound) No ManagementPolicy found for account clitest000002
+Code: ManagementPolicyNotFound
+Message: No ManagementPolicy found for account clitest000002<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_metrics_operations</td>
+          <td class="col-duration">0.30</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_renew_account_kerb_key</td>
+          <td class="col-duration">1.19</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Argument &#x27;--expand-key-type&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_renew_account_key</td>
+          <td class="col-duration">0.27</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>[{&#x27;creationTime&#x27;: &#x27;2022-02-23T03:19:49.863518+00:00&#x27;, &#x27;keyName&#x27;: &#x27;key1&#x27;, &#x27;permissions&#x27;: &#x27;FULL&#x27;, &#x27;value&#x27;: &#x27;3Q7vv6sVPMUokHTAnzt9wFk5VWOcKKgm540a1mA4cmtzMcDNXMb9MKUOAPivF9VVxdGIUFc4v8XU47IhpG0xlQ==&#x27;}, {&#x27;creationTime&#x27;: &#x27;2022-02-23T03:19:24.972791+00:00&#x27;, &#x27;keyName&#x27;: &#x27;key2&#x27;, &#x27;permissions&#x27;: &#x27;FULL&#x27;, &#x27;value&#x27;: &#x27;veryFakedStorageAccountKey==&#x27;}]
+[{&#x27;creationTime&#x27;: &#x27;2022-02-23T03:19:24.972791+00:00&#x27;, &#x27;keyName&#x27;: &#x27;key1&#x27;, &#x27;permissions&#x27;: &#x27;FULL&#x27;, &#x27;value&#x27;: &#x27;veryFakedStorageAccountKey==&#x27;}, {&#x27;creationTime&#x27;: &#x27;2022-02-23T03:19:24.972791+00:00&#x27;, &#x27;keyName&#x27;: &#x27;key2&#x27;, &#x27;permissions&#x27;: &#x27;FULL&#x27;, &#x27;value&#x27;: &#x27;veryFakedStorageAccountKey==&#x27;}]
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_show_usage</td>
+          <td class="col-duration">0.24</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_show_usage_no_location</td>
+          <td class="col-duration">0.09</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>
+Examples from AI knowledge base:
+az storage account show-usage --location westus2
+Show the current count and limit of the storage accounts under the subscription. (autogenerated)
+
+https://aka.ms/cli_ref
+Read more about the command in reference docs
+<br/> -------------------------------Captured log call-------------------------------- <br/>ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 the following arguments are required: --location/-l
+ERROR    az_command_data_logger:azlogging.py:213 the following arguments are required: --location/-l<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_storage_account_extended_location</td>
+          <td class="col-duration">0.43</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Argument &#x27;--edge-zone&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Argument &#x27;--edge-zone&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_storage_account_resource_access_rules</td>
+          <td class="col-duration">1.25</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_storage_account_service_endpoints</td>
+          <td class="col-duration">2.07</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_storage_account_show_exit_codes</td>
+          <td class="col-duration">0.31</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>
+Examples from AI knowledge base:
+https://aka.ms/cli_ref
+Read more about the command in reference docs
+<br/> -------------------------------Captured log call-------------------------------- <br/>ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 unrecognized arguments: text_causing_parsing_error
+ERROR    az_command_data_logger:azlogging.py:213 unrecognized arguments: text_causing_parsing_error
+ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 (ResourceGroupNotFound) Resource group &#x27;fake_group&#x27; could not be found.
+Code: ResourceGroupNotFound
+Message: Resource group &#x27;fake_group&#x27; could not be found.
+ERROR    az_command_data_logger:azlogging.py:213 (ResourceGroupNotFound) Resource group &#x27;fake_group&#x27; could not be found.
+Code: ResourceGroupNotFound
+Message: Resource group &#x27;fake_group&#x27; could not be found.
+ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 (ResourceNotFound) The Resource &#x27;Microsoft.Storage/storageAccounts/fake_account&#x27; under resource group &#x27;clitest.rg000001&#x27; was not found. For more details please go to https://aka.ms/ARMResourceNotFoundFix
+Code: ResourceNotFound
+Message: The Resource &#x27;Microsoft.Storage/storageAccounts/fake_account&#x27; under resource group &#x27;clitest.rg000001&#x27; was not found. For more details please go to https://aka.ms/ARMResourceNotFoundFix
+ERROR    az_command_data_logger:azlogging.py:213 (ResourceNotFound) The Resource &#x27;Microsoft.Storage/storageAccounts/fake_account&#x27; under resource group &#x27;clitest.rg000001&#x27; was not found. For more details please go to https://aka.ms/ARMResourceNotFoundFix
+Code: ResourceNotFound
+Message: The Resource &#x27;Microsoft.Storage/storageAccounts/fake_account&#x27; under resource group &#x27;clitest.rg000001&#x27; was not found. For more details please go to https://aka.ms/ARMResourceNotFoundFix<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_storage_account_with_alw</td>
+          <td class="col-duration">2.66</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_storage_account_with_default_share_permission</td>
+          <td class="col-duration">0.44</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_storage_account_with_files_adds_sam_account_name</td>
+          <td class="col-duration">0.46</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_storage_account_with_key_and_sas_policy</td>
+          <td class="col-duration">0.68</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Argument &#x27;--key-expiration-period-in-days&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Argument &#x27;--sas-expiration-period&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Argument &#x27;--key-expiration-period-in-days&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Argument &#x27;--sas-expiration-period&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_storage_account_with_nfs</td>
+          <td class="col-duration">0.96</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Argument &#x27;--enable-nfs-v3&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Argument &#x27;--enable-nfs-v3&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Argument &#x27;--enable-nfs-v3&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_storage_account_with_routing_preference</td>
+          <td class="col-duration">0.93</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_storage_account_with_shared_key_access</td>
+          <td class="col-duration">0.93</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_storage_create_default_kind</td>
+          <td class="col-duration">0.26</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_storage_create_default_sku</td>
+          <td class="col-duration">0.23</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_storage_create_with_encryption_key_type</td>
+          <td class="col-duration">0.20</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_storage_create_with_hns</td>
+          <td class="col-duration">0.28</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_storage_create_with_hns_false</td>
+          <td class="col-duration">0.20</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_storage_create_with_hns_true</td>
+          <td class="col-duration">0.15</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_storage_create_with_min_tls</td>
+          <td class="col-duration">0.97</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_storage_create_with_public_access</td>
+          <td class="col-duration">0.66</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_storage_update_with_min_tls</td>
+          <td class="col-duration">0.39</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_storage_update_with_public_access</td>
+          <td class="col-duration">0.62</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_update_storage_account_with_assigned_identity</td>
+          <td class="col-duration">0.45</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_update_storage_account_with_files_aadds</td>
+          <td class="col-duration">0.30</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_update_storage_account_with_files_aadds_false</td>
+          <td class="col-duration">0.37</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_update_storage_account_with_files_aadds_true</td>
+          <td class="col-duration">0.40</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_update_storage_account_with_files_adds</td>
+          <td class="col-duration">0.28</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_update_storage_account_with_files_adds_false</td>
+          <td class="col-duration">0.35</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_update_storage_account_with_files_adds_true</td>
+          <td class="col-duration">0.31</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_update_storage_account_with_public_network_access</td>
+          <td class="col-duration">0.58</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountTests::test_user_assigned_identity</td>
+          <td class="col-duration">3.55</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::BlobServicePropertiesTests::test_storage_account_default_service_properties</td>
+          <td class="col-duration">0.37</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::BlobServicePropertiesTests::test_storage_account_update_change_feed</td>
+          <td class="col-duration">1.02</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Argument &#x27;--change-feed-retention-days&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Argument &#x27;--change-feed-retention-days&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Argument &#x27;--change-feed-retention-days&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Argument &#x27;--change-feed-retention-days&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Argument &#x27;--change-feed-retention-days&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Argument &#x27;--change-feed-retention-days&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Argument &#x27;--change-feed-retention-days&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Argument &#x27;--change-feed-retention-days&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::BlobServicePropertiesTests::test_storage_account_update_container_delete_retention_policy</td>
+          <td class="col-duration">1.14</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 incorrect usage: you have to provide value for &#x27;--enable-container-delete-retention&#x27; when &#x27;--enable-container-delete-retention&#x27; is set to true
+ERROR    az_command_data_logger:azlogging.py:213 incorrect usage: you have to provide value for &#x27;--enable-container-delete-retention&#x27; when &#x27;--enable-container-delete-retention&#x27; is set to true
+ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 incorrect usage: &#x27;--enable-container-delete-retention&#x27; is invalid when &#x27;--enable-container-delete-retention&#x27; is set to false
+ERROR    az_command_data_logger:azlogging.py:213 incorrect usage: &#x27;--enable-container-delete-retention&#x27; is invalid when &#x27;--enable-container-delete-retention&#x27; is set to false
+ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 incorrect usage: please specify &#x27;--enable-container-delete-retention true&#x27; if you want to set the value for &#x27;--enable-container-delete-retention&#x27;
+ERROR    az_command_data_logger:azlogging.py:213 incorrect usage: please specify &#x27;--enable-container-delete-retention true&#x27; if you want to set the value for &#x27;--enable-container-delete-retention&#x27;
+ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 incorrect usage: &#x27;--enable-container-delete-retention&#x27; must be greater than or equal to 1
+ERROR    az_command_data_logger:azlogging.py:213 incorrect usage: &#x27;--enable-container-delete-retention&#x27; must be greater than or equal to 1
+ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 incorrect usage: &#x27;--enable-container-delete-retention&#x27; must be greater than or equal to 1
+ERROR    az_command_data_logger:azlogging.py:213 incorrect usage: &#x27;--enable-container-delete-retention&#x27; must be greater than or equal to 1
+ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 incorrect usage: &#x27;--enable-container-delete-retention&#x27; must be less than or equal to 365
+ERROR    az_command_data_logger:azlogging.py:213 incorrect usage: &#x27;--enable-container-delete-retention&#x27; must be less than or equal to 365<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::BlobServicePropertiesTests::test_storage_account_update_delete_retention_policy</td>
+          <td class="col-duration">0.84</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 incorrect usage: you have to provide value for &#x27;--enable-delete-retention&#x27; when &#x27;--enable-delete-retention&#x27; is set to true
+ERROR    az_command_data_logger:azlogging.py:213 incorrect usage: you have to provide value for &#x27;--enable-delete-retention&#x27; when &#x27;--enable-delete-retention&#x27; is set to true
+ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 incorrect usage: &#x27;--enable-delete-retention&#x27; is invalid when &#x27;--enable-delete-retention&#x27; is set to false
+ERROR    az_command_data_logger:azlogging.py:213 incorrect usage: &#x27;--enable-delete-retention&#x27; is invalid when &#x27;--enable-delete-retention&#x27; is set to false
+ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 incorrect usage: please specify &#x27;--enable-delete-retention true&#x27; if you want to set the value for &#x27;--enable-delete-retention&#x27;
+ERROR    az_command_data_logger:azlogging.py:213 incorrect usage: please specify &#x27;--enable-delete-retention true&#x27; if you want to set the value for &#x27;--enable-delete-retention&#x27;
+ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 incorrect usage: &#x27;--enable-delete-retention&#x27; must be greater than or equal to 1
+ERROR    az_command_data_logger:azlogging.py:213 incorrect usage: &#x27;--enable-delete-retention&#x27; must be greater than or equal to 1
+ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 incorrect usage: &#x27;--enable-delete-retention&#x27; must be greater than or equal to 1
+ERROR    az_command_data_logger:azlogging.py:213 incorrect usage: &#x27;--enable-delete-retention&#x27; must be greater than or equal to 1
+ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 incorrect usage: &#x27;--enable-delete-retention&#x27; must be less than or equal to 365
+ERROR    az_command_data_logger:azlogging.py:213 incorrect usage: &#x27;--enable-delete-retention&#x27; must be less than or equal to 365<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::BlobServicePropertiesTests::test_storage_account_update_last_access</td>
+          <td class="col-duration">0.43</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::BlobServicePropertiesTests::test_storage_account_update_versioning</td>
+          <td class="col-duration">0.62</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::FileServicePropertiesTests::test_storage_account_file_delete_retention_policy</td>
+          <td class="col-duration">0.86</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::FileServicePropertiesTests::test_storage_account_file_secured_smb</td>
+          <td class="col-duration">0.28</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::FileServicePropertiesTests::test_storage_account_file_smb_multichannel</td>
+          <td class="col-duration">0.81</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountPrivateLinkScenarioTest::test_storage_account_private_link</td>
+          <td class="col-duration">0.09</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: This command is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountPrivateEndpointScenarioTest::test_storage_account_private_endpoint</td>
+          <td class="col-duration">1.45</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: This command is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Option &#x27;--group-ids&#x27; has been deprecated and will be removed in a future release. Use &#x27;--group-id&#x27; instead.
+WARNING: Command group &#x27;storage account private-endpoint-connection&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;storage account private-endpoint-connection&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;storage account private-endpoint-connection&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;storage account private-endpoint-connection&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;storage account private-endpoint-connection&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountFailoverScenarioTest::test_storage_account_failover</td>
+          <td class="col-duration">0.64</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: This command is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountLocalContextScenarioTest::test_storage_account_local_context</td>
+          <td class="col-duration">0.86</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: This command is implicitly deprecated because command group &#x27;local-context&#x27; is deprecated and will be removed in a future release. Use &#x27;config param-persist&#x27; instead.
+WARNING: Command group &#x27;local-context&#x27; is experimental and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: This command is implicitly deprecated because command group &#x27;local-context&#x27; is deprecated and will be removed in a future release. Use &#x27;config param-persist&#x27; instead.
+WARNING: Command group &#x27;local-context&#x27; is experimental and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: This command is implicitly deprecated because command group &#x27;local-context&#x27; is deprecated and will be removed in a future release. Use &#x27;config param-persist&#x27; instead.
+WARNING: Command group &#x27;local-context&#x27; is experimental and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.configure.custom:custom.py:205 Local context is turned on, you can run `az local-context off` to turn it off.
+WARNING  cli.azure.cli.core:__init__.py:169 Parameter persistence is turned on. Its information is saved in working directory C:\Code\microsoft-notes\2022\RefineFullTest. You can run `az config param-persist off` to turn it off.
+WARNING  cli.azure.cli.core:__init__.py:175 Your preference of --resource-group: clistorage000001, --name: cli000002 are now saved as persistent parameter. To learn more, type in `az config param-persist --help`
+WARNING  cli.azure.cli.core.commands:__init__.py:600 Parameter persistence is turned on. Its information is saved in working directory C:\Code\microsoft-notes\2022\RefineFullTest. You can run `az config param-persist off` to turn it off.
+WARNING  cli.azure.cli.core.commands:__init__.py:606 Command argument values from persistent parameters: --resource-group: clistorage000001, --name: cli000002
+WARNING  cli.azure.cli.core.commands:__init__.py:600 Parameter persistence is turned on. Its information is saved in working directory C:\Code\microsoft-notes\2022\RefineFullTest. You can run `az config param-persist off` to turn it off.
+WARNING  cli.azure.cli.core.commands:__init__.py:606 Command argument values from persistent parameters: --resource-group: clistorage000001
+WARNING  cli.azure.cli.command_modules.configure.custom:custom.py:213 Local context is turned off, you can run `az local-context on` to turn it on.
+WARNING  cli.azure.cli.core.local_context:local_context.py:136 Parameter persistence file in working directory C:\Code\microsoft-notes\2022\RefineFullTest is deleted.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountORScenarioTest::test_storage_account_allow_cross_tenant_replication</td>
+          <td class="col-duration">0.61</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountORScenarioTest::test_storage_account_cross_tenant_or_policy</td>
+          <td class="col-duration">0.51</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Command group &#x27;storage account or-policy&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountORScenarioTest::test_storage_account_or_policy</td>
+          <td class="col-duration">3.50</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Command group &#x27;storage account or-policy&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;storage account or-policy&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;storage account or-policy rule&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;storage account or-policy rule&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;storage account or-policy rule&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;storage account or-policy rule&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;storage account or-policy rule&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;storage account or-policy rule&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;storage account or-policy rule&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;storage account or-policy rule&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;storage account or-policy&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;storage account or-policy&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;storage account or-policy&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;storage account or-policy&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;storage account or-policy&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;storage account or-policy&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;storage account or-policy&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;storage account or-policy&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountBlobInventoryScenarioTest::test_storage_account_blob_inventory_policy</td>
+          <td class="col-duration">1.04</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Command group &#x27;storage account blob-inventory-policy&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;storage account blob-inventory-policy&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;storage account blob-inventory-policy&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;storage account blob-inventory-policy&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;storage account blob-inventory-policy&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;storage account blob-inventory-policy&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;storage account blob-inventory-policy&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;storage account blob-inventory-policy&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/> -------------------------------Captured log call-------------------------------- <br/>ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 (BlobInventoryPolicyNotFound) Blob inventory policy does not exist for the storage account.
+Code: BlobInventoryPolicyNotFound
+Message: Blob inventory policy does not exist for the storage account.
+ERROR    az_command_data_logger:azlogging.py:213 (BlobInventoryPolicyNotFound) Blob inventory policy does not exist for the storage account.
+Code: BlobInventoryPolicyNotFound
+Message: Blob inventory policy does not exist for the storage account.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_account_scenarios.py::StorageAccountHNSMigrationScenarioTest::test_storage_account_start_hns_migration</td>
+          <td class="col-duration">9.51</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_acl_scenarios.py::StorageAccessControlListTests::test_storage_container_acl_scenarios</td>
+          <td class="col-duration">1.44</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_acl_scenarios.py::StorageAccessControlListTests::test_storage_share_acl_scenarios</td>
+          <td class="col-duration">1.76</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_adls_gen2_scenarios.py::StorageADLSGen2Tests::test_adls_access_scenarios</td>
+          <td class="col-duration">1.12</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_adls_gen2_scenarios.py::StorageADLSGen2Tests::test_adls_directory_scenarios</td>
+          <td class="col-duration">2.44</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_adls_gen2_scenarios.py::StorageADLSGen2Tests::test_adls_file_scenarios</td>
+          <td class="col-duration">2.76</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Argument &#x27;--show-next-marker&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Argument &#x27;--show-next-marker&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.storage.operations.fs_file:fs_file.py:87 Next Marker:
+WARNING  cli.azure.cli.command_modules.storage.operations.fs_file:fs_file.py:88 VBbKqqu35+7oqRUYZhhhL2NsaXRlc3RtYjVsbmhkeDJucWFtemYyYQEwMUQ4Mjg2NUZDRERCNjBEL2ZpbGVzeXN0ZW01Mnp5dDN0eHliYXhyZAEwMUQ4Mjg2NjBBN0VBREEyL2ZpbGV4ZDJ4ZHhtdRYAAAA=<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_adls_gen2_scenarios.py::StorageADLSGen2Tests::test_adls_filesystem_scenarios</td>
+          <td class="col-duration">1.34</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_adls_gen2_scenarios.py::StorageADLSGen2Tests::test_adls_metadata_scenarios</td>
+          <td class="col-duration">1.20</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_adls_gen2_scenarios.py::StorageADLSGen2Tests::test_storage_fs_generate_sas_as_user</td>
+          <td class="col-duration">0.38</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: This command is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: This command is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_adls_gen2_scenarios.py::StorageADLSGen2Tests::test_storage_fs_generate_sas_full_uri</td>
+          <td class="col-duration">0.28</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: This command is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_blob_scenarios.py::StorageBlobUploadTests::test_storage_blob_append</td>
+          <td class="col-duration">0.55</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_blob_scenarios.py::StorageBlobUploadTests::test_storage_blob_container_operations</td>
+          <td class="col-duration">2.55</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_blob_scenarios.py::StorageBlobUploadTests::test_storage_blob_copy_cancel_nopendingcopyoperation_error</td>
+          <td class="col-duration">0.78</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>ERROR    azure.multiapi.storage.v2018_11_09.common.storageclient:storageclient.py:424 Client-Request-ID=e98ec6fd-aa98-11ec-b715-ac74b19db060 Retry policy did not allow for a retry: Server-Timestamp=Wed, 23 Feb 2022 03:34:43 GMT, HTTP status code=409, Exception=There is currently no pending copy operation. ErrorCode: NoPendingCopyOperation&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;&lt;Error&gt;&lt;Code&gt;NoPendingCopyOperation&lt;/Code&gt;&lt;Message&gt;There is currently no pending copy operation.RequestId:48f25e90-201e-002d-1166-286155000000Time:2022-02-23T03:34:43.7170700Z&lt;/Message&gt;&lt;/Error&gt;.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_blob_scenarios.py::StorageBlobUploadTests::test_storage_blob_download_directory</td>
+          <td class="col-duration">0.23</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_blob_scenarios.py::StorageBlobUploadTests::test_storage_blob_generate_sas_as_user</td>
+          <td class="col-duration">0.43</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_blob_scenarios.py::StorageBlobUploadTests::test_storage_blob_generate_sas_full_uri</td>
+          <td class="col-duration">0.29</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_blob_scenarios.py::StorageBlobUploadTests::test_storage_blob_incremental_copy</td>
+          <td class="col-duration">0.69</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_blob_scenarios.py::StorageBlobUploadTests::test_storage_blob_lease_operations</td>
+          <td class="col-duration">1.41</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  msrest.serialization:serialization.py:1092 Datetime with no tzinfo will be considered UTC.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_blob_scenarios.py::StorageBlobUploadTests::test_storage_blob_metadata_operations</td>
+          <td class="col-duration">0.73</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_blob_scenarios.py::StorageBlobUploadTests::test_storage_blob_no_credentials_scenario</td>
+          <td class="col-duration">0.13</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_blob_scenarios.py::StorageBlobUploadTests::test_storage_blob_snapshot_operations</td>
+          <td class="col-duration">0.48</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_blob_scenarios.py::StorageBlobUploadTests::test_storage_blob_soft_delete</td>
+          <td class="col-duration">1.24</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_blob_scenarios.py::StorageBlobUploadTests::test_storage_blob_suppress_400</td>
+          <td class="col-duration">0.33</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 Operation returned an invalid status &#x27;The specified container does not exist.&#x27;
+ErrorCode:ContainerNotFound
+ERROR    az_command_data_logger:azlogging.py:213 Operation returned an invalid status &#x27;The specified container does not exist.&#x27;
+ErrorCode:ContainerNotFound<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_blob_scenarios.py::StorageBlobUploadTests::test_storage_blob_update_service_properties</td>
+          <td class="col-duration">0.98</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_blob_scenarios.py::StorageBlobUploadTests::test_storage_blob_upload_content_md5_scenarios</td>
+          <td class="col-duration">0.20</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_blob_scenarios.py::StorageBlobUploadTests::test_storage_blob_upload_guess_type_scenarios</td>
+          <td class="col-duration">0.65</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>C:\Users\ZELINW~1\AppData\Local\Temp\tmpnxij3hnj.png
+C:\Users\ZELINW~1\AppData\Local\Temp\tmpv9pvzc3g.html
+C:\Users\ZELINW~1\AppData\Local\Temp\tmpqjbe9aa_
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_blob_scenarios.py::StorageBlobUploadTests::test_storage_blob_upload_midsize_file</td>
+          <td class="col-duration">4.26</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.storage.operations.blob:blob.py:181 Next Marker:
+WARNING  cli.azure.cli.command_modules.storage.operations.blob:blob.py:182 2!92!MDAwMDI0IWJsb2IzYm9tcTNobHpxZXFibHRqdnVyaSEwMDAwMjghOTk5OS0xMi0zMVQyMzo1OTo1OS45OTk5OTk5WiE-
+WARNING  cli.azure.cli.command_modules.storage.operations.blob:blob.py:181 Next Marker:
+WARNING  cli.azure.cli.command_modules.storage.operations.blob:blob.py:182 2!92!MDAwMDI0IWJsb2J0dmM3Yndremxzczd4dWx6b3hueCEwMDAwMjghOTk5OS0xMi0zMVQyMzo1OTo1OS45OTk5OTk5WiE-<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_blob_scenarios.py::StorageBlobUploadTests::test_storage_blob_upload_precondition_scenarios</td>
+          <td class="col-duration">0.51</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Argument &#x27;--overwrite&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/> -------------------------------Captured log call-------------------------------- <br/>WARNING  msrest.serialization:serialization.py:1092 Datetime with no tzinfo will be considered UTC.
+WARNING  msrest.serialization:serialization.py:1092 Datetime with no tzinfo will be considered UTC.
+WARNING  msrest.serialization:serialization.py:1092 Datetime with no tzinfo will be considered UTC.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_blob_scenarios.py::StorageBlobUploadTests::test_storage_blob_upload_small_file</td>
+          <td class="col-duration">3.34</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.storage.operations.blob:blob.py:181 Next Marker:
+WARNING  cli.azure.cli.command_modules.storage.operations.blob:blob.py:182 2!92!MDAwMDI0IWJsb2J1czJ6a2Yya3l2ZXVqZ3dtcTUzbiEwMDAwMjghOTk5OS0xMi0zMVQyMzo1OTo1OS45OTk5OTk5WiE-
+WARNING  cli.azure.cli.command_modules.storage.operations.blob:blob.py:181 Next Marker:
+WARNING  cli.azure.cli.command_modules.storage.operations.blob:blob.py:182 2!92!MDAwMDI0IWJsb2J4dHV2bGdwaTN3enkzNW9kcjNrbCEwMDAwMjghOTk5OS0xMi0zMVQyMzo1OTo1OS45OTk5OTk5WiE-<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_blob_scenarios.py::StorageBlobUploadTests::test_storage_blob_upload_tiers_scenarios</td>
+          <td class="col-duration">0.85</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Argument &#x27;--data&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Argument &#x27;--length&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Argument &#x27;--overwrite&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_blob_scenarios.py::StorageBlobSetTierTests::test_storage_block_blob_set_tier</td>
+          <td class="col-duration">1.53</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>
+Examples from AI knowledge base:
+az storage blob set-tier --account-key 00000000 --account-name MyAccount --container-name mycontainer --name MyBlob --tier P10
+Set the block or page tiers on the blob. (autogenerated)
+
+https://aka.ms/cli_ref
+Read more about the command in reference docs
+WARNING: Argument &#x27;--rehydrate-priority&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Argument &#x27;--rehydrate-priority&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/> -------------------------------Captured log call-------------------------------- <br/>ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 az storage blob set-tier: &#x27;Middle&#x27; is not a valid value for &#x27;--rehydrate-priority&#x27;. Allowed values: High, Standard.
+ERROR    az_command_data_logger:azlogging.py:213 az storage blob set-tier: &#x27;Middle&#x27; is not a valid value for &#x27;--rehydrate-priority&#x27;. Allowed values: High, Standard.
+ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 --rehydrate-priority is only applicable to rehydrate blob data from the archive tier.
+ERROR    az_command_data_logger:azlogging.py:213 --rehydrate-priority is only applicable to rehydrate blob data from the archive tier.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_blob_scenarios.py::StorageBlobSetTierTests::test_storage_page_blob_set_tier</td>
+          <td class="col-duration">0.58</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Argument &#x27;--rehydrate-priority&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/> -------------------------------Captured log call-------------------------------- <br/>ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 --rehydrate-priority is only applicable to block blob.
+ERROR    az_command_data_logger:azlogging.py:213 --rehydrate-priority is only applicable to block blob.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_blob_scenarios.py::StorageBlobImmutabilityTests::test_storage_blob_vlm</td>
+          <td class="col-duration">0.63</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Argument &#x27;--enable-vlw&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/> -------------------------------Captured log call-------------------------------- <br/>WARNING  msrest.serialization:serialization.py:1092 Datetime with no tzinfo will be considered UTC.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_blob_scenarios.py::StorageBlobCommonTests::test_storage_blob_list_scenarios</td>
+          <td class="col-duration">2.04</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.storage.operations.blob:blob.py:181 Next Marker:
+WARNING  cli.azure.cli.command_modules.storage.operations.blob:blob.py:182 2!96!MDAwMDI4IWRpci9ibG9ibTN3ZGJhNjZyNTRmM2YyNW8zbXMhMDAwMDI4ITk5OTktMTItMzFUMjM6NTk6NTkuOTk5OTk5OVoh<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_blob_scenarios.py::StorageBlobPITRTests::test_storage_blob_restore</td>
+          <td class="col-duration">5.06</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_blob_scenarios.py::StorageBlobCopyTestScenario::test_storage_blob_copy_rehydrate_priority</td>
+          <td class="col-duration">0.78</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_blob_scenarios.py::StorageBlobCopyTestScenario::test_storage_container_vlm_scenarios</td>
+          <td class="col-duration">0.66</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Argument &#x27;--enable-vlw&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: This command is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_blob_scenarios.py::StorageContainerScenarioTest::test_storage_container_list_scenarios</td>
+          <td class="col-duration">1.83</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Argument &#x27;--show-next-marker&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.storage.operations.blob:blob.py:202 Next Marker:
+WARNING  cli.azure.cli.command_modules.storage.operations.blob:blob.py:203 /clitest000002/con2000004<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_blob_scenarios.py::StorageContainerScenarioTest::test_storage_container_soft_delete_scenarios</td>
+          <td class="col-duration">1.05</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_container_immutability_policy.py::StorageImmutabilityPolicy::test_immutability_policy</td>
+          <td class="col-duration">1.19</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.storage._validators:_validators.py:197 
+There are no credentials provided in your command and environment, we will query for account key for your storage account.
+It is recommended to provide --connection-string, --account-key or --sas-token in your command as credentials.
+
+You also can add `--auth-mode login` in your command to use Azure Active Directory (Azure AD) for authorization if your login account is assigned required RBAC roles.
+For more information about RBAC roles in storage, visit https://docs.microsoft.com/azure/storage/common/storage-auth-aad-rbac-cli.
+
+In addition, setting the corresponding environment variables can avoid inputting credentials in your command. Please use --help to get more information about environment variable usage.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_container_immutability_policy.py::StorageImmutabilityPolicy::test_immutability_policy_with_allow_protected_append_writes_all</td>
+          <td class="col-duration">1.51</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.storage._validators:_validators.py:197 
+There are no credentials provided in your command and environment, we will query for account key for your storage account.
+It is recommended to provide --connection-string, --account-key or --sas-token in your command as credentials.
+
+You also can add `--auth-mode login` in your command to use Azure Active Directory (Azure AD) for authorization if your login account is assigned required RBAC roles.
+For more information about RBAC roles in storage, visit https://docs.microsoft.com/azure/storage/common/storage-auth-aad-rbac-cli.
+
+In addition, setting the corresponding environment variables can avoid inputting credentials in your command. Please use --help to get more information about environment variable usage.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_container_legal_hold.py::StorageLegalHold::test_legal_hold</td>
+          <td class="col-duration">0.54</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.storage._validators:_validators.py:197 
+There are no credentials provided in your command and environment, we will query for account key for your storage account.
+It is recommended to provide --connection-string, --account-key or --sas-token in your command as credentials.
+
+You also can add `--auth-mode login` in your command to use Azure Active Directory (Azure AD) for authorization if your login account is assigned required RBAC roles.
+For more information about RBAC roles in storage, visit https://docs.microsoft.com/azure/storage/common/storage-auth-aad-rbac-cli.
+
+In addition, setting the corresponding environment variables can avoid inputting credentials in your command. Please use --help to get more information about environment variable usage.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_container_legal_hold.py::StorageLegalHold::test_legal_hold_with_allow_protected_append_writes_all</td>
+          <td class="col-duration">0.67</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.storage._validators:_validators.py:197 
+There are no credentials provided in your command and environment, we will query for account key for your storage account.
+It is recommended to provide --connection-string, --account-key or --sas-token in your command as credentials.
+
+You also can add `--auth-mode login` in your command to use Azure Active Directory (Azure AD) for authorization if your login account is assigned required RBAC roles.
+For more information about RBAC roles in storage, visit https://docs.microsoft.com/azure/storage/common/storage-auth-aad-rbac-cli.
+
+In addition, setting the corresponding environment variables can avoid inputting credentials in your command. Please use --help to get more information about environment variable usage.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_container_rm_scenarios.py::StorageContainerRmScenarios::test_storage_container_squash_scenario</td>
+          <td class="col-duration">1.02</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Argument &#x27;--enable-nfs-v3&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_container_rm_scenarios.py::StorageContainerRmScenarios::test_storage_container_using_rm_main_scenario</td>
+          <td class="col-duration">2.29</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 (ContainerNotFound) The specified container does not exist.
+RequestId:a4ce2ead-e01e-003f-7e67-288da4000000
+Time:2022-02-23T03:45:24.6215249Z
+Code: ContainerNotFound
+Message: The specified container does not exist.
+RequestId:a4ce2ead-e01e-003f-7e67-288da4000000
+Time:2022-02-23T03:45:24.6215249Z
+ERROR    az_command_data_logger:azlogging.py:213 (ContainerNotFound) The specified container does not exist.
+RequestId:a4ce2ead-e01e-003f-7e67-288da4000000
+Time:2022-02-23T03:45:24.6215249Z
+Code: ContainerNotFound
+Message: The specified container does not exist.
+RequestId:a4ce2ead-e01e-003f-7e67-288da4000000
+Time:2022-02-23T03:45:24.6215249Z<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_cors_scenarios.py::StorageCorsTests::test_storage_cors_scenario</td>
+          <td class="col-duration">0.89</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_encryption_scope_scenarios.py::StorageAccountEncryptionTests::test_storage_account_encryption_scope</td>
+          <td class="col-duration">2.21</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Argument &#x27;--default-encryption-scope&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Argument &#x27;--prevent-encryption-scope-override&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Argument &#x27;--default-encryption-scope&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Argument &#x27;--prevent-encryption-scope-override&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_file_rm_scenarios.py::StorageFileShareRmScenarios::test_storage_file_using_rm_main_scenario</td>
+          <td class="col-duration">1.78</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 (ShareNotFound) The specified share does not exist.
+RequestId:6dcb3933-401a-001d-2467-285841000000
+Time:2022-02-23T03:46:11.1032137Z
+Code: ShareNotFound
+Message: The specified share does not exist.
+RequestId:6dcb3933-401a-001d-2467-285841000000
+Time:2022-02-23T03:46:11.1032137Z
+ERROR    az_command_data_logger:azlogging.py:213 (ShareNotFound) The specified share does not exist.
+RequestId:6dcb3933-401a-001d-2467-285841000000
+Time:2022-02-23T03:46:11.1032137Z
+Code: ShareNotFound
+Message: The specified share does not exist.
+RequestId:6dcb3933-401a-001d-2467-285841000000
+Time:2022-02-23T03:46:11.1032137Z<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_file_rm_scenarios.py::StorageFileShareRmScenarios::test_storage_share_rm_soft_delete</td>
+          <td class="col-duration">1.21</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_file_rm_scenarios.py::StorageFileShareRmScenarios::test_storage_share_rm_with_NFS</td>
+          <td class="col-duration">0.51</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_file_rm_scenarios.py::StorageFileShareRmScenarios::test_storage_share_rm_with_access_tier</td>
+          <td class="col-duration">0.45</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_file_rm_scenarios.py::StorageFileShareRmScenarios::test_storage_share_rm_with_snapshot</td>
+          <td class="col-duration">0.95</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: This command is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Argument &#x27;--snapshot&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Argument &#x27;--snapshot&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Argument &#x27;--snapshot&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/> -------------------------------Captured log call-------------------------------- <br/>ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 (ShareNotFound) The specified share does not exist.
+RequestId:b2cd100c-301a-0093-7068-2873fd000000
+Time:2022-02-23T03:49:02.0423284Z
+Code: ShareNotFound
+Message: The specified share does not exist.
+RequestId:b2cd100c-301a-0093-7068-2873fd000000
+Time:2022-02-23T03:49:02.0423284Z
+ERROR    az_command_data_logger:azlogging.py:213 (ShareNotFound) The specified share does not exist.
+RequestId:b2cd100c-301a-0093-7068-2873fd000000
+Time:2022-02-23T03:49:02.0423284Z
+Code: ShareNotFound
+Message: The specified share does not exist.
+RequestId:b2cd100c-301a-0093-7068-2873fd000000
+Time:2022-02-23T03:49:02.0423284Z<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_file_rm_scenarios.py::StorageFileShareRmScenarios::test_storage_share_rm_with_stats</td>
+          <td class="col-duration">0.52</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_file_scenarios.py::StorageFileShareScenarios::test_storage_file_copy_scenario</td>
+          <td class="col-duration">1.58</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_file_scenarios.py::StorageFileShareScenarios::test_storage_file_copy_snapshot_scenario</td>
+          <td class="col-duration">1.09</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_file_scenarios.py::StorageFileShareScenarios::test_storage_file_main_scenario</td>
+          <td class="col-duration">5.43</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_file_scenarios.py::StorageFileShareScenarios::test_storage_file_share_handle_scenario</td>
+          <td class="col-duration">0.84</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_oauth.py::StorageOauthTests::test_storage_blob_oauth</td>
+          <td class="col-duration">0.51</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_oauth.py::StorageOauthTests::test_storage_queue_oauth</td>
+          <td class="col-duration">0.45</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_oauth_track2.py::StorageOauthTests::test_storage_blob_lease_oauth</td>
+          <td class="col-duration">0.90</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_oauth_track2.py::StorageOauthTests::test_storage_blob_list_oauth</td>
+          <td class="col-duration">1.71</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.storage.operations.blob:blob.py:181 Next Marker:
+WARNING  cli.azure.cli.command_modules.storage.operations.blob:blob.py:182 2!96!MDAwMDI4IWRpci9ibG9ieGRjY3hudmNqdTVicDZ5N3Jib3chMDAwMDI4ITk5OTktMTItMzFUMjM6NTk6NTkuOTk5OTk5OVoh<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_oauth_track2.py::StorageOauthTests::test_storage_blob_show_oauth</td>
+          <td class="col-duration">1.40</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  msrest.serialization:serialization.py:1092 Datetime with no tzinfo will be considered UTC.
+WARNING  msrest.serialization:serialization.py:1092 Datetime with no tzinfo will be considered UTC.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_oauth_track2.py::StorageOauthTests::test_storage_filedatalake_oauth</td>
+          <td class="col-duration">2.79</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_oauth_track2.py::StorageOauthTests::test_storage_queue_list_oauth</td>
+          <td class="col-duration">1.15</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.storage.operations.queue:queue.py:24 Next Marker:
+WARNING  cli.azure.cli.command_modules.storage.operations.queue:queue.py:25 /storage000002/secondq000004<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_oauth_track2.py::StorageBlobSetTierOauthTests::test_storage_block_blob_set_tier_oauth</td>
+          <td class="col-duration">1.43</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>
+Examples from AI knowledge base:
+az storage blob set-tier --account-key 00000000 --account-name MyAccount --container-name mycontainer --name MyBlob --tier P10
+Set the block or page tiers on the blob. (autogenerated)
+
+https://aka.ms/cli_ref
+Read more about the command in reference docs
+WARNING: Argument &#x27;--rehydrate-priority&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Argument &#x27;--rehydrate-priority&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/> -------------------------------Captured log call-------------------------------- <br/>ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 az storage blob set-tier: &#x27;Middle&#x27; is not a valid value for &#x27;--rehydrate-priority&#x27;. Allowed values: High, Standard.
+ERROR    az_command_data_logger:azlogging.py:213 az storage blob set-tier: &#x27;Middle&#x27; is not a valid value for &#x27;--rehydrate-priority&#x27;. Allowed values: High, Standard.
+ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 --rehydrate-priority is only applicable to rehydrate blob data from the archive tier.
+ERROR    az_command_data_logger:azlogging.py:213 --rehydrate-priority is only applicable to rehydrate blob data from the archive tier.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_oauth_track2.py::StorageBlobSetTierOauthTests::test_storage_page_blob_set_tier_oauth</td>
+          <td class="col-duration">0.55</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Argument &#x27;--rehydrate-priority&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/> -------------------------------Captured log call-------------------------------- <br/>ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 --rehydrate-priority is only applicable to block blob.
+ERROR    az_command_data_logger:azlogging.py:213 --rehydrate-priority is only applicable to block blob.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_queue_scenarios.py::StorageQueueScenarioTests::test_storage_queue_general_scenario</td>
+          <td class="col-duration">3.34</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_table_scenarios.py::StorageTableScenarioTests::test_storage_table_main_scenario</td>
+          <td class="col-duration">3.91</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 The specified resource does not exist.
+RequestId:4b32dab7-b002-0008-208f-37c512000000
+Time:2022-03-14T10:39:57.5599992Z
+ErrorCode:ResourceNotFound
+ERROR    az_command_data_logger:azlogging.py:213 The specified resource does not exist.
+RequestId:4b32dab7-b002-0008-208f-37c512000000
+Time:2022-03-14T10:39:57.5599992Z
+ErrorCode:ResourceNotFound<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_url_helpers.py::TestStorageUrlHelpers::test_account_name</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_url_helpers.py::TestStorageUrlHelpers::test_container_parsing</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_url_helpers.py::TestStorageUrlHelpers::test_default_value</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_url_helpers.py::TestStorageUrlHelpers::test_get_sas_token</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_url_helpers.py::TestStorageUrlHelpers::test_is_url</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_url_helpers.py::TestStorageUrlHelpers::test_share_parsing</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_validators.py::TestCmdModuleStorageValidators::test_datetime_string_type</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_validators.py::TestCmdModuleStorageValidators::test_datetime_type</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_validators.py::TestCmdModuleStorageValidators::test_get_not_none_validator</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_validators.py::TestCmdModuleStorageValidators::test_ipv4_range_type</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_validators.py::TestCmdModuleStorageValidators::test_permission_validator</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_validators.py::TestCmdModuleStorageValidators::test_resource_types_type</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_validators.py::TestCmdModuleStorageValidators::test_services_type</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_validators.py::TestCmdModuleStorageValidators::test_storage_get_char_options_validator</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_validators.py::TestCmdModuleStorageValidators::test_storage_process_blob_source_uri_redundent_parameter</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_validators.py::TestCmdModuleStorageValidators::test_validate_source_uri</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_validators.py::TestEncryptionValidators::test_validate_encryption_services</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_validators.py::TestEncryptionValidators::test_validate_encryption_source</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_validators.py::TestGetSourceClientValidator::test_as_user_validator</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_validators.py::TestGetSourceClientValidator::test_validate_negatives</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_validators.py::TestGetSourceClientValidator::test_validate_with_container_name_blob</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_validators.py::TestGetSourceClientValidator::test_validate_with_different_source_uri_sas_blob</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_validators.py::TestGetSourceClientValidator::test_validate_with_different_source_uri_sas_file</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_validators.py::TestGetSourceClientValidator::test_validate_with_share_name_file</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_validators.py::TestGetSourceClientValidator::test_validate_with_source_uri_blob</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_validators.py::TestGetSourceClientValidator::test_validate_with_source_uri_file</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/storage/tests/latest/test_storage_validators.py::TestAzcopyValidator::test_validate_azcopy_credential</td>
+          <td class="col-duration">3.43</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.storage._validators:_validators.py:197 
+There are no credentials provided in your command and environment, we will query for account key for your storage account.
+It is recommended to provide --connection-string, --account-key or --sas-token in your command as credentials.
+
+In addition, setting the corresponding environment variables can avoid inputting credentials in your command. Please use --help to get more information about environment variable usage.
+WARNING  cli.azure.cli.command_modules.storage._validators:_validators.py:203 
+Skip querying account key due to failure: Unable to get authority configuration for https://login.microsoftonline.com/00000000-0000-0000-0000-000000000000. Authority would typically be in a format of https://login.microsoftonline.com/your_tenant Also please double check your tenant name or GUID is correct.
+WARNING  cli.azure.cli.command_modules.storage._validators:_validators.py:197 
+There are no credentials provided in your command and environment, we will query for account key for your storage account.
+It is recommended to provide --connection-string, --account-key or --sas-token in your command as credentials.
+
+In addition, setting the corresponding environment variables can avoid inputting credentials in your command. Please use --help to get more information about environment variable usage.
+WARNING  cli.azure.cli.command_modules.storage._validators:_validators.py:203 
+Skip querying account key due to failure: Unable to get authority configuration for https://login.microsoftonline.com/00000000-0000-0000-0000-000000000000. Authority would typically be in a format of https://login.microsoftonline.com/your_tenant Also please double check your tenant name or GUID is correct.<br/></div></td></tr></tbody></table></body></html>

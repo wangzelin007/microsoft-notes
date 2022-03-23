@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title>Test Report</title>
+    <link href="assets/style.css" rel="stylesheet" type="text/css"/></head>
+  <body onLoad="init()">
+    <script>/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+function toArray(iter) {
+    if (iter === null) {
+        return null;
+    }
+    return Array.prototype.slice.call(iter);
+}
+
+function find(selector, elem) { // eslint-disable-line no-redeclare
+    if (!elem) {
+        elem = document;
+    }
+    return elem.querySelector(selector);
+}
+
+function findAll(selector, elem) {
+    if (!elem) {
+        elem = document;
+    }
+    return toArray(elem.querySelectorAll(selector));
+}
+
+function sortColumn(elem) {
+    toggleSortStates(elem);
+    const colIndex = toArray(elem.parentNode.childNodes).indexOf(elem);
+    let key;
+    if (elem.classList.contains('result')) {
+        key = keyResult;
+    } else if (elem.classList.contains('links')) {
+        key = keyLink;
+    } else if (elem.classList.contains('float')) {
+        key = keyFloat;
+    } else {
+        key = keyAlpha;
+    }
+    sortTable(elem, key(colIndex));
+}
+
+function showAllExtras() { // eslint-disable-line no-unused-vars
+    findAll('.col-result').forEach(showExtras);
+}
+
+function hideAllExtras() { // eslint-disable-line no-unused-vars
+    findAll('.col-result').forEach(hideExtras);
+}
+
+function showExtras(colresultElem) {
+    const extras = colresultElem.parentNode.nextElementSibling;
+    const expandcollapse = colresultElem.firstElementChild;
+    extras.classList.remove('collapsed');
+    expandcollapse.classList.remove('expander');
+    expandcollapse.classList.add('collapser');
+}
+
+function hideExtras(colresultElem) {
+    const extras = colresultElem.parentNode.nextElementSibling;
+    const expandcollapse = colresultElem.firstElementChild;
+    extras.classList.add('collapsed');
+    expandcollapse.classList.remove('collapser');
+    expandcollapse.classList.add('expander');
+}
+
+function showFilters() {
+    const filterItems = document.getElementsByClassName('filter');
+    for (let i = 0; i < filterItems.length; i++)
+        filterItems[i].hidden = false;
+}
+
+function addCollapse() {
+    // Add links for show/hide all
+    const resulttable = find('table#results-table');
+    const showhideall = document.createElement('p');
+    showhideall.innerHTML = '<a href="javascript:showAllExtras()">Show all details</a> / ' +
+                            '<a href="javascript:hideAllExtras()">Hide all details</a>';
+    resulttable.parentElement.insertBefore(showhideall, resulttable);
+
+    // Add show/hide link to each result
+    findAll('.col-result').forEach(function(elem) {
+        const collapsed = getQueryParameter('collapsed') || 'Passed';
+        const extras = elem.parentNode.nextElementSibling;
+        const expandcollapse = document.createElement('span');
+        if (extras.classList.contains('collapsed')) {
+            expandcollapse.classList.add('expander');
+        } else if (collapsed.includes(elem.innerHTML)) {
+            extras.classList.add('collapsed');
+            expandcollapse.classList.add('expander');
+        } else {
+            expandcollapse.classList.add('collapser');
+        }
+        elem.appendChild(expandcollapse);
+
+        elem.addEventListener('click', function(event) {
+            if (event.currentTarget.parentNode.nextElementSibling.classList.contains('collapsed')) {
+                showExtras(event.currentTarget);
+            } else {
+                hideExtras(event.currentTarget);
+            }
+        });
+    });
+}
+
+function getQueryParameter(name) {
+    const match = RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
+    return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
+}
+
+function init () { // eslint-disable-line no-unused-vars
+    resetSortHeaders();
+
+    addCollapse();
+
+    showFilters();
+
+    sortColumn(find('.initial-sort'));
+
+    findAll('.sortable').forEach(function(elem) {
+        elem.addEventListener('click',
+            function() {
+                sortColumn(elem);
+            }, false);
+    });
+}
+
+function sortTable(clicked, keyFunc) {
+    const rows = findAll('.results-table-row');
+    const reversed = !clicked.classList.contains('asc');
+    const sortedRows = sort(rows, keyFunc, reversed);
+    /* Whole table is removed here because browsers acts much slower
+     * when appending existing elements.
+     */
+    const thead = document.getElementById('results-table-head');
+    document.getElementById('results-table').remove();
+    const parent = document.createElement('table');
+    parent.id = 'results-table';
+    parent.appendChild(thead);
+    sortedRows.forEach(function(elem) {
+        parent.appendChild(elem);
+    });
+    document.getElementsByTagName('BODY')[0].appendChild(parent);
+}
+
+function sort(items, keyFunc, reversed) {
+    const sortArray = items.map(function(item, i) {
+        return [keyFunc(item), i];
+    });
+
+    sortArray.sort(function(a, b) {
+        const keyA = a[0];
+        const keyB = b[0];
+
+        if (keyA == keyB) return 0;
+
+        if (reversed) {
+            return keyA < keyB ? 1 : -1;
+        } else {
+            return keyA > keyB ? 1 : -1;
+        }
+    });
+
+    return sortArray.map(function(item) {
+        const index = item[1];
+        return items[index];
+    });
+}
+
+function keyAlpha(colIndex) {
+    return function(elem) {
+        return elem.childNodes[1].childNodes[colIndex].firstChild.data.toLowerCase();
+    };
+}
+
+function keyFloat(colIndex) {
+    return function(elem) {
+        return Number(elem.childNodes[1].childNodes[colIndex].firstChild.data);
+    };
+}
+
+function keyLink(colIndex) {
+    return function(elem) {
+        const dataCell = elem.childNodes[1].childNodes[colIndex].firstChild;
+        return dataCell == null ? '' : dataCell.innerText.toLowerCase();
+    };
+}
+
+function keyResult(colIndex) {
+    return function(elem) {
+        const strings = ['Error', 'Failed', 'Rerun', 'XFailed', 'XPassed',
+            'Skipped', 'Passed'];
+        return strings.indexOf(elem.childNodes[1].childNodes[colIndex].firstChild.data);
+    };
+}
+
+function resetSortHeaders() {
+    findAll('.sort-icon').forEach(function(elem) {
+        elem.parentNode.removeChild(elem);
+    });
+    findAll('.sortable').forEach(function(elem) {
+        const icon = document.createElement('div');
+        icon.className = 'sort-icon';
+        icon.textContent = 'vvv';
+        elem.insertBefore(icon, elem.firstChild);
+        elem.classList.remove('desc', 'active');
+        elem.classList.add('asc', 'inactive');
+    });
+}
+
+function toggleSortStates(elem) {
+    //if active, toggle between asc and desc
+    if (elem.classList.contains('active')) {
+        elem.classList.toggle('asc');
+        elem.classList.toggle('desc');
+    }
+
+    //if inactive, reset all other functions and add ascending active
+    if (elem.classList.contains('inactive')) {
+        resetSortHeaders();
+        elem.classList.remove('inactive');
+        elem.classList.add('active');
+    }
+}
+
+function isAllRowsHidden(value) {
+    return value.hidden == false;
+}
+
+function filterTable(elem) { // eslint-disable-line no-unused-vars
+    const outcomeAtt = 'data-test-result';
+    const outcome = elem.getAttribute(outcomeAtt);
+    const classOutcome = outcome + ' results-table-row';
+    const outcomeRows = document.getElementsByClassName(classOutcome);
+
+    for(let i = 0; i < outcomeRows.length; i++){
+        outcomeRows[i].hidden = !elem.checked;
+    }
+
+    const rows = findAll('.results-table-row').filter(isAllRowsHidden);
+    const allRowsHidden = rows.length == 0 ? true : false;
+    const notFoundMessage = document.getElementById('not-found-message');
+    notFoundMessage.hidden = !allRowsHidden;
+}
+</script>
+    <h1>acr.report.parallel.html</h1>
+    <p>Report generated on 23-Mar-2022 at 17:33:32 by <a href="https://pypi.python.org/pypi/pytest-html">pytest-html</a> v3.1.1</p>
+    <h2>Summary</h2>
+    <p>46 tests ran in 32.88 seconds. </p>
+    <p class="filter" hidden="true">(Un)check the boxes to filter the results.</p><input checked="true" class="filter" data-test-result="passed" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="passed">46 passed</span>, <input checked="true" class="filter" data-test-result="skipped" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="skipped">0 skipped</span>, <input checked="true" class="filter" data-test-result="failed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="failed">0 failed</span>, <input checked="true" class="filter" data-test-result="error" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="error">0 errors</span>, <input checked="true" class="filter" data-test-result="xfailed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="xfailed">0 expected failures</span>, <input checked="true" class="filter" data-test-result="xpassed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="xpassed">0 unexpected passes</span>
+    <h2>Results</h2>
+    <table id="results-table">
+      <thead id="results-table-head">
+        <tr>
+          <th class="sortable result initial-sort" col="result">Result</th>
+          <th class="sortable" col="name">Test</th>
+          <th class="sortable float" col="duration">Duration</th>
+          <th class="sortable links" col="links">Links</th></tr>
+        <tr hidden="true" id="not-found-message">
+          <th colspan="4">No results found. Try to check the filters</th></tr></thead>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_acr_agentpool_commands.py::AcrAgentPoolCommandsTests::test_acr_agentpool</td>
+          <td class="col-duration">4.96</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Command group &#x27;acr agentpool&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;acr agentpool&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;acr agentpool&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;acr agentpool&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;acr agentpool&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;acr agentpool&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_acr_commands.py::AcrCommandsTests::test_acr_create_replication</td>
+          <td class="col-duration">1.22</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Argument &#x27;--region-endpoint-enabled&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Argument &#x27;--region-endpoint-enabled&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_acr_commands.py::AcrCommandsTests::test_acr_create_webhook</td>
+          <td class="col-duration">0.84</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_acr_commands.py::AcrCommandsTests::test_acr_create_with_audits</td>
+          <td class="col-duration">0.60</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Argument &#x27;--workspace&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_acr_commands.py::AcrCommandsTests::test_acr_create_with_managed_registry</td>
+          <td class="col-duration">0.94</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Command group &#x27;acr config retention&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;acr config retention&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Option &#x27;-n&#x27; has been deprecated and will be removed in a future release. Use &#x27;-r&#x27; instead.
+WARNING: Option &#x27;-n&#x27; has been deprecated and will be removed in a future release. Use &#x27;-r&#x27; instead.
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_acr_commands.py::AcrCommandsTests::test_acr_encryption_with_cmk</td>
+          <td class="col-duration">1.23</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Argument &#x27;enable_soft_delete&#x27; has been deprecated and will be removed in a future release.
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_acr_commands.py::AcrCommandsTests::test_acr_export_policy</td>
+          <td class="col-duration">1.05</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Argument &#x27;--allow-exports&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Argument &#x27;--allow-exports&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Argument &#x27;--allow-exports&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Argument &#x27;--allow-exports&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Argument &#x27;--allow-exports&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.acr.custom:custom.py:161 Disabling the public endpoint overrides all firewall configurations.
+WARNING  cli.azure.cli.command_modules.acr.custom:custom.py:161 Disabling the public endpoint overrides all firewall configurations.
+WARNING  cli.azure.cli.command_modules.acr.custom:custom.py:161 Disabling the public endpoint overrides all firewall configurations.
+WARNING  cli.azure.cli.command_modules.acr.custom:custom.py:161 Disabling the public endpoint overrides all firewall configurations.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_acr_commands.py::AcrCommandsTests::test_acr_identity</td>
+          <td class="col-duration">2.61</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_acr_commands.py::AcrCommandsTests::test_acr_image_import</td>
+          <td class="col-duration">2.23</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_acr_commands.py::AcrCommandsTests::test_acr_import_no_wait</td>
+          <td class="col-duration">0.31</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.acr.import:import.py:102 Import has started. Due to no-wait option, failures will not be reflected.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_acr_commands.py::AcrCommandsTests::test_acr_with_anonymous_pull</td>
+          <td class="col-duration">0.29</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_acr_commands.py::AcrCommandsTests::test_acr_with_dedicated_data_endpoints</td>
+          <td class="col-duration">0.71</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.acr.custom:custom.py:222 To configure client firewall w/o using wildcard storage blob urls, use &quot;az acr update --name testreg000002 --data-endpoint-enabled&quot; to enable dedicated data endpoints.
+WARNING  cli.azure.cli.command_modules.acr.custom:custom.py:222 To configure client firewall w/o using wildcard storage blob urls, use &quot;az acr update --name testreg000002 --data-endpoint-enabled&quot; to enable dedicated data endpoints.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_acr_commands.py::AcrCommandsTests::test_acr_with_private_endpoint</td>
+          <td class="col-duration">2.38</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Option &#x27;--group-ids&#x27; has been deprecated and will be removed in a future release. Use &#x27;--group-id&#x27; instead.
+WARNING: Option &#x27;--group-ids&#x27; has been deprecated and will be removed in a future release. Use &#x27;--group-id&#x27; instead.
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_acr_commands.py::AcrCommandsTests::test_acr_with_public_network_access</td>
+          <td class="col-duration">0.66</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Argument &#x27;--allow-trusted-services&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Argument &#x27;--allow-trusted-services&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Argument &#x27;--allow-trusted-services&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.acr.custom:custom.py:161 Disabling the public endpoint overrides all firewall configurations.
+WARNING  cli.azure.cli.command_modules.acr.custom:custom.py:161 Disabling the public endpoint overrides all firewall configurations.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_acr_commands.py::AcrCommandsTests::test_acr_with_zone_redundancy</td>
+          <td class="col-duration">1.19</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Argument &#x27;--zone-redundancy&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Argument &#x27;--zone-redundancy&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Argument &#x27;--zone-redundancy&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_acr_commands.py::AcrCommandsTests::test_check_name_availability</td>
+          <td class="col-duration">0.06</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_acr_commands_mock.py::AcrMockCommandsTests::test_get_docker_credentials</td>
+          <td class="col-duration">0.02</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_acr_commands_mock.py::AcrMockCommandsTests::test_helm_delete</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_acr_commands_mock.py::AcrMockCommandsTests::test_helm_list</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_acr_commands_mock.py::AcrMockCommandsTests::test_helm_push</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_acr_commands_mock.py::AcrMockCommandsTests::test_helm_show</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_acr_commands_mock.py::AcrMockCommandsTests::test_manifest_delete</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_acr_commands_mock.py::AcrMockCommandsTests::test_manifest_list</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_acr_commands_mock.py::AcrMockCommandsTests::test_manifest_list_referrers</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_acr_commands_mock.py::AcrMockCommandsTests::test_manifest_metadata_list</td>
+          <td class="col-duration">0.05</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_acr_commands_mock.py::AcrMockCommandsTests::test_manifest_metadata_show</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_acr_commands_mock.py::AcrMockCommandsTests::test_manifest_metadata_update</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_acr_commands_mock.py::AcrMockCommandsTests::test_manifest_show</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_acr_commands_mock.py::AcrMockCommandsTests::test_repository_delete</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.acr.repository:repository.py:484 This operation will delete the manifest &#x27;sha256:c5515758d4c5e1e838e9cd307f6c6a0d620b5e07e6f927b07d05f6d12a1ac8d7&#x27;
+WARNING  cli.azure.cli.command_modules.acr.repository:repository.py:484 This operation will delete the manifest &#x27;sha256:c5515758d4c5e1e838e9cd307f6c6a0d620b5e07e6f927b07d05f6d12a1ac8d7&#x27;<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_acr_commands_mock.py::AcrMockCommandsTests::test_repository_list</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_acr_commands_mock.py::AcrMockCommandsTests::test_repository_show</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_acr_commands_mock.py::AcrMockCommandsTests::test_repository_show_manifests</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_acr_commands_mock.py::AcrMockCommandsTests::test_repository_show_tags</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_acr_commands_mock.py::AcrMockCommandsTests::test_repository_update</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_acr_connectedregistry_commands.py::AcrConnectedRegistryCommandsTests::test_acr_connectedregistry</td>
+          <td class="col-duration">6.47</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Command group &#x27;acr connected-registry&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;acr token&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;acr token&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;acr connected-registry&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;acr connected-registry&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;acr connected-registry&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;acr connected-registry&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;acr connected-registry&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;acr token&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;acr connected-registry&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;acr connected-registry&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;acr connected-registry&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;acr connected-registry&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;acr token&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;acr connected-registry&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;acr connected-registry&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;acr connected-registry&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;acr connected-registry&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;acr connected-registry&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;acr connected-registry&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;acr connected-registry&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;acr connected-registry&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.acr.connected_registry:connected_registry.py:376 If sync scope map &#x27;connectedregistry&#x27; already exists, its actions will be overwritten
+WARNING  cli.azure.cli.command_modules.acr.connected_registry:connected_registry.py:383 If sync token &#x27;connectedregistry&#x27; already exists, it properties will be overwritten
+WARNING  msrest.serialization:serialization.py:187 Readonly attribute provisioning_state will be ignored in class &lt;class &#x27;azure.mgmt.containerregistry.v2021_08_01_preview.models._models_py3.ConnectedRegistry&#x27;&gt;
+WARNING  msrest.serialization:serialization.py:187 Readonly attribute provisioning_state will be ignored in class &lt;class &#x27;azure.mgmt.containerregistry.v2021_08_01_preview.models._models_py3.ConnectedRegistry&#x27;&gt;
+WARNING  cli.azure.cli.command_modules.acr.connected_registry:connected_registry.py:574 Adding &#x27;child&#x27; gateway permissions and repo(s) &#x27;repo2&#x27; readonly permissions to connected registry &#x27;rootregistry&#x27; sync scope map.
+WARNING  cli.azure.cli.command_modules.acr.connected_registry:connected_registry.py:376 If sync scope map &#x27;child&#x27; already exists, its actions will be overwritten
+WARNING  cli.azure.cli.command_modules.acr.connected_registry:connected_registry.py:383 If sync token &#x27;child&#x27; already exists, it properties will be overwritten
+WARNING  msrest.serialization:serialization.py:187 Readonly attribute provisioning_state will be ignored in class &lt;class &#x27;azure.mgmt.containerregistry.v2021_08_01_preview.models._models_py3.ConnectedRegistry&#x27;&gt;
+WARNING  cli.azure.cli.command_modules.acr.connected_registry:connected_registry.py:574 Adding &#x27;grandchild&#x27; gateway permissions and repo(s) &#x27;repo2&#x27; readonly permissions to connected registry &#x27;child&#x27; sync scope map.
+WARNING  cli.azure.cli.command_modules.acr.connected_registry:connected_registry.py:574 Adding &#x27;grandchild&#x27; gateway permissions and repo(s) &#x27;repo2&#x27; readonly permissions to connected registry &#x27;rootregistry&#x27; sync scope map.
+WARNING  cli.azure.cli.command_modules.acr.connected_registry:connected_registry.py:376 If sync scope map &#x27;grandchild&#x27; already exists, its actions will be overwritten
+WARNING  cli.azure.cli.command_modules.acr.connected_registry:connected_registry.py:383 If sync token &#x27;grandchild&#x27; already exists, it properties will be overwritten
+WARNING  msrest.serialization:serialization.py:187 Readonly attribute provisioning_state will be ignored in class &lt;class &#x27;azure.mgmt.containerregistry.v2021_08_01_preview.models._models_py3.ConnectedRegistry&#x27;&gt;
+WARNING  cli.azure.cli.command_modules.acr.connected_registry:connected_registry.py:490 Please store your generated credentials safely.
+WARNING  cli.azure.cli.command_modules.acr.connected_registry:connected_registry.py:574 Adding &#x27;repo1, repo3&#x27; repository permissions to child
+WARNING  cli.azure.cli.command_modules.acr.connected_registry:connected_registry.py:574 Adding &#x27;repo1, repo3&#x27; repository permissions to rootregistry
+WARNING  cli.azure.cli.command_modules.acr.connected_registry:connected_registry.py:574 Adding &#x27;repo1, repo3&#x27; repository permissions to grandchild
+WARNING  cli.azure.cli.command_modules.acr.connected_registry:connected_registry.py:574 Removing &#x27;repo1, repo2&#x27; repository permissions from child
+WARNING  cli.azure.cli.command_modules.acr.connected_registry:connected_registry.py:574 Removing &#x27;repo1, repo2&#x27; repository permissions from grandchild
+WARNING  cli.azure.cli.command_modules.acr.connected_registry:connected_registry.py:574 Removing &#x27;repo1, repo2&#x27; repository permissions from rootregistry
+WARNING  cli.azure.cli.command_modules.acr.connected_registry:connected_registry.py:574 Removing &#x27;repo3&#x27; repository permissions from grandchild
+WARNING  cli.azure.cli.command_modules.acr.connected_registry:connected_registry.py:574 Adding &#x27;repo1&#x27; repository permissions to rootregistry
+WARNING  cli.azure.cli.command_modules.acr.connected_registry:connected_registry.py:574 Adding &#x27;repo1&#x27; and removing &#x27;repo3&#x27; repository permissions in child
+WARNING  cli.azure.cli.command_modules.acr.connected_registry:connected_registry.py:574 Removing &#x27;grandchild&#x27; gateway permissions to connected registry &#x27;child&#x27; sync scope map.
+WARNING  cli.azure.cli.command_modules.acr.connected_registry:connected_registry.py:574 Removing &#x27;grandchild&#x27; gateway permissions to connected registry &#x27;rootregistry&#x27; sync scope map.
+WARNING  cli.azure.cli.command_modules.acr.connected_registry:connected_registry.py:283 Connected registry successfully deleted. Please cleanup your sync tokens and scope maps. Run the following commands for cleanup: 
+	az acr token delete -n child -r clireg000002 --yes
+	az acr scope-map delete -n child -r clireg000002 --yes
+Run the following command on all ascendency to remove the deleted registry gateway access: 
+	az acr scope-map update -n &lt;scope-map-name&gt; -r clireg000002 --remove-gateway child config/read config/write message/read message/write<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_acr_network_rule_commands.py::AcrNetworkRuleCommandsTests::test_acr_network_rule</td>
+          <td class="col-duration">0.95</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_acr_task_commands.py::AcrTaskCommandsTests::test_acr_task</td>
+          <td class="col-duration">1.40</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.acr.task:task.py:907 Queued a run with ID: cf1
+WARNING  cli.azure.cli.command_modules.acr.task:task.py:912 Waiting for an agent...
+WARNING  cli.azure.cli.command_modules.acr.task:task.py:907 Queued a run with ID: cf2
+WARNING  cli.azure.cli.command_modules.acr.task:task.py:912 Waiting for an agent...
+WARNING  msrest.serialization:serialization.py:394 Discriminator type is absent or null, use base class TaskStepProperties.
+WARNING  msrest.serialization:serialization.py:394 Discriminator type is absent or null, use base class TaskStepProperties.
+WARNING  msrest.serialization:serialization.py:394 Discriminator type is absent or null, use base class TaskStepProperties.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_acr_taskrun_commands.py::AcrTaskRunCommandsTests::test_acr_taskrun</td>
+          <td class="col-duration">0.59</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: This command is implicitly deprecated because command group &#x27;group deployment&#x27; is deprecated and will be removed in a future release. Use &#x27;deployment group&#x27; instead.
+WARNING: Command group &#x27;acr taskrun&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;acr taskrun&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;acr taskrun&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_acr_token.py::AcrTokenCommandsTests::test_repository_token_create</td>
+          <td class="col-duration">1.28</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Command group &#x27;acr token&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;acr scope-map&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;acr scope-map&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;acr token&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;acr token&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;acr token&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;acr token&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.acr.token:token.py:82 Please store your generated credentials safely. Meanwhile you can use it through &quot;docker login clireg000002.azurecr.io -u acr-token -p SgnwGJ6aiW+/lKQnKWIX1LdqFN18QqQ9&quot;.
+WARNING  msrest.serialization:serialization.py:1115 Datetime with no tzinfo will be considered UTC.
+WARNING  cli.azure.cli.command_modules.acr.token:token.py:82 Please store your generated credentials safely. Meanwhile you can use it through &quot;docker login clireg000002.azurecr.io -u token-3 -p njUaYZr68vESz8l=OSYoXILAlWtKJTtK&quot;.
+WARNING  msrest.serialization:serialization.py:1115 Datetime with no tzinfo will be considered UTC.
+WARNING  cli.azure.cli.command_modules.acr.token:token.py:82 Please store your generated credentials safely. Meanwhile you can use it through &quot;docker login clireg000002.azurecr.io -u token-4 -p M=XWf4b6PSKyibgspA8C7kQ46C6g1ADC&quot;.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_split_registry_and_image.py::TestSplitRegistryAndImage::test_split_empy_source</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_split_registry_and_image.py::TestSplitRegistryAndImage::test_split_single_dot</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_split_registry_and_image.py::TestSplitRegistryAndImage::test_split_single_image</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_split_registry_and_image.py::TestSplitRegistryAndImage::test_split_single_login_server</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_split_registry_and_image.py::TestSplitRegistryAndImage::test_split_single_slash</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_split_registry_and_image.py::TestSplitRegistryAndImage::test_split_valid_acr_source</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/acr/tests/latest/test_split_registry_and_image.py::TestSplitRegistryAndImage::test_split_valid_docker_source</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody></table></body></html>

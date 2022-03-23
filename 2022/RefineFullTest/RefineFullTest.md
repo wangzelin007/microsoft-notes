@@ -65,9 +65,24 @@ if parallel:
 1. 分多台机器同时跑
 2. 每台机器上也要开并行 (需要解决并行冲突的问题: 1.同时写一个本地文件。 是否可以通过查找with open 分析 345 处)
 3. 是否还有其他历史原因
-4. 为什么会产生测试依赖的问题？ 比如创建vm需要创建网络，或者多个用例同时创建了vm，为什么就会冲突，冲突的点在哪里？
-   是否是因为测试写的不标准，比如使用了同样的vm名称，网络信息导致的冲突? 是否可以通过规范测试用例来解决？
-   否则只能禁用并行化测试了。
 
 今天还有一个很关键，反复跑，看是否出现问题。
 先不纠结live test。
+
+1. 结论 azdev/代码
+2. rebase 加日志彻底确认diff问题
+3. 并行需要修复 5 个module
+4. azdev 支持并行和串行
+5. 开页面记录测试速度提升 和 bot 问题
+
+pip install pytest-html
+azdev test --no-exitfirst --profile latest --verbose --pytest-args "--html=index.report.parallel.html --durations=0"
+https://github.com/pytest-dev/pytest-html/pull/464/files
+
+并行 parallel
+azdev test --no-exitfirst --profile latest --verbose --pytest-args "--html=index.report.parallel.html --durations=0"
+非并行 Non-parallel
+azdev test --no-exitfirst --profile latest --verbose --series --pytest-args "--html=index.report.parallel.html --durations=0"
+
+https://dev.azure.com/azure-sdk/public/_apps/hub/ms.vss-ciworkflow.build-ci-hub?_a=edit-build-definition&id=246&view=Tab_Tasks
+shallow fetch: When selected, limit fetching to the specified number of commits from the tip of each remote branch history. You can specify the number of commits to fetch in Fetch depth option.

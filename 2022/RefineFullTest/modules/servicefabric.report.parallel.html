@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title>Test Report</title>
+    <link href="assets/style.css" rel="stylesheet" type="text/css"/></head>
+  <body onLoad="init()">
+    <script>/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+function toArray(iter) {
+    if (iter === null) {
+        return null;
+    }
+    return Array.prototype.slice.call(iter);
+}
+
+function find(selector, elem) { // eslint-disable-line no-redeclare
+    if (!elem) {
+        elem = document;
+    }
+    return elem.querySelector(selector);
+}
+
+function findAll(selector, elem) {
+    if (!elem) {
+        elem = document;
+    }
+    return toArray(elem.querySelectorAll(selector));
+}
+
+function sortColumn(elem) {
+    toggleSortStates(elem);
+    const colIndex = toArray(elem.parentNode.childNodes).indexOf(elem);
+    let key;
+    if (elem.classList.contains('result')) {
+        key = keyResult;
+    } else if (elem.classList.contains('links')) {
+        key = keyLink;
+    } else if (elem.classList.contains('float')) {
+        key = keyFloat;
+    } else {
+        key = keyAlpha;
+    }
+    sortTable(elem, key(colIndex));
+}
+
+function showAllExtras() { // eslint-disable-line no-unused-vars
+    findAll('.col-result').forEach(showExtras);
+}
+
+function hideAllExtras() { // eslint-disable-line no-unused-vars
+    findAll('.col-result').forEach(hideExtras);
+}
+
+function showExtras(colresultElem) {
+    const extras = colresultElem.parentNode.nextElementSibling;
+    const expandcollapse = colresultElem.firstElementChild;
+    extras.classList.remove('collapsed');
+    expandcollapse.classList.remove('expander');
+    expandcollapse.classList.add('collapser');
+}
+
+function hideExtras(colresultElem) {
+    const extras = colresultElem.parentNode.nextElementSibling;
+    const expandcollapse = colresultElem.firstElementChild;
+    extras.classList.add('collapsed');
+    expandcollapse.classList.remove('collapser');
+    expandcollapse.classList.add('expander');
+}
+
+function showFilters() {
+    const filterItems = document.getElementsByClassName('filter');
+    for (let i = 0; i < filterItems.length; i++)
+        filterItems[i].hidden = false;
+}
+
+function addCollapse() {
+    // Add links for show/hide all
+    const resulttable = find('table#results-table');
+    const showhideall = document.createElement('p');
+    showhideall.innerHTML = '<a href="javascript:showAllExtras()">Show all details</a> / ' +
+                            '<a href="javascript:hideAllExtras()">Hide all details</a>';
+    resulttable.parentElement.insertBefore(showhideall, resulttable);
+
+    // Add show/hide link to each result
+    findAll('.col-result').forEach(function(elem) {
+        const collapsed = getQueryParameter('collapsed') || 'Passed';
+        const extras = elem.parentNode.nextElementSibling;
+        const expandcollapse = document.createElement('span');
+        if (extras.classList.contains('collapsed')) {
+            expandcollapse.classList.add('expander');
+        } else if (collapsed.includes(elem.innerHTML)) {
+            extras.classList.add('collapsed');
+            expandcollapse.classList.add('expander');
+        } else {
+            expandcollapse.classList.add('collapser');
+        }
+        elem.appendChild(expandcollapse);
+
+        elem.addEventListener('click', function(event) {
+            if (event.currentTarget.parentNode.nextElementSibling.classList.contains('collapsed')) {
+                showExtras(event.currentTarget);
+            } else {
+                hideExtras(event.currentTarget);
+            }
+        });
+    });
+}
+
+function getQueryParameter(name) {
+    const match = RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
+    return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
+}
+
+function init () { // eslint-disable-line no-unused-vars
+    resetSortHeaders();
+
+    addCollapse();
+
+    showFilters();
+
+    sortColumn(find('.initial-sort'));
+
+    findAll('.sortable').forEach(function(elem) {
+        elem.addEventListener('click',
+            function() {
+                sortColumn(elem);
+            }, false);
+    });
+}
+
+function sortTable(clicked, keyFunc) {
+    const rows = findAll('.results-table-row');
+    const reversed = !clicked.classList.contains('asc');
+    const sortedRows = sort(rows, keyFunc, reversed);
+    /* Whole table is removed here because browsers acts much slower
+     * when appending existing elements.
+     */
+    const thead = document.getElementById('results-table-head');
+    document.getElementById('results-table').remove();
+    const parent = document.createElement('table');
+    parent.id = 'results-table';
+    parent.appendChild(thead);
+    sortedRows.forEach(function(elem) {
+        parent.appendChild(elem);
+    });
+    document.getElementsByTagName('BODY')[0].appendChild(parent);
+}
+
+function sort(items, keyFunc, reversed) {
+    const sortArray = items.map(function(item, i) {
+        return [keyFunc(item), i];
+    });
+
+    sortArray.sort(function(a, b) {
+        const keyA = a[0];
+        const keyB = b[0];
+
+        if (keyA == keyB) return 0;
+
+        if (reversed) {
+            return keyA < keyB ? 1 : -1;
+        } else {
+            return keyA > keyB ? 1 : -1;
+        }
+    });
+
+    return sortArray.map(function(item) {
+        const index = item[1];
+        return items[index];
+    });
+}
+
+function keyAlpha(colIndex) {
+    return function(elem) {
+        return elem.childNodes[1].childNodes[colIndex].firstChild.data.toLowerCase();
+    };
+}
+
+function keyFloat(colIndex) {
+    return function(elem) {
+        return Number(elem.childNodes[1].childNodes[colIndex].firstChild.data);
+    };
+}
+
+function keyLink(colIndex) {
+    return function(elem) {
+        const dataCell = elem.childNodes[1].childNodes[colIndex].firstChild;
+        return dataCell == null ? '' : dataCell.innerText.toLowerCase();
+    };
+}
+
+function keyResult(colIndex) {
+    return function(elem) {
+        const strings = ['Error', 'Failed', 'Rerun', 'XFailed', 'XPassed',
+            'Skipped', 'Passed'];
+        return strings.indexOf(elem.childNodes[1].childNodes[colIndex].firstChild.data);
+    };
+}
+
+function resetSortHeaders() {
+    findAll('.sort-icon').forEach(function(elem) {
+        elem.parentNode.removeChild(elem);
+    });
+    findAll('.sortable').forEach(function(elem) {
+        const icon = document.createElement('div');
+        icon.className = 'sort-icon';
+        icon.textContent = 'vvv';
+        elem.insertBefore(icon, elem.firstChild);
+        elem.classList.remove('desc', 'active');
+        elem.classList.add('asc', 'inactive');
+    });
+}
+
+function toggleSortStates(elem) {
+    //if active, toggle between asc and desc
+    if (elem.classList.contains('active')) {
+        elem.classList.toggle('asc');
+        elem.classList.toggle('desc');
+    }
+
+    //if inactive, reset all other functions and add ascending active
+    if (elem.classList.contains('inactive')) {
+        resetSortHeaders();
+        elem.classList.remove('inactive');
+        elem.classList.add('active');
+    }
+}
+
+function isAllRowsHidden(value) {
+    return value.hidden == false;
+}
+
+function filterTable(elem) { // eslint-disable-line no-unused-vars
+    const outcomeAtt = 'data-test-result';
+    const outcome = elem.getAttribute(outcomeAtt);
+    const classOutcome = outcome + ' results-table-row';
+    const outcomeRows = document.getElementsByClassName(classOutcome);
+
+    for(let i = 0; i < outcomeRows.length; i++){
+        outcomeRows[i].hidden = !elem.checked;
+    }
+
+    const rows = findAll('.results-table-row').filter(isAllRowsHidden);
+    const allRowsHidden = rows.length == 0 ? true : false;
+    const notFoundMessage = document.getElementById('not-found-message');
+    notFoundMessage.hidden = !allRowsHidden;
+}
+</script>
+    <h1>servicefabric.report.parallel.html</h1>
+    <p>Report generated on 23-Mar-2022 at 18:47:22 by <a href="https://pypi.python.org/pypi/pytest-html">pytest-html</a> v3.1.1</p>
+    <h2>Summary</h2>
+    <p>9 tests ran in 91.05 seconds. </p>
+    <p class="filter" hidden="true">(Un)check the boxes to filter the results.</p><input checked="true" class="filter" data-test-result="passed" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="passed">7 passed</span>, <input checked="true" class="filter" data-test-result="skipped" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="skipped">1 skipped</span>, <input checked="true" class="filter" data-test-result="failed" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="failed">2 failed</span>, <input checked="true" class="filter" data-test-result="error" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="error">0 errors</span>, <input checked="true" class="filter" data-test-result="xfailed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="xfailed">0 expected failures</span>, <input checked="true" class="filter" data-test-result="xpassed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="xpassed">0 unexpected passes</span>
+    <h2>Results</h2>
+    <table id="results-table">
+      <thead id="results-table-head">
+        <tr>
+          <th class="sortable result initial-sort" col="result">Result</th>
+          <th class="sortable" col="name">Test</th>
+          <th class="sortable float" col="duration">Duration</th>
+          <th class="sortable links" col="links">Links</th></tr>
+        <tr hidden="true" id="not-found-message">
+          <th colspan="4">No results found. Try to check the filters</th></tr></thead>
+      <tbody class="failed results-table-row">
+        <tr>
+          <td class="col-result">Failed</td>
+          <td class="col-name">azure/cli/command_modules/servicefabric/tests/latest/test_sf_cluster.py::ServiceFabricClusterTests::test_create_cluster_with_separate_kv</td>
+          <td class="col-duration">0.32</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">self = &lt;azure.cli.testsdk.base.ExecutionResult object at 0x000001FB958B3580&gt;<br/>cli_ctx = &lt;azure.cli.core.mock.DummyCli object at 0x000001FB9058A8E0&gt;<br/>command = &#x27;keyvault certificate create --vault-name sfrp-cli-kv-000002 -n sfrp-cli-000003 -p @&quot;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\servicefabric\\tests\\latest\\policy.json&quot;&#x27;<br/>expect_failure = False<br/><br/>    def _in_process_execute(self, cli_ctx, command, expect_failure=False):<br/>        from io import StringIO<br/>        from vcr.errors import CannotOverwriteExistingCassetteException<br/>    <br/>        if command.startswith(&#x27;az &#x27;):<br/>            command = command[3:]<br/>    <br/>        stdout_buf = StringIO()<br/>        logging_buf = StringIO()<br/>        try:<br/>            # issue: stderr cannot be redirect in this form, as a result some failure information<br/>            # is lost when command fails.<br/>&gt;           self.exit_code = cli_ctx.invoke(shlex.split(command), out_file=stdout_buf) or 0<br/><br/>c:\code\azure-cli\src\azure-cli-testsdk\azure\cli\testsdk\base.py:294: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>self = &lt;azure.cli.core.mock.DummyCli object at 0x000001FB9058A8E0&gt;<br/>args = [&#x27;keyvault&#x27;, &#x27;certificate&#x27;, &#x27;create&#x27;, &#x27;--vault-name&#x27;, &#x27;sfrp-cli-kv-000002&#x27;, &#x27;-n&#x27;, ...]<br/>initial_invocation_data = None<br/>out_file = &lt;_io.StringIO object at 0x000001FB955C5430&gt;<br/><br/>    def invoke(self, args, initial_invocation_data=None, out_file=None):<br/>        &quot;&quot;&quot; Invoke a command.<br/>    <br/>        :param args: The arguments that represent the command<br/>        :type args: list, tuple<br/>        :param initial_invocation_data: Prime the in memory collection of key-value data for this invocation.<br/>        :type initial_invocation_data: dict<br/>        :param out_file: The file to send output to. If not used, we use out_file for knack.cli.CLI instance<br/>        :type out_file: file-like object<br/>        :return: The exit code of the invocation<br/>        :rtype: int<br/>        &quot;&quot;&quot;<br/>        from .util import CommandResultItem<br/>    <br/>        if not isinstance(args, (list, tuple)):<br/>            raise TypeError(&#x27;args should be a list or tuple.&#x27;)<br/>        exit_code = 0<br/>        try:<br/>            out_file = out_file or self.out_file<br/>            if out_file is sys.stdout and self._should_init_colorama:<br/>                self.init_debug_log.append(&quot;Init colorama.&quot;)<br/>                import colorama<br/>                colorama.init()<br/>                # point out_file to the new sys.stdout which is overwritten by colorama<br/>                out_file = sys.stdout<br/>    <br/>            args = self.completion.get_completion_args() or args<br/>    <br/>            self.logging.configure(args)<br/>            logger.debug(&#x27;Command arguments: %s&#x27;, args)<br/>            self._print_init_log()<br/>    <br/>            self.raise_event(EVENT_CLI_PRE_EXECUTE)<br/>            if CLI._should_show_version(args):<br/>                self.show_version()<br/>                self.result = CommandResultItem(None)<br/>            else:<br/>                self.invocation = self.invocation_cls(cli_ctx=self,<br/>                                                      parser_cls=self.parser_cls,<br/>                                                      commands_loader_cls=self.commands_loader_cls,<br/>                                                      help_cls=self.help_cls,<br/>                                                      initial_data=initial_invocation_data)<br/>                cmd_result = self.invocation.execute(args)<br/>                self.result = cmd_result<br/>                exit_code = self.result.exit_code<br/>                output_type = self.invocation.data[&#x27;output&#x27;]<br/>                if cmd_result and cmd_result.result is not None:<br/>                    formatter = self.output.get_formatter(output_type)<br/>                    self.output.out(cmd_result, formatter=formatter, out_file=out_file)<br/>                self.raise_event(EVENT_CLI_SUCCESSFUL_EXECUTE, result=cmd_result)<br/>        except KeyboardInterrupt as ex:<br/>            exit_code = 1<br/>            self.result = CommandResultItem(None, error=ex, exit_code=exit_code)<br/>        except Exception as ex:  # pylint: disable=broad-except<br/>&gt;           exit_code = self.exception_handler(ex)<br/><br/>C:\Code\azure-cli\env\lib\site-packages\knack\cli.py:243: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>self = &lt;azure.cli.core.mock.DummyCli object at 0x000001FB9058A8E0&gt;<br/>ex = CLIError(&#x27;AKV10000: Request is missing a Bearer or PoP token.&#x27;)<br/><br/>    def exception_handler(self, ex):  # pylint: disable=no-self-use<br/>        from azure.cli.core.util import handle_exception<br/>&gt;       return handle_exception(ex)<br/><br/>c:\code\azure-cli\src\azure-cli-core\azure\cli\core\__init__.py:135: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>ex = CLIError(&#x27;AKV10000: Request is missing a Bearer or PoP token.&#x27;), args = ()<br/>kwargs = {}<br/><br/>    def _handle_main_exception(ex, *args, **kwargs):  # pylint: disable=unused-argument<br/>        if isinstance(ex, CannotOverwriteExistingCassetteException):<br/>            # This exception usually caused by a no match HTTP request. This is a product error<br/>            # that is caused by change of SDK invocation.<br/>            raise ex<br/>    <br/>&gt;       raise CliExecutionError(ex)<br/><span class="error">E       azure.cli.testsdk.exceptions.CliExecutionError: The CLI throws exception CLIError during execution and fails the command.</span><br/><br/>c:\code\azure-cli\src\azure-cli-testsdk\azure\cli\testsdk\patches.py:35: CliExecutionError<br/><br/>During handling of the above exception, another exception occurred:<br/><br/>self = &lt;azure.cli.command_modules.servicefabric.tests.latest.test_sf_cluster.ServiceFabricClusterTests testMethod=test_create_cluster_with_separate_kv&gt;<br/>key_vault = &#x27;sfrp-cli-kv-000002&#x27;, resource_group = &#x27;clitest.rg000001&#x27;<br/><br/>    @ResourceGroupPreparer()<br/>    @KeyVaultPreparer(name_prefix=&#x27;sfrp-cli-kv-&#x27;, additional_params=&#x27;--enabled-for-deployment --enabled-for-template-deployment&#x27;)<br/>    def test_create_cluster_with_separate_kv(self, key_vault, resource_group):<br/>        self.kwargs.update({<br/>            &#x27;kv_name&#x27;: key_vault,<br/>            &#x27;loc&#x27;: &#x27;westus&#x27;,<br/>            &#x27;cert_name&#x27;: self.create_random_name(&#x27;sfrp-cli-&#x27;, 24),<br/>            &#x27;cluster_name&#x27;: self.create_random_name(&#x27;sfrp-cli-&#x27;, 24),<br/>            &#x27;vm_password&#x27;: &quot;Pass123!@#&quot;,<br/>            &#x27;policy_path&#x27;: os.path.join(TEST_DIR, &#x27;policy.json&#x27;)<br/>        })<br/>&gt;       _create_cluster_with_separate_kv(self, self.kwargs)<br/><br/>c:\code\azure-cli\src\azure-cli\azure\cli\command_modules\servicefabric\tests\latest\test_sf_cluster.py:29: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/>c:\code\azure-cli\src\azure-cli\azure\cli\command_modules\servicefabric\tests\latest\test_util.py:29: in _create_cluster_with_separate_kv<br/>    cert = _add_selfsigned_cert_to_keyvault(test, kwargs)<br/>c:\code\azure-cli\src\azure-cli\azure\cli\command_modules\servicefabric\tests\latest\test_util.py:18: in _add_selfsigned_cert_to_keyvault<br/>    test.cmd(&#x27;keyvault certificate create --vault-name {kv_name} -n {cert_name} -p @&quot;{policy_path}&quot;&#x27;)<br/>c:\code\azure-cli\src\azure-cli-testsdk\azure\cli\testsdk\base.py:169: in cmd<br/>    return execute(self.cli_ctx, command, expect_failure=expect_failure).assert_with_checks(checks)<br/>c:\code\azure-cli\src\azure-cli-testsdk\azure\cli\testsdk\base.py:243: in __init__<br/>    self._in_process_execute(cli_ctx, command, expect_failure=expect_failure)<br/>c:\code\azure-cli\src\azure-cli-testsdk\azure\cli\testsdk\base.py:306: in _in_process_execute<br/>    raise ex.exception<br/>C:\Code\azure-cli\env\lib\site-packages\knack\cli.py:231: in invoke<br/>    cmd_result = self.invocation.execute(args)<br/>c:\code\azure-cli\src\azure-cli-core\azure\cli\core\commands\__init__.py:658: in execute<br/>    raise ex<br/>c:\code\azure-cli\src\azure-cli-core\azure\cli\core\commands\__init__.py:721: in _run_jobs_serially<br/>    results.append(self._run_job(expanded_arg, cmd_copy))<br/>c:\code\azure-cli\src\azure-cli-core\azure\cli\core\commands\__init__.py:692: in _run_job<br/>    result = cmd_copy(params)<br/>c:\code\azure-cli\src\azure-cli-core\azure\cli\core\commands\__init__.py:328: in __call__<br/>    return self.handler(*args, **kwargs)<br/>c:\code\azure-cli\src\azure-cli\azure\cli\command_modules\keyvault\_command_type.py:138: in keyvault_command_handler<br/>    return keyvault_exception_handler(self.command_loader, ex)<br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>cmd = &lt;azure.cli.command_modules.keyvault.KeyVaultCommandsLoader object at 0x000001FB958B99A0&gt;<br/>ex = KeyVaultErrorException(&#x27;(Unauthorized) AKV10000: Request is missing a Bearer or PoP token.&#x27;)<br/><br/>    def keyvault_exception_handler(cmd, ex):<br/>        from msrest.exceptions import ValidationError, ClientRequestError<br/>        from azure.cli.core.profiles import ResourceType<br/>        KeyVaultErrorException = cmd.get_models(&#x27;KeyVaultErrorException&#x27;, resource_type=ResourceType.DATA_KEYVAULT)<br/>        if isinstance(ex, (ValidationError, KeyVaultErrorException)):<br/>            try:<br/>&gt;               raise CLIError(ex.inner_exception.error.message)<br/><span class="error">E               knack.util.CLIError: AKV10000: Request is missing a Bearer or PoP token.</span><br/><br/>c:\code\azure-cli\src\azure-cli\azure\cli\command_modules\keyvault\_command_type.py:38: CLIError<br/></div></td></tr></tbody>
+      <tbody class="failed results-table-row">
+        <tr>
+          <td class="col-result">Failed</td>
+          <td class="col-name">azure/cli/command_modules/servicefabric/tests/latest/test_sf_managed_cluster.py::ServiceFabricManagedClustersTests::test_cert_and_ext</td>
+          <td class="col-duration">14.35</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">self = &lt;azure.cli.testsdk.base.ExecutionResult object at 0x000001FB95CD96D0&gt;<br/>cli_ctx = &lt;azure.cli.core.mock.DummyCli object at 0x000001FB913DDCD0&gt;<br/>command = &#x27;keyvault certificate create --vault-name sfrp-cli-kv-000002 -n sfrp-cli-000005 -p @&quot;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\servicefabric\\tests\\latest\\policy.json&quot;&#x27;<br/>expect_failure = False<br/><br/>    def _in_process_execute(self, cli_ctx, command, expect_failure=False):<br/>        from io import StringIO<br/>        from vcr.errors import CannotOverwriteExistingCassetteException<br/>    <br/>        if command.startswith(&#x27;az &#x27;):<br/>            command = command[3:]<br/>    <br/>        stdout_buf = StringIO()<br/>        logging_buf = StringIO()<br/>        try:<br/>            # issue: stderr cannot be redirect in this form, as a result some failure information<br/>            # is lost when command fails.<br/>&gt;           self.exit_code = cli_ctx.invoke(shlex.split(command), out_file=stdout_buf) or 0<br/><br/>c:\code\azure-cli\src\azure-cli-testsdk\azure\cli\testsdk\base.py:294: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>self = &lt;azure.cli.core.mock.DummyCli object at 0x000001FB913DDCD0&gt;<br/>args = [&#x27;keyvault&#x27;, &#x27;certificate&#x27;, &#x27;create&#x27;, &#x27;--vault-name&#x27;, &#x27;sfrp-cli-kv-000002&#x27;, &#x27;-n&#x27;, ...]<br/>initial_invocation_data = None<br/>out_file = &lt;_io.StringIO object at 0x000001FB95F8DD30&gt;<br/><br/>    def invoke(self, args, initial_invocation_data=None, out_file=None):<br/>        &quot;&quot;&quot; Invoke a command.<br/>    <br/>        :param args: The arguments that represent the command<br/>        :type args: list, tuple<br/>        :param initial_invocation_data: Prime the in memory collection of key-value data for this invocation.<br/>        :type initial_invocation_data: dict<br/>        :param out_file: The file to send output to. If not used, we use out_file for knack.cli.CLI instance<br/>        :type out_file: file-like object<br/>        :return: The exit code of the invocation<br/>        :rtype: int<br/>        &quot;&quot;&quot;<br/>        from .util import CommandResultItem<br/>    <br/>        if not isinstance(args, (list, tuple)):<br/>            raise TypeError(&#x27;args should be a list or tuple.&#x27;)<br/>        exit_code = 0<br/>        try:<br/>            out_file = out_file or self.out_file<br/>            if out_file is sys.stdout and self._should_init_colorama:<br/>                self.init_debug_log.append(&quot;Init colorama.&quot;)<br/>                import colorama<br/>                colorama.init()<br/>                # point out_file to the new sys.stdout which is overwritten by colorama<br/>                out_file = sys.stdout<br/>    <br/>            args = self.completion.get_completion_args() or args<br/>    <br/>            self.logging.configure(args)<br/>            logger.debug(&#x27;Command arguments: %s&#x27;, args)<br/>            self._print_init_log()<br/>    <br/>            self.raise_event(EVENT_CLI_PRE_EXECUTE)<br/>            if CLI._should_show_version(args):<br/>                self.show_version()<br/>                self.result = CommandResultItem(None)<br/>            else:<br/>                self.invocation = self.invocation_cls(cli_ctx=self,<br/>                                                      parser_cls=self.parser_cls,<br/>                                                      commands_loader_cls=self.commands_loader_cls,<br/>                                                      help_cls=self.help_cls,<br/>                                                      initial_data=initial_invocation_data)<br/>                cmd_result = self.invocation.execute(args)<br/>                self.result = cmd_result<br/>                exit_code = self.result.exit_code<br/>                output_type = self.invocation.data[&#x27;output&#x27;]<br/>                if cmd_result and cmd_result.result is not None:<br/>                    formatter = self.output.get_formatter(output_type)<br/>                    self.output.out(cmd_result, formatter=formatter, out_file=out_file)<br/>                self.raise_event(EVENT_CLI_SUCCESSFUL_EXECUTE, result=cmd_result)<br/>        except KeyboardInterrupt as ex:<br/>            exit_code = 1<br/>            self.result = CommandResultItem(None, error=ex, exit_code=exit_code)<br/>        except Exception as ex:  # pylint: disable=broad-except<br/>&gt;           exit_code = self.exception_handler(ex)<br/><br/>C:\Code\azure-cli\env\lib\site-packages\knack\cli.py:243: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>self = &lt;azure.cli.core.mock.DummyCli object at 0x000001FB913DDCD0&gt;<br/>ex = CLIError(&#x27;AKV10000: Request is missing a Bearer or PoP token.&#x27;)<br/><br/>    def exception_handler(self, ex):  # pylint: disable=no-self-use<br/>        from azure.cli.core.util import handle_exception<br/>&gt;       return handle_exception(ex)<br/><br/>c:\code\azure-cli\src\azure-cli-core\azure\cli\core\__init__.py:135: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>ex = CLIError(&#x27;AKV10000: Request is missing a Bearer or PoP token.&#x27;), args = ()<br/>kwargs = {}<br/><br/>    def _handle_main_exception(ex, *args, **kwargs):  # pylint: disable=unused-argument<br/>        if isinstance(ex, CannotOverwriteExistingCassetteException):<br/>            # This exception usually caused by a no match HTTP request. This is a product error<br/>            # that is caused by change of SDK invocation.<br/>            raise ex<br/>    <br/>&gt;       raise CliExecutionError(ex)<br/><span class="error">E       azure.cli.testsdk.exceptions.CliExecutionError: The CLI throws exception CLIError during execution and fails the command.</span><br/><br/>c:\code\azure-cli\src\azure-cli-testsdk\azure\cli\testsdk\patches.py:35: CliExecutionError<br/><br/>During handling of the above exception, another exception occurred:<br/><br/>self = &lt;azure.cli.command_modules.servicefabric.tests.latest.test_sf_managed_cluster.ServiceFabricManagedClustersTests testMethod=test_cert_and_ext&gt;<br/>key_vault = &#x27;sfrp-cli-kv-000002&#x27;, resource_group = &#x27;clitest.rg000001&#x27;<br/><br/>    @ResourceGroupPreparer()<br/>    @KeyVaultPreparer(name_prefix=&#x27;sfrp-cli-kv-&#x27;, location=&#x27;eastasia&#x27;, additional_params=&#x27;--enabled-for-deployment --enabled-for-template-deployment&#x27;)<br/>    def test_cert_and_ext(self, key_vault, resource_group):<br/>        self.kwargs.update({<br/>            &#x27;cert_tp&#x27;: &#x27;123BDACDCDFB2C7B250192C6078E47D1E1DB119B&#x27;,<br/>            &#x27;cert_tp2&#x27;: &#x27;123BDACDCDFB2C7B250192C6078E47D1E1DB7777&#x27;,<br/>            &#x27;loc&#x27;: &#x27;eastasia&#x27;,<br/>            &#x27;cluster_name&#x27;: self.create_random_name(&#x27;sfrp-cli-&#x27;, 24),<br/>            &#x27;vm_password&#x27;: self.create_random_name(&#x27;Pass@&#x27;, 9),<br/>            &#x27;extName&#x27;: &#x27;csetest&#x27;,<br/>            &#x27;publisher&#x27;: &#x27;Microsoft.Compute&#x27;,<br/>            &#x27;extType&#x27;: &#x27;BGInfo&#x27;,<br/>            &#x27;extVer&#x27;: &#x27;2.1&#x27;,<br/>            &#x27;kv_name&#x27;: key_vault,<br/>            &#x27;cert_name&#x27;: self.create_random_name(&#x27;sfrp-cli-&#x27;, 24)<br/>        })<br/>    <br/>        self.cmd(&#x27;az sf managed-cluster create -g {rg} -c {cluster_name} -l {loc} --cert-thumbprint {cert_tp} --cert-is-admin --admin-password {vm_password}&#x27;,<br/>                 checks=[self.check(&#x27;provisioningState&#x27;, &#x27;Succeeded&#x27;),<br/>                         self.check(&#x27;clusterState&#x27;, &#x27;WaitingForNodes&#x27;)])<br/>    <br/>        self.cmd(&#x27;az sf managed-node-type create -g {rg} -c {cluster_name} -n pnt --instance-count 5 --primary&#x27;,<br/>                 checks=[self.check(&#x27;provisioningState&#x27;, &#x27;Succeeded&#x27;)])<br/>    <br/>        # add extension<br/>        self.cmd(&#x27;az sf managed-node-type vm-extension add -g {rg} -c {cluster_name} -n pnt &#x27;<br/>                 &#x27; --extension-name {extName} --publisher {publisher} --extension-type {extType} --type-handler-version {extVer} --auto-upgrade-minor-version&#x27;,<br/>                 checks=[self.check(&#x27;provisioningState&#x27;, &#x27;Succeeded&#x27;)])<br/>    <br/>        self.cmd(&#x27;az sf managed-node-type show -g {rg} -c {cluster_name} -n pnt&#x27;,<br/>                 checks=[self.check(&#x27;length(vmExtensions)&#x27;, 1)])<br/>    <br/>        # add secret<br/>        kv = self.cmd(&#x27;keyvault show -n {kv_name} -g {rg}&#x27;).get_output_in_json()<br/>        self.kwargs.update({&#x27;kv_id&#x27;: kv[&#x27;id&#x27;]})<br/>&gt;       cert = _add_selfsigned_cert_to_keyvault(self, self.kwargs)<br/><br/>c:\code\azure-cli\src\azure-cli\azure\cli\command_modules\servicefabric\tests\latest\test_sf_managed_cluster.py:146: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/>c:\code\azure-cli\src\azure-cli\azure\cli\command_modules\servicefabric\tests\latest\test_util.py:18: in _add_selfsigned_cert_to_keyvault<br/>    test.cmd(&#x27;keyvault certificate create --vault-name {kv_name} -n {cert_name} -p @&quot;{policy_path}&quot;&#x27;)<br/>c:\code\azure-cli\src\azure-cli-testsdk\azure\cli\testsdk\base.py:169: in cmd<br/>    return execute(self.cli_ctx, command, expect_failure=expect_failure).assert_with_checks(checks)<br/>c:\code\azure-cli\src\azure-cli-testsdk\azure\cli\testsdk\base.py:243: in __init__<br/>    self._in_process_execute(cli_ctx, command, expect_failure=expect_failure)<br/>c:\code\azure-cli\src\azure-cli-testsdk\azure\cli\testsdk\base.py:306: in _in_process_execute<br/>    raise ex.exception<br/>C:\Code\azure-cli\env\lib\site-packages\knack\cli.py:231: in invoke<br/>    cmd_result = self.invocation.execute(args)<br/>c:\code\azure-cli\src\azure-cli-core\azure\cli\core\commands\__init__.py:658: in execute<br/>    raise ex<br/>c:\code\azure-cli\src\azure-cli-core\azure\cli\core\commands\__init__.py:721: in _run_jobs_serially<br/>    results.append(self._run_job(expanded_arg, cmd_copy))<br/>c:\code\azure-cli\src\azure-cli-core\azure\cli\core\commands\__init__.py:692: in _run_job<br/>    result = cmd_copy(params)<br/>c:\code\azure-cli\src\azure-cli-core\azure\cli\core\commands\__init__.py:328: in __call__<br/>    return self.handler(*args, **kwargs)<br/>c:\code\azure-cli\src\azure-cli\azure\cli\command_modules\keyvault\_command_type.py:138: in keyvault_command_handler<br/>    return keyvault_exception_handler(self.command_loader, ex)<br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>cmd = &lt;azure.cli.command_modules.keyvault.KeyVaultCommandsLoader object at 0x000001FB95A603D0&gt;<br/>ex = KeyVaultErrorException(&#x27;(Unauthorized) AKV10000: Request is missing a Bearer or PoP token.&#x27;)<br/><br/>    def keyvault_exception_handler(cmd, ex):<br/>        from msrest.exceptions import ValidationError, ClientRequestError<br/>        from azure.cli.core.profiles import ResourceType<br/>        KeyVaultErrorException = cmd.get_models(&#x27;KeyVaultErrorException&#x27;, resource_type=ResourceType.DATA_KEYVAULT)<br/>        if isinstance(ex, (ValidationError, KeyVaultErrorException)):<br/>            try:<br/>&gt;               raise CLIError(ex.inner_exception.error.message)<br/><span class="error">E               knack.util.CLIError: AKV10000: Request is missing a Bearer or PoP token.</span><br/><br/>c:\code\azure-cli\src\azure-cli\azure\cli\command_modules\keyvault\_command_type.py:38: CLIError<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td class="col-name">azure/cli/command_modules/servicefabric/tests/latest/test_sf_cluster.py::ServiceFabricClusterTests::test_cluster</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">(&#x27;c:\\code\\azure-cli\\src\\azure-cli\\azure\\cli\\command_modules\\servicefabric\\tests\\latest\\test_sf_cluster.py&#x27;, 32, &#x27;Skipped: no quota, disable temporarily&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/servicefabric/tests/latest/test_sf_application.py::ServiceFabricApplicationTests::test_application_related</td>
+          <td class="col-duration">10.85</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 (NotFound) Resource /subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/CLITEST.RG4L2LLMN5UKXBRYPL2G7RBLVHEDW66BOFX3VR5KDIK4FLZSI3OE2QI5D4VRO6TKCCK/providers/Microsoft.ServiceFabric/clusters/SFRP-CLI-POXYN4ET7EZJSE3/applicationTypes/CALCSERVICEAPP not found.
+Code: NotFound
+Message: Resource /subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/CLITEST.RG4L2LLMN5UKXBRYPL2G7RBLVHEDW66BOFX3VR5KDIK4FLZSI3OE2QI5D4VRO6TKCCK/providers/Microsoft.ServiceFabric/clusters/SFRP-CLI-POXYN4ET7EZJSE3/applicationTypes/CALCSERVICEAPP not found.
+ERROR    az_command_data_logger:azlogging.py:213 (NotFound) Resource /subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/CLITEST.RG4L2LLMN5UKXBRYPL2G7RBLVHEDW66BOFX3VR5KDIK4FLZSI3OE2QI5D4VRO6TKCCK/providers/Microsoft.ServiceFabric/clusters/SFRP-CLI-POXYN4ET7EZJSE3/applicationTypes/CALCSERVICEAPP not found.
+Code: NotFound
+Message: Resource /subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/CLITEST.RG4L2LLMN5UKXBRYPL2G7RBLVHEDW66BOFX3VR5KDIK4FLZSI3OE2QI5D4VRO6TKCCK/providers/Microsoft.ServiceFabric/clusters/SFRP-CLI-POXYN4ET7EZJSE3/applicationTypes/CALCSERVICEAPP not found.
+ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 (NotFound) Resource /subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/CLITEST.RG4L2LLMN5UKXBRYPL2G7RBLVHEDW66BOFX3VR5KDIK4FLZSI3OE2QI5D4VRO6TKCCK/providers/Microsoft.ServiceFabric/clusters/SFRP-CLI-POXYN4ET7EZJSE3/applicationTypes/CALCSERVICEAPP/versions/1.0 not found.
+Code: NotFound
+Message: Resource /subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/CLITEST.RG4L2LLMN5UKXBRYPL2G7RBLVHEDW66BOFX3VR5KDIK4FLZSI3OE2QI5D4VRO6TKCCK/providers/Microsoft.ServiceFabric/clusters/SFRP-CLI-POXYN4ET7EZJSE3/applicationTypes/CALCSERVICEAPP/versions/1.0 not found.
+ERROR    az_command_data_logger:azlogging.py:213 (NotFound) Resource /subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/CLITEST.RG4L2LLMN5UKXBRYPL2G7RBLVHEDW66BOFX3VR5KDIK4FLZSI3OE2QI5D4VRO6TKCCK/providers/Microsoft.ServiceFabric/clusters/SFRP-CLI-POXYN4ET7EZJSE3/applicationTypes/CALCSERVICEAPP/versions/1.0 not found.
+Code: NotFound
+Message: Resource /subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/CLITEST.RG4L2LLMN5UKXBRYPL2G7RBLVHEDW66BOFX3VR5KDIK4FLZSI3OE2QI5D4VRO6TKCCK/providers/Microsoft.ServiceFabric/clusters/SFRP-CLI-POXYN4ET7EZJSE3/applicationTypes/CALCSERVICEAPP/versions/1.0 not found.
+ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 (NotFound) Resource /subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/CLITEST.RG4L2LLMN5UKXBRYPL2G7RBLVHEDW66BOFX3VR5KDIK4FLZSI3OE2QI5D4VRO6TKCCK/providers/Microsoft.ServiceFabric/clusters/SFRP-CLI-POXYN4ET7EZJSE3/applications/TESTAPPU4WC not found.
+Code: NotFound
+Message: Resource /subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/CLITEST.RG4L2LLMN5UKXBRYPL2G7RBLVHEDW66BOFX3VR5KDIK4FLZSI3OE2QI5D4VRO6TKCCK/providers/Microsoft.ServiceFabric/clusters/SFRP-CLI-POXYN4ET7EZJSE3/applications/TESTAPPU4WC not found.
+ERROR    az_command_data_logger:azlogging.py:213 (NotFound) Resource /subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/CLITEST.RG4L2LLMN5UKXBRYPL2G7RBLVHEDW66BOFX3VR5KDIK4FLZSI3OE2QI5D4VRO6TKCCK/providers/Microsoft.ServiceFabric/clusters/SFRP-CLI-POXYN4ET7EZJSE3/applications/TESTAPPU4WC not found.
+Code: NotFound
+Message: Resource /subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/CLITEST.RG4L2LLMN5UKXBRYPL2G7RBLVHEDW66BOFX3VR5KDIK4FLZSI3OE2QI5D4VRO6TKCCK/providers/Microsoft.ServiceFabric/clusters/SFRP-CLI-POXYN4ET7EZJSE3/applications/TESTAPPU4WC not found.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/servicefabric/tests/latest/test_sf_managed_application.py::ServiceFabricManagedApplicationTests::test_managed_app_type</td>
+          <td class="col-duration">5.28</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 (NotFound) GetEntityFromTable: the ApplicationTypeData f85387ca-3677-4296-974b-c5e2870b3e8b&amp;votingtype could not be found.
+Code: NotFound
+Message: GetEntityFromTable: the ApplicationTypeData f85387ca-3677-4296-974b-c5e2870b3e8b&amp;votingtype could not be found.
+ERROR    az_command_data_logger:azlogging.py:213 (NotFound) GetEntityFromTable: the ApplicationTypeData f85387ca-3677-4296-974b-c5e2870b3e8b&amp;votingtype could not be found.
+Code: NotFound
+Message: GetEntityFromTable: the ApplicationTypeData f85387ca-3677-4296-974b-c5e2870b3e8b&amp;votingtype could not be found.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/servicefabric/tests/latest/test_sf_managed_application.py::ServiceFabricManagedApplicationTests::test_managed_app_type_version</td>
+          <td class="col-duration">5.42</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 (NotFound) GetEntityFromTable: the ApplicationTypeVersionData ac8ac0be-38b8-433b-94a0-c016a76e211d&amp;votingtype&amp;1.0.0 could not be found.
+Code: NotFound
+Message: GetEntityFromTable: the ApplicationTypeVersionData ac8ac0be-38b8-433b-94a0-c016a76e211d&amp;votingtype&amp;1.0.0 could not be found.
+ERROR    az_command_data_logger:azlogging.py:213 (NotFound) GetEntityFromTable: the ApplicationTypeVersionData ac8ac0be-38b8-433b-94a0-c016a76e211d&amp;votingtype&amp;1.0.0 could not be found.
+Code: NotFound
+Message: GetEntityFromTable: the ApplicationTypeVersionData ac8ac0be-38b8-433b-94a0-c016a76e211d&amp;votingtype&amp;1.0.0 could not be found.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/servicefabric/tests/latest/test_sf_managed_application.py::ServiceFabricManagedApplicationTests::test_managed_application</td>
+          <td class="col-duration">7.92</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 (NotFound) GetEntityFromTable: the ApplicationData 0a572b42-11d0-4b15-a6a1-e6ad7de58ea5&amp;testappiwui could not be found.
+Code: NotFound
+Message: GetEntityFromTable: the ApplicationData 0a572b42-11d0-4b15-a6a1-e6ad7de58ea5&amp;testappiwui could not be found.
+ERROR    az_command_data_logger:azlogging.py:213 (NotFound) GetEntityFromTable: the ApplicationData 0a572b42-11d0-4b15-a6a1-e6ad7de58ea5&amp;testappiwui could not be found.
+Code: NotFound
+Message: GetEntityFromTable: the ApplicationData 0a572b42-11d0-4b15-a6a1-e6ad7de58ea5&amp;testappiwui could not be found.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/servicefabric/tests/latest/test_sf_managed_application.py::ServiceFabricManagedApplicationTests::test_managed_service</td>
+          <td class="col-duration">14.54</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  msrest.serialization:serialization.py:185 instance_count is not a known attribute of class &lt;class &#x27;azure.mgmt.servicefabricmanagedclusters.models._models_py3.StatefulServiceProperties&#x27;&gt; and will be ignored
+ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 Operation returned an invalid status &#x27;Not Found&#x27;
+ERROR    az_command_data_logger:azlogging.py:213 Operation returned an invalid status &#x27;Not Found&#x27;
+ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 Operation returned an invalid status &#x27;Not Found&#x27;
+ERROR    az_command_data_logger:azlogging.py:213 Operation returned an invalid status &#x27;Not Found&#x27;<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/servicefabric/tests/latest/test_sf_managed_cluster.py::ServiceFabricManagedClustersTests::test_basic_cluster</td>
+          <td class="col-duration">4.38</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 Operation returned an invalid status &#x27;Not Found&#x27;
+ERROR    az_command_data_logger:azlogging.py:213 Operation returned an invalid status &#x27;Not Found&#x27;<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/servicefabric/tests/latest/test_sf_managed_cluster.py::ServiceFabricManagedClustersTests::test_node_type_operation</td>
+          <td class="col-duration">25.93</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>ERROR    cli.azure.cli.command_modules.servicefabric.operations.managed_node_types:managed_node_types.py:169 HttpResponseError: (OperationFailed) Node(s): [ snt_0,snt_1 ] not found on &#x27;snt&#x27; node type. List of node type nodes: [  ]
+Code: OperationFailed
+Message: Node(s): [ snt_0,snt_1 ] not found on &#x27;snt&#x27; node type. List of node type nodes: [  ]
+ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 (NotFound) GetEntityFromTable: the NodeTypeData 641504f5-f8d4-41df-a909-e126b6104bb4_snt could not be found.
+Code: NotFound
+Message: GetEntityFromTable: the NodeTypeData 641504f5-f8d4-41df-a909-e126b6104bb4_snt could not be found.
+ERROR    az_command_data_logger:azlogging.py:213 (NotFound) GetEntityFromTable: the NodeTypeData 641504f5-f8d4-41df-a909-e126b6104bb4_snt could not be found.
+Code: NotFound
+Message: GetEntityFromTable: the NodeTypeData 641504f5-f8d4-41df-a909-e126b6104bb4_snt could not be found.
+ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 (ResourceNotFound) The Resource &#x27;Microsoft.ServiceFabric/managedclusters/sfrp-cli-000002&#x27; under resource group &#x27;clitest.rg000001&#x27; was not found. For more details please go to https://aka.ms/ARMResourceNotFoundFix
+Code: ResourceNotFound
+Message: The Resource &#x27;Microsoft.ServiceFabric/managedclusters/sfrp-cli-000002&#x27; under resource group &#x27;clitest.rg000001&#x27; was not found. For more details please go to https://aka.ms/ARMResourceNotFoundFix
+ERROR    az_command_data_logger:azlogging.py:213 (ResourceNotFound) The Resource &#x27;Microsoft.ServiceFabric/managedclusters/sfrp-cli-000002&#x27; under resource group &#x27;clitest.rg000001&#x27; was not found. For more details please go to https://aka.ms/ARMResourceNotFoundFix
+Code: ResourceNotFound
+Message: The Resource &#x27;Microsoft.ServiceFabric/managedclusters/sfrp-cli-000002&#x27; under resource group &#x27;clitest.rg000001&#x27; was not found. For more details please go to https://aka.ms/ARMResourceNotFoundFix<br/></div></td></tr></tbody></table></body></html>

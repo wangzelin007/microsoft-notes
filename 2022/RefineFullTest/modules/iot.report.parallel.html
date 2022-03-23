@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title>Test Report</title>
+    <link href="assets/style.css" rel="stylesheet" type="text/css"/></head>
+  <body onLoad="init()">
+    <script>/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+function toArray(iter) {
+    if (iter === null) {
+        return null;
+    }
+    return Array.prototype.slice.call(iter);
+}
+
+function find(selector, elem) { // eslint-disable-line no-redeclare
+    if (!elem) {
+        elem = document;
+    }
+    return elem.querySelector(selector);
+}
+
+function findAll(selector, elem) {
+    if (!elem) {
+        elem = document;
+    }
+    return toArray(elem.querySelectorAll(selector));
+}
+
+function sortColumn(elem) {
+    toggleSortStates(elem);
+    const colIndex = toArray(elem.parentNode.childNodes).indexOf(elem);
+    let key;
+    if (elem.classList.contains('result')) {
+        key = keyResult;
+    } else if (elem.classList.contains('links')) {
+        key = keyLink;
+    } else if (elem.classList.contains('float')) {
+        key = keyFloat;
+    } else {
+        key = keyAlpha;
+    }
+    sortTable(elem, key(colIndex));
+}
+
+function showAllExtras() { // eslint-disable-line no-unused-vars
+    findAll('.col-result').forEach(showExtras);
+}
+
+function hideAllExtras() { // eslint-disable-line no-unused-vars
+    findAll('.col-result').forEach(hideExtras);
+}
+
+function showExtras(colresultElem) {
+    const extras = colresultElem.parentNode.nextElementSibling;
+    const expandcollapse = colresultElem.firstElementChild;
+    extras.classList.remove('collapsed');
+    expandcollapse.classList.remove('expander');
+    expandcollapse.classList.add('collapser');
+}
+
+function hideExtras(colresultElem) {
+    const extras = colresultElem.parentNode.nextElementSibling;
+    const expandcollapse = colresultElem.firstElementChild;
+    extras.classList.add('collapsed');
+    expandcollapse.classList.remove('collapser');
+    expandcollapse.classList.add('expander');
+}
+
+function showFilters() {
+    const filterItems = document.getElementsByClassName('filter');
+    for (let i = 0; i < filterItems.length; i++)
+        filterItems[i].hidden = false;
+}
+
+function addCollapse() {
+    // Add links for show/hide all
+    const resulttable = find('table#results-table');
+    const showhideall = document.createElement('p');
+    showhideall.innerHTML = '<a href="javascript:showAllExtras()">Show all details</a> / ' +
+                            '<a href="javascript:hideAllExtras()">Hide all details</a>';
+    resulttable.parentElement.insertBefore(showhideall, resulttable);
+
+    // Add show/hide link to each result
+    findAll('.col-result').forEach(function(elem) {
+        const collapsed = getQueryParameter('collapsed') || 'Passed';
+        const extras = elem.parentNode.nextElementSibling;
+        const expandcollapse = document.createElement('span');
+        if (extras.classList.contains('collapsed')) {
+            expandcollapse.classList.add('expander');
+        } else if (collapsed.includes(elem.innerHTML)) {
+            extras.classList.add('collapsed');
+            expandcollapse.classList.add('expander');
+        } else {
+            expandcollapse.classList.add('collapser');
+        }
+        elem.appendChild(expandcollapse);
+
+        elem.addEventListener('click', function(event) {
+            if (event.currentTarget.parentNode.nextElementSibling.classList.contains('collapsed')) {
+                showExtras(event.currentTarget);
+            } else {
+                hideExtras(event.currentTarget);
+            }
+        });
+    });
+}
+
+function getQueryParameter(name) {
+    const match = RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
+    return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
+}
+
+function init () { // eslint-disable-line no-unused-vars
+    resetSortHeaders();
+
+    addCollapse();
+
+    showFilters();
+
+    sortColumn(find('.initial-sort'));
+
+    findAll('.sortable').forEach(function(elem) {
+        elem.addEventListener('click',
+            function() {
+                sortColumn(elem);
+            }, false);
+    });
+}
+
+function sortTable(clicked, keyFunc) {
+    const rows = findAll('.results-table-row');
+    const reversed = !clicked.classList.contains('asc');
+    const sortedRows = sort(rows, keyFunc, reversed);
+    /* Whole table is removed here because browsers acts much slower
+     * when appending existing elements.
+     */
+    const thead = document.getElementById('results-table-head');
+    document.getElementById('results-table').remove();
+    const parent = document.createElement('table');
+    parent.id = 'results-table';
+    parent.appendChild(thead);
+    sortedRows.forEach(function(elem) {
+        parent.appendChild(elem);
+    });
+    document.getElementsByTagName('BODY')[0].appendChild(parent);
+}
+
+function sort(items, keyFunc, reversed) {
+    const sortArray = items.map(function(item, i) {
+        return [keyFunc(item), i];
+    });
+
+    sortArray.sort(function(a, b) {
+        const keyA = a[0];
+        const keyB = b[0];
+
+        if (keyA == keyB) return 0;
+
+        if (reversed) {
+            return keyA < keyB ? 1 : -1;
+        } else {
+            return keyA > keyB ? 1 : -1;
+        }
+    });
+
+    return sortArray.map(function(item) {
+        const index = item[1];
+        return items[index];
+    });
+}
+
+function keyAlpha(colIndex) {
+    return function(elem) {
+        return elem.childNodes[1].childNodes[colIndex].firstChild.data.toLowerCase();
+    };
+}
+
+function keyFloat(colIndex) {
+    return function(elem) {
+        return Number(elem.childNodes[1].childNodes[colIndex].firstChild.data);
+    };
+}
+
+function keyLink(colIndex) {
+    return function(elem) {
+        const dataCell = elem.childNodes[1].childNodes[colIndex].firstChild;
+        return dataCell == null ? '' : dataCell.innerText.toLowerCase();
+    };
+}
+
+function keyResult(colIndex) {
+    return function(elem) {
+        const strings = ['Error', 'Failed', 'Rerun', 'XFailed', 'XPassed',
+            'Skipped', 'Passed'];
+        return strings.indexOf(elem.childNodes[1].childNodes[colIndex].firstChild.data);
+    };
+}
+
+function resetSortHeaders() {
+    findAll('.sort-icon').forEach(function(elem) {
+        elem.parentNode.removeChild(elem);
+    });
+    findAll('.sortable').forEach(function(elem) {
+        const icon = document.createElement('div');
+        icon.className = 'sort-icon';
+        icon.textContent = 'vvv';
+        elem.insertBefore(icon, elem.firstChild);
+        elem.classList.remove('desc', 'active');
+        elem.classList.add('asc', 'inactive');
+    });
+}
+
+function toggleSortStates(elem) {
+    //if active, toggle between asc and desc
+    if (elem.classList.contains('active')) {
+        elem.classList.toggle('asc');
+        elem.classList.toggle('desc');
+    }
+
+    //if inactive, reset all other functions and add ascending active
+    if (elem.classList.contains('inactive')) {
+        resetSortHeaders();
+        elem.classList.remove('inactive');
+        elem.classList.add('active');
+    }
+}
+
+function isAllRowsHidden(value) {
+    return value.hidden == false;
+}
+
+function filterTable(elem) { // eslint-disable-line no-unused-vars
+    const outcomeAtt = 'data-test-result';
+    const outcome = elem.getAttribute(outcomeAtt);
+    const classOutcome = outcome + ' results-table-row';
+    const outcomeRows = document.getElementsByClassName(classOutcome);
+
+    for(let i = 0; i < outcomeRows.length; i++){
+        outcomeRows[i].hidden = !elem.checked;
+    }
+
+    const rows = findAll('.results-table-row').filter(isAllRowsHidden);
+    const allRowsHidden = rows.length == 0 ? true : false;
+    const notFoundMessage = document.getElementById('not-found-message');
+    notFoundMessage.hidden = !allRowsHidden;
+}
+</script>
+    <h1>iot.report.parallel.html</h1>
+    <p>Report generated on 23-Mar-2022 at 17:58:06 by <a href="https://pypi.python.org/pypi/pytest-html">pytest-html</a> v3.1.1</p>
+    <h2>Summary</h2>
+    <p>9 tests ran in 139.68 seconds. </p>
+    <p class="filter" hidden="true">(Un)check the boxes to filter the results.</p><input checked="true" class="filter" data-test-result="passed" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="passed">8 passed</span>, <input checked="true" class="filter" data-test-result="skipped" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="skipped">0 skipped</span>, <input checked="true" class="filter" data-test-result="failed" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="failed">1 failed</span>, <input checked="true" class="filter" data-test-result="error" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="error">0 errors</span>, <input checked="true" class="filter" data-test-result="xfailed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="xfailed">0 expected failures</span>, <input checked="true" class="filter" data-test-result="xpassed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="xpassed">0 unexpected passes</span>
+    <h2>Results</h2>
+    <table id="results-table">
+      <thead id="results-table-head">
+        <tr>
+          <th class="sortable result initial-sort" col="result">Result</th>
+          <th class="sortable" col="name">Test</th>
+          <th class="sortable float" col="duration">Duration</th>
+          <th class="sortable links" col="links">Links</th></tr>
+        <tr hidden="true" id="not-found-message">
+          <th colspan="4">No results found. Try to check the filters</th></tr></thead>
+      <tbody class="failed results-table-row">
+        <tr>
+          <td class="col-result">Failed</td>
+          <td class="col-name">azure/cli/command_modules/iot/tests/latest/test_iot_dps_commands.py::IoTDpsTest::test_dps_linked_hub_lifecycle</td>
+          <td class="col-duration">1.74</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">self = &lt;azure.cli.command_modules.iot.tests.latest.test_iot_dps_commands.IoTDpsTest testMethod=test_dps_linked_hub_lifecycle&gt;<br/>group_name = &#x27;clitest.rg000001&#x27;, group_location = &#x27;westus&#x27;<br/><br/>    @ResourceGroupPreparer(parameter_name=&#x27;group_name&#x27;, parameter_name_for_location=&#x27;group_location&#x27;)<br/>    def test_dps_linked_hub_lifecycle(self, group_name, group_location):<br/>        dps_name = self.create_random_name(&#x27;dps&#x27;, 20)<br/>        hub_name = self.create_random_name(&#x27;iot&#x27;, 20)<br/>        hub_host_name = &#x27;{}.azure-devices.net&#x27;.format(hub_name)<br/>        key_name = self.create_random_name(&#x27;key&#x27;, 20)<br/>        permission = &#x27;RegistryWrite&#x27;<br/>    <br/>        # Create DPS<br/>        self.cmd(&#x27;az iot dps create -g {} -n {}&#x27;.format(group_name, dps_name),<br/>                 checks=[self.check(&#x27;name&#x27;, dps_name),<br/>                         self.check(&#x27;location&#x27;, group_location)])<br/>    <br/>        # Create and set up Hub<br/>        self.cmd(&#x27;az iot hub create -n {} -g {} --sku S1&#x27;.format(hub_name, group_name),<br/>                 checks=[self.check(&#x27;resourcegroup&#x27;, group_name),<br/>                         self.check(&#x27;name&#x27;, hub_name),<br/>                         self.check(&#x27;sku.name&#x27;, &#x27;S1&#x27;)])<br/>    <br/>        self.cmd(&#x27;az iot hub policy create --hub-name {} -n {} --permissions {}&#x27;.format(hub_name, key_name, permission))<br/>    <br/>        # Create linked-hub fails if there is no hub name or connection string<br/>        self.cmd(&#x27;az iot dps linked-hub create --dps-name {} -g {} --l {}&#x27;<br/>                 .format(dps_name, group_name, group_location),<br/>                 expect_failure=True)<br/>    <br/>        # Create linked-hub fails with a fake connection string<br/>&gt;       self.cmd(&#x27;az iot dps linked-hub create --dps-name {} -g {} --connection-string {}&#x27;<br/>                 .format(dps_name, group_name, &quot;Test&quot;),<br/>                 expect_failure=True)<br/><br/>c:\code\azure-cli\src\azure-cli\azure\cli\command_modules\iot\tests\latest\test_iot_dps_commands.py:228: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/>c:\code\azure-cli\src\azure-cli-testsdk\azure\cli\testsdk\base.py:169: in cmd<br/>    return execute(self.cli_ctx, command, expect_failure=expect_failure).assert_with_checks(checks)<br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>self = &lt;azure.cli.testsdk.base.ExecutionResult object at 0x0000014A667E8880&gt;<br/>cli_ctx = &lt;azure.cli.core.mock.DummyCli object at 0x0000014A66AE4640&gt;<br/>command = &#x27;iot dps linked-hub create --dps-name dps000002 -g clitest.rg000001 --connection-string Test&#x27;<br/>expect_failure = True<br/><br/>    def __init__(self, cli_ctx, command, expect_failure=False):<br/>        self.output = &#x27;&#x27;<br/>        self.applog = &#x27;&#x27;<br/>        self.command_coverage = {}<br/>        cli_ctx.data[&#x27;_cache&#x27;] = None<br/>    <br/>        if os.environ.get(ENV_COMMAND_COVERAGE, None):<br/>            with open(COVERAGE_FILE, &#x27;a&#x27;) as coverage_file:<br/>                if command.startswith(&#x27;az &#x27;):<br/>                    command = command[3:]<br/>                coverage_file.write(command + &#x27;\n&#x27;)<br/>    <br/>        self._in_process_execute(cli_ctx, command, expect_failure=expect_failure)<br/>    <br/>        log_val = (&#x27;Logging &#x27; + self.applog) if self.applog else &#x27;&#x27;<br/>        if expect_failure and self.exit_code == 0:<br/>            logger.error(&#x27;Command &quot;%s&quot; =&gt; %d. (It did not fail as expected). %s\n&#x27;, command,<br/>                         self.exit_code, log_val)<br/>&gt;           raise AssertionError(&#x27;The command did not fail as it was expected.&#x27;)<br/><span class="error">E           AssertionError: The command did not fail as it was expected.</span><br/><br/>c:\code\azure-cli\src\azure-cli-testsdk\azure\cli\testsdk\base.py:249: AssertionError<br/> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Argument &#x27;location&#x27; has been deprecated and will be removed in a future release.
+<br/> -------------------------------Captured log call-------------------------------- <br/>WARNING  msrest.serialization:serialization.py:185 container_uri is not a known attribute of class &lt;class &#x27;azure.mgmt.iothub.v2021_07_02.models._models_py3.StorageEndpointProperties&#x27;&gt; and will be ignored
+ERROR    azure.cli.testsdk:base.py:247 Command &quot;iot dps linked-hub create --dps-name dps000002 -g clitest.rg000001 --connection-string Test&quot; =&gt; 0. (It did not fail as expected).<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/iot/tests/latest/test_iot_central_commands.py::IoTCentralTest::test_iot_central_app</td>
+          <td class="col-duration">4.64</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/iot/tests/latest/test_iot_certificate_commands.py::IotHubCertificateTest::test_certificate_lifecycle</td>
+          <td class="col-duration">3.63</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  msrest.serialization:serialization.py:185 container_uri is not a known attribute of class &lt;class &#x27;azure.mgmt.iothub.v2021_07_02.models._models_py3.StorageEndpointProperties&#x27;&gt; and will be ignored<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/iot/tests/latest/test_iot_commands.py::IoTHubTest::test_hub_file_upload</td>
+          <td class="col-duration">18.65</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.storage._validators:_validators.py:197 
+There are no credentials provided in your command and environment, we will query for account key for your storage account.
+It is recommended to provide --connection-string, --account-key or --sas-token in your command as credentials.
+
+You also can add `--auth-mode login` in your command to use Azure Active Directory (Azure AD) for authorization if your login account is assigned required RBAC roles.
+For more information about RBAC roles in storage, visit https://docs.microsoft.com/azure/storage/common/storage-auth-aad-rbac-cli.
+
+In addition, setting the corresponding environment variables can avoid inputting credentials in your command. Please use --help to get more information about environment variable usage.
+WARNING  msrest.serialization:serialization.py:185 container_uri is not a known attribute of class &lt;class &#x27;azure.mgmt.iothub.v2021_07_02.models._models_py3.StorageEndpointProperties&#x27;&gt; and will be ignored
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/iot/tests/latest/test_iot_commands.py::IoTHubTest::test_identity_hub</td>
+          <td class="col-duration">23.72</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Option &#x27;--group-ids&#x27; has been deprecated and will be removed in a future release. Use &#x27;--group-id&#x27; instead.
+<br/> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.storage._validators:_validators.py:197 
+There are no credentials provided in your command and environment, we will query for account key for your storage account.
+It is recommended to provide --connection-string, --account-key or --sas-token in your command as credentials.
+
+You also can add `--auth-mode login` in your command to use Azure Active Directory (Azure AD) for authorization if your login account is assigned required RBAC roles.
+For more information about RBAC roles in storage, visit https://docs.microsoft.com/azure/storage/common/storage-auth-aad-rbac-cli.
+
+In addition, setting the corresponding environment variables can avoid inputting credentials in your command. Please use --help to get more information about environment variable usage.
+WARNING  msrest.serialization:serialization.py:185 container_uri is not a known attribute of class &lt;class &#x27;azure.mgmt.iothub.v2021_07_02.models._models_py3.StorageEndpointProperties&#x27;&gt; and will be ignored
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.role:__init__.py:26 The underlying Active Directory Graph API will be replaced by Microsoft Graph API in a future version of Azure CLI. Please carefully review all breaking changes introduced during this migration: https://docs.microsoft.com/cli/azure/microsoft-graph-migration
+WARNING  cli.azure.cli.command_modules.network._validators:_validators.py:1959 Resource ID will be ignored since other three arguments have been provided.
+WARNING  cli.azure.cli.command_modules.network._validators:_validators.py:1959 Resource ID will be ignored since other three arguments have been provided.
+WARNING  cli.azure.cli.command_modules.network._validators:_validators.py:1985 Resource ID will be ignored since other three arguments have been provided.
+WARNING  cli.azure.cli.command_modules.network.private_link_resource_and_endpoint_connections.resource_providers:__init__.py:82 Cannot query the state of private endpoint connection. Please use `az network private-endpoint-connection show` command to check the status.
+WARNING  cli.azure.cli.command_modules.network.private_link_resource_and_endpoint_connections.resource_providers:__init__.py:82 Cannot query the state of private endpoint connection. Please use `az network private-endpoint-connection show` command to check the status.
+WARNING  cli.azure.cli.command_modules.network._validators:_validators.py:1985 Resource ID will be ignored since other three arguments have been provided.
+WARNING  cli.azure.cli.command_modules.network.private_link_resource_and_endpoint_connections.resource_providers:__init__.py:82 Cannot query the state of private endpoint connection. Please use `az network private-endpoint-connection show` command to check the status.
+WARNING  cli.azure.cli.command_modules.network._validators:_validators.py:1985 Resource ID will be ignored since other three arguments have been provided.
+WARNING  cli.azure.cli.command_modules.network._validators:_validators.py:1985 Resource ID will be ignored since other three arguments have been provided.
+WARNING  cli.azure.cli.command_modules.network.private_link_resource_and_endpoint_connections.resource_providers:__init__.py:117 Deleting operation is asynchronous. Please use `az network private-endpoint-connection show to query the status.<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/iot/tests/latest/test_iot_commands.py::IoTHubTest::test_iot_hub</td>
+          <td class="col-duration">78.01</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: This command has been deprecated and will be removed in a future release. Use &#x27;IoT Extension (azure-iot) connection-string command (az iot hub connection-string show)&#x27; instead.
+WARNING: This command has been deprecated and will be removed in a future release. Use &#x27;IoT Extension (azure-iot) connection-string command (az iot hub connection-string show)&#x27; instead.
+WARNING: This command has been deprecated and will be removed in a future release. Use &#x27;IoT Extension (azure-iot) connection-string command (az iot hub connection-string show)&#x27; instead.
+WARNING: This command has been deprecated and will be removed in a future release. Use &#x27;IoT Extension (azure-iot) connection-string command (az iot hub connection-string show)&#x27; instead.
+<br/> -------------------------------Captured log call-------------------------------- <br/>WARNING  cli.azure.cli.command_modules.storage._validators:_validators.py:197 
+There are no credentials provided in your command and environment, we will query for account key for your storage account.
+It is recommended to provide --connection-string, --account-key or --sas-token in your command as credentials.
+
+You also can add `--auth-mode login` in your command to use Azure Active Directory (Azure AD) for authorization if your login account is assigned required RBAC roles.
+For more information about RBAC roles in storage, visit https://docs.microsoft.com/azure/storage/common/storage-auth-aad-rbac-cli.
+
+In addition, setting the corresponding environment variables can avoid inputting credentials in your command. Please use --help to get more information about environment variable usage.
+WARNING  msrest.serialization:serialization.py:185 container_uri is not a known attribute of class &lt;class &#x27;azure.mgmt.iothub.v2021_07_02.models._models_py3.StorageEndpointProperties&#x27;&gt; and will be ignored
+WARNING  msrest.serialization:serialization.py:185 container_uri is not a known attribute of class &lt;class &#x27;azure.mgmt.iothub.v2021_07_02.models._models_py3.StorageEndpointProperties&#x27;&gt; and will be ignored
+WARNING  msrest.serialization:serialization.py:185 container_uri is not a known attribute of class &lt;class &#x27;azure.mgmt.iothub.v2021_07_02.models._models_py3.StorageEndpointProperties&#x27;&gt; and will be ignored
+WARNING  msrest.serialization:serialization.py:185 container_uri is not a known attribute of class &lt;class &#x27;azure.mgmt.iothub.v2021_07_02.models._models_py3.StorageEndpointProperties&#x27;&gt; and will be ignored
+WARNING  msrest.serialization:serialization.py:185 container_uri is not a known attribute of class &lt;class &#x27;azure.mgmt.iothub.v2021_07_02.models._models_py3.StorageEndpointProperties&#x27;&gt; and will be ignored
+WARNING  msrest.serialization:serialization.py:185 container_uri is not a known attribute of class &lt;class &#x27;azure.mgmt.iothub.v2021_07_02.models._models_py3.StorageEndpointProperties&#x27;&gt; and will be ignored<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/iot/tests/latest/test_iot_dps_commands.py::IoTDpsTest::test_dps_certificate_lifecycle</td>
+          <td class="col-duration">3.05</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/iot/tests/latest/test_iot_dps_commands.py::IoTDpsTest::test_dps_lifecycle</td>
+          <td class="col-duration">5.37</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/iot/tests/latest/test_sas_token_auth.py::TestSasTokenAuth::test_generate_sas_token</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody></table></body></html>

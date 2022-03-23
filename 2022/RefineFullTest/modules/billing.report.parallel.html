@@ -1,0 +1,1550 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title>Test Report</title>
+    <link href="assets/style.css" rel="stylesheet" type="text/css"/></head>
+  <body onLoad="init()">
+    <script>/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+function toArray(iter) {
+    if (iter === null) {
+        return null;
+    }
+    return Array.prototype.slice.call(iter);
+}
+
+function find(selector, elem) { // eslint-disable-line no-redeclare
+    if (!elem) {
+        elem = document;
+    }
+    return elem.querySelector(selector);
+}
+
+function findAll(selector, elem) {
+    if (!elem) {
+        elem = document;
+    }
+    return toArray(elem.querySelectorAll(selector));
+}
+
+function sortColumn(elem) {
+    toggleSortStates(elem);
+    const colIndex = toArray(elem.parentNode.childNodes).indexOf(elem);
+    let key;
+    if (elem.classList.contains('result')) {
+        key = keyResult;
+    } else if (elem.classList.contains('links')) {
+        key = keyLink;
+    } else if (elem.classList.contains('float')) {
+        key = keyFloat;
+    } else {
+        key = keyAlpha;
+    }
+    sortTable(elem, key(colIndex));
+}
+
+function showAllExtras() { // eslint-disable-line no-unused-vars
+    findAll('.col-result').forEach(showExtras);
+}
+
+function hideAllExtras() { // eslint-disable-line no-unused-vars
+    findAll('.col-result').forEach(hideExtras);
+}
+
+function showExtras(colresultElem) {
+    const extras = colresultElem.parentNode.nextElementSibling;
+    const expandcollapse = colresultElem.firstElementChild;
+    extras.classList.remove('collapsed');
+    expandcollapse.classList.remove('expander');
+    expandcollapse.classList.add('collapser');
+}
+
+function hideExtras(colresultElem) {
+    const extras = colresultElem.parentNode.nextElementSibling;
+    const expandcollapse = colresultElem.firstElementChild;
+    extras.classList.add('collapsed');
+    expandcollapse.classList.remove('collapser');
+    expandcollapse.classList.add('expander');
+}
+
+function showFilters() {
+    const filterItems = document.getElementsByClassName('filter');
+    for (let i = 0; i < filterItems.length; i++)
+        filterItems[i].hidden = false;
+}
+
+function addCollapse() {
+    // Add links for show/hide all
+    const resulttable = find('table#results-table');
+    const showhideall = document.createElement('p');
+    showhideall.innerHTML = '<a href="javascript:showAllExtras()">Show all details</a> / ' +
+                            '<a href="javascript:hideAllExtras()">Hide all details</a>';
+    resulttable.parentElement.insertBefore(showhideall, resulttable);
+
+    // Add show/hide link to each result
+    findAll('.col-result').forEach(function(elem) {
+        const collapsed = getQueryParameter('collapsed') || 'Passed';
+        const extras = elem.parentNode.nextElementSibling;
+        const expandcollapse = document.createElement('span');
+        if (extras.classList.contains('collapsed')) {
+            expandcollapse.classList.add('expander');
+        } else if (collapsed.includes(elem.innerHTML)) {
+            extras.classList.add('collapsed');
+            expandcollapse.classList.add('expander');
+        } else {
+            expandcollapse.classList.add('collapser');
+        }
+        elem.appendChild(expandcollapse);
+
+        elem.addEventListener('click', function(event) {
+            if (event.currentTarget.parentNode.nextElementSibling.classList.contains('collapsed')) {
+                showExtras(event.currentTarget);
+            } else {
+                hideExtras(event.currentTarget);
+            }
+        });
+    });
+}
+
+function getQueryParameter(name) {
+    const match = RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
+    return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
+}
+
+function init () { // eslint-disable-line no-unused-vars
+    resetSortHeaders();
+
+    addCollapse();
+
+    showFilters();
+
+    sortColumn(find('.initial-sort'));
+
+    findAll('.sortable').forEach(function(elem) {
+        elem.addEventListener('click',
+            function() {
+                sortColumn(elem);
+            }, false);
+    });
+}
+
+function sortTable(clicked, keyFunc) {
+    const rows = findAll('.results-table-row');
+    const reversed = !clicked.classList.contains('asc');
+    const sortedRows = sort(rows, keyFunc, reversed);
+    /* Whole table is removed here because browsers acts much slower
+     * when appending existing elements.
+     */
+    const thead = document.getElementById('results-table-head');
+    document.getElementById('results-table').remove();
+    const parent = document.createElement('table');
+    parent.id = 'results-table';
+    parent.appendChild(thead);
+    sortedRows.forEach(function(elem) {
+        parent.appendChild(elem);
+    });
+    document.getElementsByTagName('BODY')[0].appendChild(parent);
+}
+
+function sort(items, keyFunc, reversed) {
+    const sortArray = items.map(function(item, i) {
+        return [keyFunc(item), i];
+    });
+
+    sortArray.sort(function(a, b) {
+        const keyA = a[0];
+        const keyB = b[0];
+
+        if (keyA == keyB) return 0;
+
+        if (reversed) {
+            return keyA < keyB ? 1 : -1;
+        } else {
+            return keyA > keyB ? 1 : -1;
+        }
+    });
+
+    return sortArray.map(function(item) {
+        const index = item[1];
+        return items[index];
+    });
+}
+
+function keyAlpha(colIndex) {
+    return function(elem) {
+        return elem.childNodes[1].childNodes[colIndex].firstChild.data.toLowerCase();
+    };
+}
+
+function keyFloat(colIndex) {
+    return function(elem) {
+        return Number(elem.childNodes[1].childNodes[colIndex].firstChild.data);
+    };
+}
+
+function keyLink(colIndex) {
+    return function(elem) {
+        const dataCell = elem.childNodes[1].childNodes[colIndex].firstChild;
+        return dataCell == null ? '' : dataCell.innerText.toLowerCase();
+    };
+}
+
+function keyResult(colIndex) {
+    return function(elem) {
+        const strings = ['Error', 'Failed', 'Rerun', 'XFailed', 'XPassed',
+            'Skipped', 'Passed'];
+        return strings.indexOf(elem.childNodes[1].childNodes[colIndex].firstChild.data);
+    };
+}
+
+function resetSortHeaders() {
+    findAll('.sort-icon').forEach(function(elem) {
+        elem.parentNode.removeChild(elem);
+    });
+    findAll('.sortable').forEach(function(elem) {
+        const icon = document.createElement('div');
+        icon.className = 'sort-icon';
+        icon.textContent = 'vvv';
+        elem.insertBefore(icon, elem.firstChild);
+        elem.classList.remove('desc', 'active');
+        elem.classList.add('asc', 'inactive');
+    });
+}
+
+function toggleSortStates(elem) {
+    //if active, toggle between asc and desc
+    if (elem.classList.contains('active')) {
+        elem.classList.toggle('asc');
+        elem.classList.toggle('desc');
+    }
+
+    //if inactive, reset all other functions and add ascending active
+    if (elem.classList.contains('inactive')) {
+        resetSortHeaders();
+        elem.classList.remove('inactive');
+        elem.classList.add('active');
+    }
+}
+
+function isAllRowsHidden(value) {
+    return value.hidden == false;
+}
+
+function filterTable(elem) { // eslint-disable-line no-unused-vars
+    const outcomeAtt = 'data-test-result';
+    const outcome = elem.getAttribute(outcomeAtt);
+    const classOutcome = outcome + ' results-table-row';
+    const outcomeRows = document.getElementsByClassName(classOutcome);
+
+    for(let i = 0; i < outcomeRows.length; i++){
+        outcomeRows[i].hidden = !elem.checked;
+    }
+
+    const rows = findAll('.results-table-row').filter(isAllRowsHidden);
+    const allRowsHidden = rows.length == 0 ? true : false;
+    const notFoundMessage = document.getElementById('not-found-message');
+    notFoundMessage.hidden = !allRowsHidden;
+}
+</script>
+    <h1>billing.report.parallel.html</h1>
+    <p>Report generated on 23-Mar-2022 at 17:48:01 by <a href="https://pypi.python.org/pypi/pytest-html">pytest-html</a> v3.1.1</p>
+    <h2>Summary</h2>
+    <p>17 tests ran in 3.01 seconds. </p>
+    <p class="filter" hidden="true">(Un)check the boxes to filter the results.</p><input checked="true" class="filter" data-test-result="passed" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="passed">17 passed</span>, <input checked="true" class="filter" data-test-result="skipped" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="skipped">0 skipped</span>, <input checked="true" class="filter" data-test-result="failed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="failed">0 failed</span>, <input checked="true" class="filter" data-test-result="error" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="error">0 errors</span>, <input checked="true" class="filter" data-test-result="xfailed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="xfailed">0 expected failures</span>, <input checked="true" class="filter" data-test-result="xpassed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="xpassed">0 unexpected passes</span>
+    <h2>Results</h2>
+    <table id="results-table">
+      <thead id="results-table-head">
+        <tr>
+          <th class="sortable result initial-sort" col="result">Result</th>
+          <th class="sortable" col="name">Test</th>
+          <th class="sortable float" col="duration">Duration</th>
+          <th class="sortable links" col="links">Links</th></tr>
+        <tr hidden="true" id="not-found-message">
+          <th colspan="4">No results found. Try to check the filters</th></tr></thead>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/billing/tests/latest/test_billing_commands.py::AzureBillingServiceScenarioTest::test_list_billing_periods</td>
+          <td class="col-duration">0.33</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/billing/tests/latest/test_billing_commands.py::AzureBillingServiceScenarioTest::test_list_enrollment_accounts</td>
+          <td class="col-duration">0.10</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/billing/tests/latest/test_billing_scenario_incrementalGenerated.py::BillingAccountScenarioTest::test_billing_balance_show</td>
+          <td class="col-duration">0.06</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Command group &#x27;billing balance&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/billing/tests/latest/test_billing_scenario_incrementalGenerated.py::BillingProfileScenarioTest::test_biiling_profile_list_and_show</td>
+          <td class="col-duration">0.22</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Command group &#x27;billing profile&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+--------------------------------------
+step exception in step__billingprofiles_get: Query &#x27;length(@)&#x27; doesn&#x27;t yield expected value &#x27;1&#x27;, instead the actual value is &#x27;6&#x27;. Data: 
+[
+  {
+    &quot;billTo&quot;: {
+      &quot;addressLine1&quot;: &quot;PLAMUATT2NetNew&quot;,
+      &quot;addressLine2&quot;: &quot;&quot;,
+      &quot;addressLine3&quot;: null,
+      &quot;city&quot;: &quot;Paris&quot;,
+      &quot;companyName&quot;: &quot;PLAMUATT2NetNew&quot;,
+      &quot;country&quot;: &quot;FR&quot;,
+      &quot;district&quot;: null,
+      &quot;email&quot;: null,
+      &quot;firstName&quot;: null,
+      &quot;lastName&quot;: null,
+      &quot;middleName&quot;: null,
+      &quot;phoneNumber&quot;: &quot;1234567890&quot;,
+      &quot;postalCode&quot;: &quot;75016&quot;,
+      &quot;region&quot;: &quot;Paris&quot;
+    },
+    &quot;billingRelationshipType&quot;: &quot;CSPPartner&quot;,
+    &quot;currency&quot;: &quot;CHF&quot;,
+    &quot;displayName&quot;: &quot;PLAMUATT2NetNew-CHF&quot;,
+    &quot;enabledAzurePlans&quot;: [
+      {
+        &quot;skuDescription&quot;: &quot;Microsoft Azure Plan&quot;,
+        &quot;skuId&quot;: &quot;0001&quot;
+      }
+    ],
+    &quot;hasReadAccess&quot;: true,
+    &quot;id&quot;: &quot;/providers/Microsoft.Billing/billingAccounts/aff095f4-f26b-5334-db79-29704a77c0e5:8d5301c9-db55-4eb6-8611-9db0417d6cb2_2019-05-31/billingProfiles/5XQV-V4U6-BG7-AJ4D-SGB&quot;,
+    &quot;indirectRelationshipInfo&quot;: null,
+    &quot;invoiceDay&quot;: 6,
+    &quot;invoiceEmailOptIn&quot;: false,
+    &quot;invoiceSections&quot;: {
+      &quot;hasMoreResults&quot;: false,
+      &quot;value&quot;: null
+    },
+    &quot;name&quot;: &quot;5XQV-V4U6-BG7-AJ4D-SGB&quot;,
+    &quot;poNumber&quot;: null,
+    &quot;spendingLimit&quot;: &quot;Off&quot;,
+    &quot;status&quot;: &quot;Active&quot;,
+    &quot;statusReasonCode&quot;: null,
+    &quot;systemId&quot;: &quot;5XQV-V4U6-BG7-AJ4D-SGB&quot;,
+    &quot;tags&quot;: null,
+    &quot;targetClouds&quot;: [],
+    &quot;type&quot;: &quot;Microsoft.Billing/billingAccounts/billingProfiles&quot;
+  },
+  {
+    &quot;billTo&quot;: {
+      &quot;addressLine1&quot;: &quot;PLAMUATT2NetNew&quot;,
+      &quot;addressLine2&quot;: &quot;&quot;,
+      &quot;addressLine3&quot;: null,
+      &quot;city&quot;: &quot;Paris&quot;,
+      &quot;companyName&quot;: &quot;PLAMUATT2NetNew&quot;,
+      &quot;country&quot;: &quot;FR&quot;,
+      &quot;district&quot;: null,
+      &quot;email&quot;: null,
+      &quot;firstName&quot;: null,
+      &quot;lastName&quot;: null,
+      &quot;middleName&quot;: null,
+      &quot;phoneNumber&quot;: &quot;1234567890&quot;,
+      &quot;postalCode&quot;: &quot;75016&quot;,
+      &quot;region&quot;: &quot;Paris&quot;
+    },
+    &quot;billingRelationshipType&quot;: &quot;CSPPartner&quot;,
+    &quot;currency&quot;: &quot;SEK&quot;,
+    &quot;displayName&quot;: &quot;PLAMUATT2NetNew-SEK&quot;,
+    &quot;enabledAzurePlans&quot;: [
+      {
+        &quot;skuDescription&quot;: &quot;Microsoft Azure Plan&quot;,
+        &quot;skuId&quot;: &quot;0001&quot;
+      }
+    ],
+    &quot;hasReadAccess&quot;: true,
+    &quot;id&quot;: &quot;/providers/Microsoft.Billing/billingAccounts/aff095f4-f26b-5334-db79-29704a77c0e5:8d5301c9-db55-4eb6-8611-9db0417d6cb2_2019-05-31/billingProfiles/7AAC-54QF-BG7-AJ4D-SGB&quot;,
+    &quot;indirectRelationshipInfo&quot;: null,
+    &quot;invoiceDay&quot;: 6,
+    &quot;invoiceEmailOptIn&quot;: false,
+    &quot;invoiceSections&quot;: {
+      &quot;hasMoreResults&quot;: false,
+      &quot;value&quot;: null
+    },
+    &quot;name&quot;: &quot;7AAC-54QF-BG7-AJ4D-SGB&quot;,
+    &quot;poNumber&quot;: null,
+    &quot;spendingLimit&quot;: &quot;On&quot;,
+    &quot;status&quot;: &quot;Active&quot;,
+    &quot;statusReasonCode&quot;: null,
+    &quot;systemId&quot;: &quot;7AAC-54QF-BG7-AJ4D-SGB&quot;,
+    &quot;tags&quot;: null,
+    &quot;targetClouds&quot;: [],
+    &quot;type&quot;: &quot;Microsoft.Billing/billingAccounts/billingProfiles&quot;
+  },
+  {
+    &quot;billTo&quot;: {
+      &quot;addressLine1&quot;: &quot;PLAMUATT2NetNew&quot;,
+      &quot;addressLine2&quot;: &quot;&quot;,
+      &quot;addressLine3&quot;: null,
+      &quot;city&quot;: &quot;Paris&quot;,
+      &quot;companyName&quot;: &quot;PLAMUATT2NetNew&quot;,
+      &quot;country&quot;: &quot;FR&quot;,
+      &quot;district&quot;: null,
+      &quot;email&quot;: null,
+      &quot;firstName&quot;: null,
+      &quot;lastName&quot;: null,
+      &quot;middleName&quot;: null,
+      &quot;phoneNumber&quot;: &quot;1234567890&quot;,
+      &quot;postalCode&quot;: &quot;75016&quot;,
+      &quot;region&quot;: &quot;Paris&quot;
+    },
+    &quot;billingRelationshipType&quot;: &quot;CSPPartner&quot;,
+    &quot;currency&quot;: &quot;NOK&quot;,
+    &quot;displayName&quot;: &quot;PLAMUATT2NetNew-NOK&quot;,
+    &quot;enabledAzurePlans&quot;: [
+      {
+        &quot;skuDescription&quot;: &quot;Microsoft Azure Plan&quot;,
+        &quot;skuId&quot;: &quot;0001&quot;
+      }
+    ],
+    &quot;hasReadAccess&quot;: true,
+    &quot;id&quot;: &quot;/providers/Microsoft.Billing/billingAccounts/aff095f4-f26b-5334-db79-29704a77c0e5:8d5301c9-db55-4eb6-8611-9db0417d6cb2_2019-05-31/billingProfiles/GTML-JUTM-BG7-AJ4D-SGB&quot;,
+    &quot;indirectRelationshipInfo&quot;: null,
+    &quot;invoiceDay&quot;: 6,
+    &quot;invoiceEmailOptIn&quot;: false,
+    &quot;invoiceSections&quot;: {
+      &quot;hasMoreResults&quot;: false,
+      &quot;value&quot;: null
+    },
+    &quot;name&quot;: &quot;GTML-JUTM-BG7-AJ4D-SGB&quot;,
+    &quot;poNumber&quot;: null,
+    &quot;spendingLimit&quot;: &quot;Off&quot;,
+    &quot;status&quot;: &quot;Active&quot;,
+    &quot;statusReasonCode&quot;: null,
+    &quot;systemId&quot;: &quot;GTML-JUTM-BG7-AJ4D-SGB&quot;,
+    &quot;tags&quot;: null,
+    &quot;targetClouds&quot;: [],
+    &quot;type&quot;: &quot;Microsoft.Billing/billingAccounts/billingProfiles&quot;
+  },
+  {
+    &quot;billTo&quot;: {
+      &quot;addressLine1&quot;: &quot;PLAMUATT2NetNew&quot;,
+      &quot;addressLine2&quot;: &quot;&quot;,
+      &quot;addressLine3&quot;: null,
+      &quot;city&quot;: &quot;Paris&quot;,
+      &quot;companyName&quot;: &quot;PLAMUATT2NetNew&quot;,
+      &quot;country&quot;: &quot;FR&quot;,
+      &quot;district&quot;: null,
+      &quot;email&quot;: null,
+      &quot;firstName&quot;: null,
+      &quot;lastName&quot;: null,
+      &quot;middleName&quot;: null,
+      &quot;phoneNumber&quot;: &quot;1234567890&quot;,
+      &quot;postalCode&quot;: &quot;75016&quot;,
+      &quot;region&quot;: &quot;Paris&quot;
+    },
+    &quot;billingRelationshipType&quot;: &quot;CSPPartner&quot;,
+    &quot;currency&quot;: &quot;EUR&quot;,
+    &quot;displayName&quot;: &quot;PLAMUATT2NetNew-EUR&quot;,
+    &quot;enabledAzurePlans&quot;: [
+      {
+        &quot;skuDescription&quot;: &quot;Microsoft Azure Plan&quot;,
+        &quot;skuId&quot;: &quot;0001&quot;
+      }
+    ],
+    &quot;hasReadAccess&quot;: true,
+    &quot;id&quot;: &quot;/providers/Microsoft.Billing/billingAccounts/aff095f4-f26b-5334-db79-29704a77c0e5:8d5301c9-db55-4eb6-8611-9db0417d6cb2_2019-05-31/billingProfiles/ROHX-DYIN-BG7-AJ4D-SGB&quot;,
+    &quot;indirectRelationshipInfo&quot;: null,
+    &quot;invoiceDay&quot;: 6,
+    &quot;invoiceEmailOptIn&quot;: false,
+    &quot;invoiceSections&quot;: {
+      &quot;hasMoreResults&quot;: false,
+      &quot;value&quot;: null
+    },
+    &quot;name&quot;: &quot;ROHX-DYIN-BG7-AJ4D-SGB&quot;,
+    &quot;poNumber&quot;: null,
+    &quot;spendingLimit&quot;: &quot;On&quot;,
+    &quot;status&quot;: &quot;Active&quot;,
+    &quot;statusReasonCode&quot;: null,
+    &quot;systemId&quot;: &quot;ROHX-DYIN-BG7-AJ4D-SGB&quot;,
+    &quot;tags&quot;: null,
+    &quot;targetClouds&quot;: [],
+    &quot;type&quot;: &quot;Microsoft.Billing/billingAccounts/billingProfiles&quot;
+  },
+  {
+    &quot;billTo&quot;: {
+      &quot;addressLine1&quot;: &quot;PLAMUATT2NetNew&quot;,
+      &quot;addressLine2&quot;: &quot;&quot;,
+      &quot;addressLine3&quot;: null,
+      &quot;city&quot;: &quot;Paris&quot;,
+      &quot;companyName&quot;: &quot;PLAMUATT2NetNew&quot;,
+      &quot;country&quot;: &quot;FR&quot;,
+      &quot;district&quot;: null,
+      &quot;email&quot;: null,
+      &quot;firstName&quot;: null,
+      &quot;lastName&quot;: null,
+      &quot;middleName&quot;: null,
+      &quot;phoneNumber&quot;: &quot;1234567890&quot;,
+      &quot;postalCode&quot;: &quot;75016&quot;,
+      &quot;region&quot;: &quot;Paris&quot;
+    },
+    &quot;billingRelationshipType&quot;: &quot;CSPPartner&quot;,
+    &quot;currency&quot;: &quot;DKK&quot;,
+    &quot;displayName&quot;: &quot;PLAMUATT2NetNew-DKK&quot;,
+    &quot;enabledAzurePlans&quot;: [
+      {
+        &quot;skuDescription&quot;: &quot;Microsoft Azure Plan&quot;,
+        &quot;skuId&quot;: &quot;0001&quot;
+      }
+    ],
+    &quot;hasReadAccess&quot;: true,
+    &quot;id&quot;: &quot;/providers/Microsoft.Billing/billingAccounts/aff095f4-f26b-5334-db79-29704a77c0e5:8d5301c9-db55-4eb6-8611-9db0417d6cb2_2019-05-31/billingProfiles/DN7P-GKOI-BG7-AJ4D-SGB&quot;,
+    &quot;indirectRelationshipInfo&quot;: null,
+    &quot;invoiceDay&quot;: 6,
+    &quot;invoiceEmailOptIn&quot;: false,
+    &quot;invoiceSections&quot;: {
+      &quot;hasMoreResults&quot;: false,
+      &quot;value&quot;: null
+    },
+    &quot;name&quot;: &quot;DN7P-GKOI-BG7-AJ4D-SGB&quot;,
+    &quot;poNumber&quot;: null,
+    &quot;spendingLimit&quot;: &quot;On&quot;,
+    &quot;status&quot;: &quot;Active&quot;,
+    &quot;statusReasonCode&quot;: null,
+    &quot;systemId&quot;: &quot;DN7P-GKOI-BG7-AJ4D-SGB&quot;,
+    &quot;tags&quot;: null,
+    &quot;targetClouds&quot;: [],
+    &quot;type&quot;: &quot;Microsoft.Billing/billingAccounts/billingProfiles&quot;
+  },
+  {
+    &quot;billTo&quot;: {
+      &quot;addressLine1&quot;: &quot;PLAMUATT2NetNew&quot;,
+      &quot;addressLine2&quot;: null,
+      &quot;addressLine3&quot;: null,
+      &quot;city&quot;: &quot;Paris&quot;,
+      &quot;companyName&quot;: &quot;PLAMUATT2NetNew*&quot;,
+      &quot;country&quot;: &quot;FR&quot;,
+      &quot;district&quot;: null,
+      &quot;email&quot;: null,
+      &quot;firstName&quot;: null,
+      &quot;lastName&quot;: null,
+      &quot;middleName&quot;: null,
+      &quot;phoneNumber&quot;: &quot;1234567890&quot;,
+      &quot;postalCode&quot;: &quot;75016&quot;,
+      &quot;region&quot;: &quot;Paris&quot;
+    },
+    &quot;billingRelationshipType&quot;: &quot;CSPPartner&quot;,
+    &quot;currency&quot;: &quot;GBP&quot;,
+    &quot;displayName&quot;: &quot;PLAMUATT2NetNew-GBP&quot;,
+    &quot;enabledAzurePlans&quot;: [
+      {
+        &quot;skuDescription&quot;: &quot;Microsoft Azure Plan&quot;,
+        &quot;skuId&quot;: &quot;0001&quot;
+      }
+    ],
+    &quot;hasReadAccess&quot;: true,
+    &quot;id&quot;: &quot;/providers/Microsoft.Billing/billingAccounts/aff095f4-f26b-5334-db79-29704a77c0e5:8d5301c9-db55-4eb6-8611-9db0417d6cb2_2019-05-31/billingProfiles/XXGU-AF7A-BG7-AJ4D-SGB&quot;,
+    &quot;indirectRelationshipInfo&quot;: null,
+    &quot;invoiceDay&quot;: 6,
+    &quot;invoiceEmailOptIn&quot;: false,
+    &quot;invoiceSections&quot;: {
+      &quot;hasMoreResults&quot;: false,
+      &quot;value&quot;: null
+    },
+    &quot;name&quot;: &quot;XXGU-AF7A-BG7-AJ4D-SGB&quot;,
+    &quot;poNumber&quot;: null,
+    &quot;spendingLimit&quot;: &quot;On&quot;,
+    &quot;status&quot;: &quot;Active&quot;,
+    &quot;statusReasonCode&quot;: null,
+    &quot;systemId&quot;: &quot;XXGU-AF7A-BG7-AJ4D-SGB&quot;,
+    &quot;tags&quot;: null,
+    &quot;targetClouds&quot;: [],
+    &quot;type&quot;: &quot;Microsoft.Billing/billingAccounts/billingProfiles&quot;
+  }
+]
+
+
+WARNING: Command group &#x27;billing profile&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;billing profile&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+--------------------------------------
+step exception in step__billingprofiles_get_billingprofile: Query &#x27;invoiceEmailOptIn&#x27; doesn&#x27;t yield expected value &#x27;True&#x27;, instead the actual value is &#x27;None&#x27;. Data: 
+{
+  &quot;billTo&quot;: {
+    &quot;addressLine1&quot;: &quot;PLAMUATT2NetNew&quot;,
+    &quot;addressLine2&quot;: &quot;&quot;,
+    &quot;addressLine3&quot;: null,
+    &quot;city&quot;: &quot;Paris&quot;,
+    &quot;companyName&quot;: &quot;PLAMUATT2NetNew&quot;,
+    &quot;country&quot;: &quot;FR&quot;,
+    &quot;district&quot;: null,
+    &quot;email&quot;: null,
+    &quot;firstName&quot;: null,
+    &quot;lastName&quot;: null,
+    &quot;middleName&quot;: null,
+    &quot;phoneNumber&quot;: &quot;1234567890&quot;,
+    &quot;postalCode&quot;: &quot;75016&quot;,
+    &quot;region&quot;: &quot;Paris&quot;
+  },
+  &quot;billingRelationshipType&quot;: &quot;CSPPartner&quot;,
+  &quot;currency&quot;: &quot;DKK&quot;,
+  &quot;displayName&quot;: &quot;PLAMUATT2NetNew-DKK&quot;,
+  &quot;enabledAzurePlans&quot;: [
+    {
+      &quot;skuDescription&quot;: &quot;Microsoft Azure Plan&quot;,
+      &quot;skuId&quot;: &quot;0001&quot;
+    }
+  ],
+  &quot;hasReadAccess&quot;: true,
+  &quot;id&quot;: &quot;/providers/Microsoft.Billing/billingAccounts/aff095f4-f26b-5334-db79-29704a77c0e5:8d5301c9-db55-4eb6-8611-9db0417d6cb2_2019-05-31/billingProfiles/DN7P-GKOI-BG7-AJ4D-SGB&quot;,
+  &quot;indirectRelationshipInfo&quot;: null,
+  &quot;invoiceDay&quot;: 6,
+  &quot;invoiceEmailOptIn&quot;: false,
+  &quot;invoiceSections&quot;: {
+    &quot;hasMoreResults&quot;: false,
+    &quot;value&quot;: null
+  },
+  &quot;name&quot;: &quot;DN7P-GKOI-BG7-AJ4D-SGB&quot;,
+  &quot;poNumber&quot;: null,
+  &quot;spendingLimit&quot;: &quot;On&quot;,
+  &quot;status&quot;: &quot;Active&quot;,
+  &quot;statusReasonCode&quot;: null,
+  &quot;systemId&quot;: &quot;DN7P-GKOI-BG7-AJ4D-SGB&quot;,
+  &quot;tags&quot;: null,
+  &quot;targetClouds&quot;: [],
+  &quot;type&quot;: &quot;Microsoft.Billing/billingAccounts/billingProfiles&quot;
+}
+
+
+WARNING: Command group &#x27;billing profile&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+--------------------------------------
+step exception in step__billingprofiles_get_billingprofilewithexpand: Query &#x27;invoiceEmailOptIn&#x27; doesn&#x27;t yield expected value &#x27;True&#x27;, instead the actual value is &#x27;None&#x27;. Data: 
+{
+  &quot;billTo&quot;: {
+    &quot;addressLine1&quot;: &quot;PLAMUATT2NetNew&quot;,
+    &quot;addressLine2&quot;: &quot;&quot;,
+    &quot;addressLine3&quot;: null,
+    &quot;city&quot;: &quot;Paris&quot;,
+    &quot;companyName&quot;: &quot;PLAMUATT2NetNew&quot;,
+    &quot;country&quot;: &quot;FR&quot;,
+    &quot;district&quot;: null,
+    &quot;email&quot;: null,
+    &quot;firstName&quot;: null,
+    &quot;lastName&quot;: null,
+    &quot;middleName&quot;: null,
+    &quot;phoneNumber&quot;: &quot;1234567890&quot;,
+    &quot;postalCode&quot;: &quot;75016&quot;,
+    &quot;region&quot;: &quot;Paris&quot;
+  },
+  &quot;billingRelationshipType&quot;: &quot;CSPPartner&quot;,
+  &quot;currency&quot;: &quot;DKK&quot;,
+  &quot;displayName&quot;: &quot;PLAMUATT2NetNew-DKK&quot;,
+  &quot;enabledAzurePlans&quot;: [
+    {
+      &quot;skuDescription&quot;: &quot;Microsoft Azure Plan&quot;,
+      &quot;skuId&quot;: &quot;0001&quot;
+    }
+  ],
+  &quot;hasReadAccess&quot;: true,
+  &quot;id&quot;: &quot;/providers/Microsoft.Billing/billingAccounts/aff095f4-f26b-5334-db79-29704a77c0e5:8d5301c9-db55-4eb6-8611-9db0417d6cb2_2019-05-31/billingProfiles/DN7P-GKOI-BG7-AJ4D-SGB&quot;,
+  &quot;indirectRelationshipInfo&quot;: null,
+  &quot;invoiceDay&quot;: 6,
+  &quot;invoiceEmailOptIn&quot;: false,
+  &quot;invoiceSections&quot;: {
+    &quot;hasMoreResults&quot;: false,
+    &quot;value&quot;: [
+      {
+        &quot;displayName&quot;: &quot;Modern Azure Customer DK&quot;,
+        &quot;id&quot;: &quot;/providers/Microsoft.Billing/billingAccounts/aff095f4-f26b-5334-db79-29704a77c0e5:8d5301c9-db55-4eb6-8611-9db0417d6cb2_2019-05-31/billingProfiles/DN7P-GKOI-BG7-AJ4D-SGB/invoiceSections/63DQ-IVMU-PJA-AJ4D-SGB&quot;,
+        &quot;labels&quot;: null,
+        &quot;name&quot;: &quot;63DQ-IVMU-PJA-AJ4D-SGB&quot;,
+        &quot;state&quot;: &quot;Active&quot;,
+        &quot;systemId&quot;: &quot;63DQ-IVMU-PJA-AJ4D-SGB&quot;,
+        &quot;targetCloud&quot;: null,
+        &quot;type&quot;: &quot;Microsoft.Billing/billingAccounts/billingProfiles/invoiceSections&quot;
+      }
+    ]
+  },
+  &quot;name&quot;: &quot;DN7P-GKOI-BG7-AJ4D-SGB&quot;,
+  &quot;poNumber&quot;: null,
+  &quot;spendingLimit&quot;: &quot;On&quot;,
+  &quot;status&quot;: &quot;Active&quot;,
+  &quot;statusReasonCode&quot;: null,
+  &quot;systemId&quot;: &quot;DN7P-GKOI-BG7-AJ4D-SGB&quot;,
+  &quot;tags&quot;: null,
+  &quot;targetClouds&quot;: [],
+  &quot;type&quot;: &quot;Microsoft.Billing/billingAccounts/billingProfiles&quot;
+}
+
+
+<br/> -------------------------------Captured log call-------------------------------- <br/>ERROR    azure.cli.testsdk:__init__.py:76 --------------------------------------
+ERROR    azure.cli.testsdk:__init__.py:77 step exception in step__billingprofiles_get: Query &#x27;length(@)&#x27; doesn&#x27;t yield expected value &#x27;1&#x27;, instead the actual value is &#x27;6&#x27;. Data: 
+[
+  {
+    &quot;billTo&quot;: {
+      &quot;addressLine1&quot;: &quot;PLAMUATT2NetNew&quot;,
+      &quot;addressLine2&quot;: &quot;&quot;,
+      &quot;addressLine3&quot;: null,
+      &quot;city&quot;: &quot;Paris&quot;,
+      &quot;companyName&quot;: &quot;PLAMUATT2NetNew&quot;,
+      &quot;country&quot;: &quot;FR&quot;,
+      &quot;district&quot;: null,
+      &quot;email&quot;: null,
+      &quot;firstName&quot;: null,
+      &quot;lastName&quot;: null,
+      &quot;middleName&quot;: null,
+      &quot;phoneNumber&quot;: &quot;1234567890&quot;,
+      &quot;postalCode&quot;: &quot;75016&quot;,
+      &quot;region&quot;: &quot;Paris&quot;
+    },
+    &quot;billingRelationshipType&quot;: &quot;CSPPartner&quot;,
+    &quot;currency&quot;: &quot;CHF&quot;,
+    &quot;displayName&quot;: &quot;PLAMUATT2NetNew-CHF&quot;,
+    &quot;enabledAzurePlans&quot;: [
+      {
+        &quot;skuDescription&quot;: &quot;Microsoft Azure Plan&quot;,
+        &quot;skuId&quot;: &quot;0001&quot;
+      }
+    ],
+    &quot;hasReadAccess&quot;: true,
+    &quot;id&quot;: &quot;/providers/Microsoft.Billing/billingAccounts/aff095f4-f26b-5334-db79-29704a77c0e5:8d5301c9-db55-4eb6-8611-9db0417d6cb2_2019-05-31/billingProfiles/5XQV-V4U6-BG7-AJ4D-SGB&quot;,
+    &quot;indirectRelationshipInfo&quot;: null,
+    &quot;invoiceDay&quot;: 6,
+    &quot;invoiceEmailOptIn&quot;: false,
+    &quot;invoiceSections&quot;: {
+      &quot;hasMoreResults&quot;: false,
+      &quot;value&quot;: null
+    },
+    &quot;name&quot;: &quot;5XQV-V4U6-BG7-AJ4D-SGB&quot;,
+    &quot;poNumber&quot;: null,
+    &quot;spendingLimit&quot;: &quot;Off&quot;,
+    &quot;status&quot;: &quot;Active&quot;,
+    &quot;statusReasonCode&quot;: null,
+    &quot;systemId&quot;: &quot;5XQV-V4U6-BG7-AJ4D-SGB&quot;,
+    &quot;tags&quot;: null,
+    &quot;targetClouds&quot;: [],
+    &quot;type&quot;: &quot;Microsoft.Billing/billingAccounts/billingProfiles&quot;
+  },
+  {
+    &quot;billTo&quot;: {
+      &quot;addressLine1&quot;: &quot;PLAMUATT2NetNew&quot;,
+      &quot;addressLine2&quot;: &quot;&quot;,
+      &quot;addressLine3&quot;: null,
+      &quot;city&quot;: &quot;Paris&quot;,
+      &quot;companyName&quot;: &quot;PLAMUATT2NetNew&quot;,
+      &quot;country&quot;: &quot;FR&quot;,
+      &quot;district&quot;: null,
+      &quot;email&quot;: null,
+      &quot;firstName&quot;: null,
+      &quot;lastName&quot;: null,
+      &quot;middleName&quot;: null,
+      &quot;phoneNumber&quot;: &quot;1234567890&quot;,
+      &quot;postalCode&quot;: &quot;75016&quot;,
+      &quot;region&quot;: &quot;Paris&quot;
+    },
+    &quot;billingRelationshipType&quot;: &quot;CSPPartner&quot;,
+    &quot;currency&quot;: &quot;SEK&quot;,
+    &quot;displayName&quot;: &quot;PLAMUATT2NetNew-SEK&quot;,
+    &quot;enabledAzurePlans&quot;: [
+      {
+        &quot;skuDescription&quot;: &quot;Microsoft Azure Plan&quot;,
+        &quot;skuId&quot;: &quot;0001&quot;
+      }
+    ],
+    &quot;hasReadAccess&quot;: true,
+    &quot;id&quot;: &quot;/providers/Microsoft.Billing/billingAccounts/aff095f4-f26b-5334-db79-29704a77c0e5:8d5301c9-db55-4eb6-8611-9db0417d6cb2_2019-05-31/billingProfiles/7AAC-54QF-BG7-AJ4D-SGB&quot;,
+    &quot;indirectRelationshipInfo&quot;: null,
+    &quot;invoiceDay&quot;: 6,
+    &quot;invoiceEmailOptIn&quot;: false,
+    &quot;invoiceSections&quot;: {
+      &quot;hasMoreResults&quot;: false,
+      &quot;value&quot;: null
+    },
+    &quot;name&quot;: &quot;7AAC-54QF-BG7-AJ4D-SGB&quot;,
+    &quot;poNumber&quot;: null,
+    &quot;spendingLimit&quot;: &quot;On&quot;,
+    &quot;status&quot;: &quot;Active&quot;,
+    &quot;statusReasonCode&quot;: null,
+    &quot;systemId&quot;: &quot;7AAC-54QF-BG7-AJ4D-SGB&quot;,
+    &quot;tags&quot;: null,
+    &quot;targetClouds&quot;: [],
+    &quot;type&quot;: &quot;Microsoft.Billing/billingAccounts/billingProfiles&quot;
+  },
+  {
+    &quot;billTo&quot;: {
+      &quot;addressLine1&quot;: &quot;PLAMUATT2NetNew&quot;,
+      &quot;addressLine2&quot;: &quot;&quot;,
+      &quot;addressLine3&quot;: null,
+      &quot;city&quot;: &quot;Paris&quot;,
+      &quot;companyName&quot;: &quot;PLAMUATT2NetNew&quot;,
+      &quot;country&quot;: &quot;FR&quot;,
+      &quot;district&quot;: null,
+      &quot;email&quot;: null,
+      &quot;firstName&quot;: null,
+      &quot;lastName&quot;: null,
+      &quot;middleName&quot;: null,
+      &quot;phoneNumber&quot;: &quot;1234567890&quot;,
+      &quot;postalCode&quot;: &quot;75016&quot;,
+      &quot;region&quot;: &quot;Paris&quot;
+    },
+    &quot;billingRelationshipType&quot;: &quot;CSPPartner&quot;,
+    &quot;currency&quot;: &quot;NOK&quot;,
+    &quot;displayName&quot;: &quot;PLAMUATT2NetNew-NOK&quot;,
+    &quot;enabledAzurePlans&quot;: [
+      {
+        &quot;skuDescription&quot;: &quot;Microsoft Azure Plan&quot;,
+        &quot;skuId&quot;: &quot;0001&quot;
+      }
+    ],
+    &quot;hasReadAccess&quot;: true,
+    &quot;id&quot;: &quot;/providers/Microsoft.Billing/billingAccounts/aff095f4-f26b-5334-db79-29704a77c0e5:8d5301c9-db55-4eb6-8611-9db0417d6cb2_2019-05-31/billingProfiles/GTML-JUTM-BG7-AJ4D-SGB&quot;,
+    &quot;indirectRelationshipInfo&quot;: null,
+    &quot;invoiceDay&quot;: 6,
+    &quot;invoiceEmailOptIn&quot;: false,
+    &quot;invoiceSections&quot;: {
+      &quot;hasMoreResults&quot;: false,
+      &quot;value&quot;: null
+    },
+    &quot;name&quot;: &quot;GTML-JUTM-BG7-AJ4D-SGB&quot;,
+    &quot;poNumber&quot;: null,
+    &quot;spendingLimit&quot;: &quot;Off&quot;,
+    &quot;status&quot;: &quot;Active&quot;,
+    &quot;statusReasonCode&quot;: null,
+    &quot;systemId&quot;: &quot;GTML-JUTM-BG7-AJ4D-SGB&quot;,
+    &quot;tags&quot;: null,
+    &quot;targetClouds&quot;: [],
+    &quot;type&quot;: &quot;Microsoft.Billing/billingAccounts/billingProfiles&quot;
+  },
+  {
+    &quot;billTo&quot;: {
+      &quot;addressLine1&quot;: &quot;PLAMUATT2NetNew&quot;,
+      &quot;addressLine2&quot;: &quot;&quot;,
+      &quot;addressLine3&quot;: null,
+      &quot;city&quot;: &quot;Paris&quot;,
+      &quot;companyName&quot;: &quot;PLAMUATT2NetNew&quot;,
+      &quot;country&quot;: &quot;FR&quot;,
+      &quot;district&quot;: null,
+      &quot;email&quot;: null,
+      &quot;firstName&quot;: null,
+      &quot;lastName&quot;: null,
+      &quot;middleName&quot;: null,
+      &quot;phoneNumber&quot;: &quot;1234567890&quot;,
+      &quot;postalCode&quot;: &quot;75016&quot;,
+      &quot;region&quot;: &quot;Paris&quot;
+    },
+    &quot;billingRelationshipType&quot;: &quot;CSPPartner&quot;,
+    &quot;currency&quot;: &quot;EUR&quot;,
+    &quot;displayName&quot;: &quot;PLAMUATT2NetNew-EUR&quot;,
+    &quot;enabledAzurePlans&quot;: [
+      {
+        &quot;skuDescription&quot;: &quot;Microsoft Azure Plan&quot;,
+        &quot;skuId&quot;: &quot;0001&quot;
+      }
+    ],
+    &quot;hasReadAccess&quot;: true,
+    &quot;id&quot;: &quot;/providers/Microsoft.Billing/billingAccounts/aff095f4-f26b-5334-db79-29704a77c0e5:8d5301c9-db55-4eb6-8611-9db0417d6cb2_2019-05-31/billingProfiles/ROHX-DYIN-BG7-AJ4D-SGB&quot;,
+    &quot;indirectRelationshipInfo&quot;: null,
+    &quot;invoiceDay&quot;: 6,
+    &quot;invoiceEmailOptIn&quot;: false,
+    &quot;invoiceSections&quot;: {
+      &quot;hasMoreResults&quot;: false,
+      &quot;value&quot;: null
+    },
+    &quot;name&quot;: &quot;ROHX-DYIN-BG7-AJ4D-SGB&quot;,
+    &quot;poNumber&quot;: null,
+    &quot;spendingLimit&quot;: &quot;On&quot;,
+    &quot;status&quot;: &quot;Active&quot;,
+    &quot;statusReasonCode&quot;: null,
+    &quot;systemId&quot;: &quot;ROHX-DYIN-BG7-AJ4D-SGB&quot;,
+    &quot;tags&quot;: null,
+    &quot;targetClouds&quot;: [],
+    &quot;type&quot;: &quot;Microsoft.Billing/billingAccounts/billingProfiles&quot;
+  },
+  {
+    &quot;billTo&quot;: {
+      &quot;addressLine1&quot;: &quot;PLAMUATT2NetNew&quot;,
+      &quot;addressLine2&quot;: &quot;&quot;,
+      &quot;addressLine3&quot;: null,
+      &quot;city&quot;: &quot;Paris&quot;,
+      &quot;companyName&quot;: &quot;PLAMUATT2NetNew&quot;,
+      &quot;country&quot;: &quot;FR&quot;,
+      &quot;district&quot;: null,
+      &quot;email&quot;: null,
+      &quot;firstName&quot;: null,
+      &quot;lastName&quot;: null,
+      &quot;middleName&quot;: null,
+      &quot;phoneNumber&quot;: &quot;1234567890&quot;,
+      &quot;postalCode&quot;: &quot;75016&quot;,
+      &quot;region&quot;: &quot;Paris&quot;
+    },
+    &quot;billingRelationshipType&quot;: &quot;CSPPartner&quot;,
+    &quot;currency&quot;: &quot;DKK&quot;,
+    &quot;displayName&quot;: &quot;PLAMUATT2NetNew-DKK&quot;,
+    &quot;enabledAzurePlans&quot;: [
+      {
+        &quot;skuDescription&quot;: &quot;Microsoft Azure Plan&quot;,
+        &quot;skuId&quot;: &quot;0001&quot;
+      }
+    ],
+    &quot;hasReadAccess&quot;: true,
+    &quot;id&quot;: &quot;/providers/Microsoft.Billing/billingAccounts/aff095f4-f26b-5334-db79-29704a77c0e5:8d5301c9-db55-4eb6-8611-9db0417d6cb2_2019-05-31/billingProfiles/DN7P-GKOI-BG7-AJ4D-SGB&quot;,
+    &quot;indirectRelationshipInfo&quot;: null,
+    &quot;invoiceDay&quot;: 6,
+    &quot;invoiceEmailOptIn&quot;: false,
+    &quot;invoiceSections&quot;: {
+      &quot;hasMoreResults&quot;: false,
+      &quot;value&quot;: null
+    },
+    &quot;name&quot;: &quot;DN7P-GKOI-BG7-AJ4D-SGB&quot;,
+    &quot;poNumber&quot;: null,
+    &quot;spendingLimit&quot;: &quot;On&quot;,
+    &quot;status&quot;: &quot;Active&quot;,
+    &quot;statusReasonCode&quot;: null,
+    &quot;systemId&quot;: &quot;DN7P-GKOI-BG7-AJ4D-SGB&quot;,
+    &quot;tags&quot;: null,
+    &quot;targetClouds&quot;: [],
+    &quot;type&quot;: &quot;Microsoft.Billing/billingAccounts/billingProfiles&quot;
+  },
+  {
+    &quot;billTo&quot;: {
+      &quot;addressLine1&quot;: &quot;PLAMUATT2NetNew&quot;,
+      &quot;addressLine2&quot;: null,
+      &quot;addressLine3&quot;: null,
+      &quot;city&quot;: &quot;Paris&quot;,
+      &quot;companyName&quot;: &quot;PLAMUATT2NetNew*&quot;,
+      &quot;country&quot;: &quot;FR&quot;,
+      &quot;district&quot;: null,
+      &quot;email&quot;: null,
+      &quot;firstName&quot;: null,
+      &quot;lastName&quot;: null,
+      &quot;middleName&quot;: null,
+      &quot;phoneNumber&quot;: &quot;1234567890&quot;,
+      &quot;postalCode&quot;: &quot;75016&quot;,
+      &quot;region&quot;: &quot;Paris&quot;
+    },
+    &quot;billingRelationshipType&quot;: &quot;CSPPartner&quot;,
+    &quot;currency&quot;: &quot;GBP&quot;,
+    &quot;displayName&quot;: &quot;PLAMUATT2NetNew-GBP&quot;,
+    &quot;enabledAzurePlans&quot;: [
+      {
+        &quot;skuDescription&quot;: &quot;Microsoft Azure Plan&quot;,
+        &quot;skuId&quot;: &quot;0001&quot;
+      }
+    ],
+    &quot;hasReadAccess&quot;: true,
+    &quot;id&quot;: &quot;/providers/Microsoft.Billing/billingAccounts/aff095f4-f26b-5334-db79-29704a77c0e5:8d5301c9-db55-4eb6-8611-9db0417d6cb2_2019-05-31/billingProfiles/XXGU-AF7A-BG7-AJ4D-SGB&quot;,
+    &quot;indirectRelationshipInfo&quot;: null,
+    &quot;invoiceDay&quot;: 6,
+    &quot;invoiceEmailOptIn&quot;: false,
+    &quot;invoiceSections&quot;: {
+      &quot;hasMoreResults&quot;: false,
+      &quot;value&quot;: null
+    },
+    &quot;name&quot;: &quot;XXGU-AF7A-BG7-AJ4D-SGB&quot;,
+    &quot;poNumber&quot;: null,
+    &quot;spendingLimit&quot;: &quot;On&quot;,
+    &quot;status&quot;: &quot;Active&quot;,
+    &quot;statusReasonCode&quot;: null,
+    &quot;systemId&quot;: &quot;XXGU-AF7A-BG7-AJ4D-SGB&quot;,
+    &quot;tags&quot;: null,
+    &quot;targetClouds&quot;: [],
+    &quot;type&quot;: &quot;Microsoft.Billing/billingAccounts/billingProfiles&quot;
+  }
+]
+
+
+ERROR    azure.cli.testsdk:__init__.py:76 --------------------------------------
+ERROR    azure.cli.testsdk:__init__.py:77 step exception in step__billingprofiles_get_billingprofile: Query &#x27;invoiceEmailOptIn&#x27; doesn&#x27;t yield expected value &#x27;True&#x27;, instead the actual value is &#x27;None&#x27;. Data: 
+{
+  &quot;billTo&quot;: {
+    &quot;addressLine1&quot;: &quot;PLAMUATT2NetNew&quot;,
+    &quot;addressLine2&quot;: &quot;&quot;,
+    &quot;addressLine3&quot;: null,
+    &quot;city&quot;: &quot;Paris&quot;,
+    &quot;companyName&quot;: &quot;PLAMUATT2NetNew&quot;,
+    &quot;country&quot;: &quot;FR&quot;,
+    &quot;district&quot;: null,
+    &quot;email&quot;: null,
+    &quot;firstName&quot;: null,
+    &quot;lastName&quot;: null,
+    &quot;middleName&quot;: null,
+    &quot;phoneNumber&quot;: &quot;1234567890&quot;,
+    &quot;postalCode&quot;: &quot;75016&quot;,
+    &quot;region&quot;: &quot;Paris&quot;
+  },
+  &quot;billingRelationshipType&quot;: &quot;CSPPartner&quot;,
+  &quot;currency&quot;: &quot;DKK&quot;,
+  &quot;displayName&quot;: &quot;PLAMUATT2NetNew-DKK&quot;,
+  &quot;enabledAzurePlans&quot;: [
+    {
+      &quot;skuDescription&quot;: &quot;Microsoft Azure Plan&quot;,
+      &quot;skuId&quot;: &quot;0001&quot;
+    }
+  ],
+  &quot;hasReadAccess&quot;: true,
+  &quot;id&quot;: &quot;/providers/Microsoft.Billing/billingAccounts/aff095f4-f26b-5334-db79-29704a77c0e5:8d5301c9-db55-4eb6-8611-9db0417d6cb2_2019-05-31/billingProfiles/DN7P-GKOI-BG7-AJ4D-SGB&quot;,
+  &quot;indirectRelationshipInfo&quot;: null,
+  &quot;invoiceDay&quot;: 6,
+  &quot;invoiceEmailOptIn&quot;: false,
+  &quot;invoiceSections&quot;: {
+    &quot;hasMoreResults&quot;: false,
+    &quot;value&quot;: null
+  },
+  &quot;name&quot;: &quot;DN7P-GKOI-BG7-AJ4D-SGB&quot;,
+  &quot;poNumber&quot;: null,
+  &quot;spendingLimit&quot;: &quot;On&quot;,
+  &quot;status&quot;: &quot;Active&quot;,
+  &quot;statusReasonCode&quot;: null,
+  &quot;systemId&quot;: &quot;DN7P-GKOI-BG7-AJ4D-SGB&quot;,
+  &quot;tags&quot;: null,
+  &quot;targetClouds&quot;: [],
+  &quot;type&quot;: &quot;Microsoft.Billing/billingAccounts/billingProfiles&quot;
+}
+
+
+ERROR    azure.cli.testsdk:__init__.py:76 --------------------------------------
+ERROR    azure.cli.testsdk:__init__.py:77 step exception in step__billingprofiles_get_billingprofilewithexpand: Query &#x27;invoiceEmailOptIn&#x27; doesn&#x27;t yield expected value &#x27;True&#x27;, instead the actual value is &#x27;None&#x27;. Data: 
+{
+  &quot;billTo&quot;: {
+    &quot;addressLine1&quot;: &quot;PLAMUATT2NetNew&quot;,
+    &quot;addressLine2&quot;: &quot;&quot;,
+    &quot;addressLine3&quot;: null,
+    &quot;city&quot;: &quot;Paris&quot;,
+    &quot;companyName&quot;: &quot;PLAMUATT2NetNew&quot;,
+    &quot;country&quot;: &quot;FR&quot;,
+    &quot;district&quot;: null,
+    &quot;email&quot;: null,
+    &quot;firstName&quot;: null,
+    &quot;lastName&quot;: null,
+    &quot;middleName&quot;: null,
+    &quot;phoneNumber&quot;: &quot;1234567890&quot;,
+    &quot;postalCode&quot;: &quot;75016&quot;,
+    &quot;region&quot;: &quot;Paris&quot;
+  },
+  &quot;billingRelationshipType&quot;: &quot;CSPPartner&quot;,
+  &quot;currency&quot;: &quot;DKK&quot;,
+  &quot;displayName&quot;: &quot;PLAMUATT2NetNew-DKK&quot;,
+  &quot;enabledAzurePlans&quot;: [
+    {
+      &quot;skuDescription&quot;: &quot;Microsoft Azure Plan&quot;,
+      &quot;skuId&quot;: &quot;0001&quot;
+    }
+  ],
+  &quot;hasReadAccess&quot;: true,
+  &quot;id&quot;: &quot;/providers/Microsoft.Billing/billingAccounts/aff095f4-f26b-5334-db79-29704a77c0e5:8d5301c9-db55-4eb6-8611-9db0417d6cb2_2019-05-31/billingProfiles/DN7P-GKOI-BG7-AJ4D-SGB&quot;,
+  &quot;indirectRelationshipInfo&quot;: null,
+  &quot;invoiceDay&quot;: 6,
+  &quot;invoiceEmailOptIn&quot;: false,
+  &quot;invoiceSections&quot;: {
+    &quot;hasMoreResults&quot;: false,
+    &quot;value&quot;: [
+      {
+        &quot;displayName&quot;: &quot;Modern Azure Customer DK&quot;,
+        &quot;id&quot;: &quot;/providers/Microsoft.Billing/billingAccounts/aff095f4-f26b-5334-db79-29704a77c0e5:8d5301c9-db55-4eb6-8611-9db0417d6cb2_2019-05-31/billingProfiles/DN7P-GKOI-BG7-AJ4D-SGB/invoiceSections/63DQ-IVMU-PJA-AJ4D-SGB&quot;,
+        &quot;labels&quot;: null,
+        &quot;name&quot;: &quot;63DQ-IVMU-PJA-AJ4D-SGB&quot;,
+        &quot;state&quot;: &quot;Active&quot;,
+        &quot;systemId&quot;: &quot;63DQ-IVMU-PJA-AJ4D-SGB&quot;,
+        &quot;targetCloud&quot;: null,
+        &quot;type&quot;: &quot;Microsoft.Billing/billingAccounts/billingProfiles/invoiceSections&quot;
+      }
+    ]
+  },
+  &quot;name&quot;: &quot;DN7P-GKOI-BG7-AJ4D-SGB&quot;,
+  &quot;poNumber&quot;: null,
+  &quot;spendingLimit&quot;: &quot;On&quot;,
+  &quot;status&quot;: &quot;Active&quot;,
+  &quot;statusReasonCode&quot;: null,
+  &quot;systemId&quot;: &quot;DN7P-GKOI-BG7-AJ4D-SGB&quot;,
+  &quot;tags&quot;: null,
+  &quot;targetClouds&quot;: [],
+  &quot;type&quot;: &quot;Microsoft.Billing/billingAccounts/billingProfiles&quot;
+}<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/billing/tests/latest/test_billing_scenario_incrementalGenerated.py::BillingProfileScenarioTest::test_billing_profile_create_and_update</td>
+          <td class="col-duration">0.20</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Command group &#x27;billing profile&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;billing profile&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;billing profile&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+--------------------------------------
+step exception in step__billingprofiles_get_billingprofile: 3
+<br/> -------------------------------Captured log call-------------------------------- <br/>ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 (NotFound) The resource or one of its dependencies could not be found.
+Code: NotFound
+Message: The resource or one of its dependencies could not be found.
+ERROR    az_command_data_logger:azlogging.py:213 (NotFound) The resource or one of its dependencies could not be found.
+Code: NotFound
+Message: The resource or one of its dependencies could not be found.
+ERROR    azure.cli.testsdk:__init__.py:76 --------------------------------------
+ERROR    azure.cli.testsdk:__init__.py:77 step exception in step__billingprofiles_get_billingprofile: 3<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/billing/tests/latest/test_billing_scenario_incrementalGenerated.py::BillingCustomerScenarioTest::test_billing_customer_list_and_show</td>
+          <td class="col-duration">0.18</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Command group &#x27;billing customer&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;billing customer&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;billing customer&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;billing customer&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/billing/tests/latest/test_billing_scenario_incrementalGenerated.py::BillingPolicyScenarioTest::test_billing_policy_show_and_update</td>
+          <td class="col-duration">0.22</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Command group &#x27;billing policy&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;billing policy&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;billing policy&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;billing policy&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;billing policy&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/billing/tests/latest/test_billing_scenario_incrementalGenerated.py::BillingPropertyScenarioTest::test_billing_property_show</td>
+          <td class="col-duration">0.06</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Command group &#x27;billing property&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/billing/tests/latest/test_billing_scenario_incrementalGenerated.py::BillingInvoiceScenarioTest::test_billing_invoice_list_and_show</td>
+          <td class="col-duration">0.01</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/billing/tests/latest/test_billing_scenario_incrementalGenerated.py::BillingInvoiceSectionScenarioTest::test_billing_invoice_section_list_and_show</td>
+          <td class="col-duration">0.11</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Command group &#x27;billing invoice section&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+--------------------------------------
+step exception in step__invoicesections_get: Query &#x27;length(@)&#x27; doesn&#x27;t yield expected value &#x27;1&#x27;, instead the actual value is &#x27;5&#x27;. Data: 
+[
+  {
+    &quot;displayName&quot;: &quot;Modern Ireland Customer&quot;,
+    &quot;id&quot;: &quot;/providers/Microsoft.Billing/billingAccounts/aff095f4-f26b-5334-db79-29704a77c0e5:8d5301c9-db55-4eb6-8611-9db0417d6cb2_2019-05-31/billingProfiles/ROHX-DYIN-BG7-AJ4D-SGB/invoiceSections/QTHC-PDIL-PJA-AJ4D-SGB&quot;,
+    &quot;labels&quot;: null,
+    &quot;name&quot;: &quot;QTHC-PDIL-PJA-AJ4D-SGB&quot;,
+    &quot;state&quot;: &quot;Active&quot;,
+    &quot;systemId&quot;: &quot;QTHC-PDIL-PJA-AJ4D-SGB&quot;,
+    &quot;targetCloud&quot;: null,
+    &quot;type&quot;: &quot;Microsoft.Billing/billingAccounts/billingProfiles/invoiceSections&quot;
+  },
+  {
+    &quot;displayName&quot;: &quot;Modern Azure Customer BE&quot;,
+    &quot;id&quot;: &quot;/providers/Microsoft.Billing/billingAccounts/aff095f4-f26b-5334-db79-29704a77c0e5:8d5301c9-db55-4eb6-8611-9db0417d6cb2_2019-05-31/billingProfiles/ROHX-DYIN-BG7-AJ4D-SGB/invoiceSections/45XH-MP4W-PJA-AJ4D-SGB&quot;,
+    &quot;labels&quot;: null,
+    &quot;name&quot;: &quot;45XH-MP4W-PJA-AJ4D-SGB&quot;,
+    &quot;state&quot;: &quot;Active&quot;,
+    &quot;systemId&quot;: &quot;45XH-MP4W-PJA-AJ4D-SGB&quot;,
+    &quot;targetCloud&quot;: null,
+    &quot;type&quot;: &quot;Microsoft.Billing/billingAccounts/billingProfiles/invoiceSections&quot;
+  },
+  {
+    &quot;displayName&quot;: &quot;Humongous Insurance DE1&quot;,
+    &quot;id&quot;: &quot;/providers/Microsoft.Billing/billingAccounts/aff095f4-f26b-5334-db79-29704a77c0e5:8d5301c9-db55-4eb6-8611-9db0417d6cb2_2019-05-31/billingProfiles/ROHX-DYIN-BG7-AJ4D-SGB/invoiceSections/7S7S-YONO-PJA-AJ4D-SGB&quot;,
+    &quot;labels&quot;: null,
+    &quot;name&quot;: &quot;7S7S-YONO-PJA-AJ4D-SGB&quot;,
+    &quot;state&quot;: &quot;Active&quot;,
+    &quot;systemId&quot;: &quot;7S7S-YONO-PJA-AJ4D-SGB&quot;,
+    &quot;targetCloud&quot;: null,
+    &quot;type&quot;: &quot;Microsoft.Billing/billingAccounts/billingProfiles/invoiceSections&quot;
+  },
+  {
+    &quot;displayName&quot;: &quot;Modern Azure Customer DE&quot;,
+    &quot;id&quot;: &quot;/providers/Microsoft.Billing/billingAccounts/aff095f4-f26b-5334-db79-29704a77c0e5:8d5301c9-db55-4eb6-8611-9db0417d6cb2_2019-05-31/billingProfiles/ROHX-DYIN-BG7-AJ4D-SGB/invoiceSections/CSZH-A3KS-PJA-AJ4D-SGB&quot;,
+    &quot;labels&quot;: null,
+    &quot;name&quot;: &quot;CSZH-A3KS-PJA-AJ4D-SGB&quot;,
+    &quot;state&quot;: &quot;Active&quot;,
+    &quot;systemId&quot;: &quot;CSZH-A3KS-PJA-AJ4D-SGB&quot;,
+    &quot;targetCloud&quot;: null,
+    &quot;type&quot;: &quot;Microsoft.Billing/billingAccounts/billingProfiles/invoiceSections&quot;
+  },
+  {
+    &quot;displayName&quot;: &quot;Humongous Insurance DE2&quot;,
+    &quot;id&quot;: &quot;/providers/Microsoft.Billing/billingAccounts/aff095f4-f26b-5334-db79-29704a77c0e5:8d5301c9-db55-4eb6-8611-9db0417d6cb2_2019-05-31/billingProfiles/ROHX-DYIN-BG7-AJ4D-SGB/invoiceSections/VTHL-KNJG-PJA-AJ4D-SGB&quot;,
+    &quot;labels&quot;: null,
+    &quot;name&quot;: &quot;VTHL-KNJG-PJA-AJ4D-SGB&quot;,
+    &quot;state&quot;: &quot;Active&quot;,
+    &quot;systemId&quot;: &quot;VTHL-KNJG-PJA-AJ4D-SGB&quot;,
+    &quot;targetCloud&quot;: null,
+    &quot;type&quot;: &quot;Microsoft.Billing/billingAccounts/billingProfiles/invoiceSections&quot;
+  }
+]
+
+
+WARNING: Command group &#x27;billing invoice section&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+--------------------------------------
+step exception in step__invoicesections_get_invoicesection: Query &#x27;displayName&#x27; doesn&#x27;t yield expected value &#x27;invoiceSection1&#x27;, instead the actual value is &#x27;Humongous Insurance DE1&#x27;. Data: 
+{
+  &quot;displayName&quot;: &quot;Humongous Insurance DE1&quot;,
+  &quot;id&quot;: &quot;/providers/Microsoft.Billing/billingAccounts/aff095f4-f26b-5334-db79-29704a77c0e5:8d5301c9-db55-4eb6-8611-9db0417d6cb2_2019-05-31/billingProfiles/ROHX-DYIN-BG7-AJ4D-SGB/invoiceSections/7S7S-YONO-PJA-AJ4D-SGB&quot;,
+  &quot;labels&quot;: null,
+  &quot;name&quot;: &quot;7S7S-YONO-PJA-AJ4D-SGB&quot;,
+  &quot;state&quot;: &quot;Active&quot;,
+  &quot;systemId&quot;: &quot;7S7S-YONO-PJA-AJ4D-SGB&quot;,
+  &quot;targetCloud&quot;: null,
+  &quot;type&quot;: &quot;Microsoft.Billing/billingAccounts/billingProfiles/invoiceSections&quot;
+}
+
+
+<br/> -------------------------------Captured log call-------------------------------- <br/>ERROR    azure.cli.testsdk:__init__.py:76 --------------------------------------
+ERROR    azure.cli.testsdk:__init__.py:77 step exception in step__invoicesections_get: Query &#x27;length(@)&#x27; doesn&#x27;t yield expected value &#x27;1&#x27;, instead the actual value is &#x27;5&#x27;. Data: 
+[
+  {
+    &quot;displayName&quot;: &quot;Modern Ireland Customer&quot;,
+    &quot;id&quot;: &quot;/providers/Microsoft.Billing/billingAccounts/aff095f4-f26b-5334-db79-29704a77c0e5:8d5301c9-db55-4eb6-8611-9db0417d6cb2_2019-05-31/billingProfiles/ROHX-DYIN-BG7-AJ4D-SGB/invoiceSections/QTHC-PDIL-PJA-AJ4D-SGB&quot;,
+    &quot;labels&quot;: null,
+    &quot;name&quot;: &quot;QTHC-PDIL-PJA-AJ4D-SGB&quot;,
+    &quot;state&quot;: &quot;Active&quot;,
+    &quot;systemId&quot;: &quot;QTHC-PDIL-PJA-AJ4D-SGB&quot;,
+    &quot;targetCloud&quot;: null,
+    &quot;type&quot;: &quot;Microsoft.Billing/billingAccounts/billingProfiles/invoiceSections&quot;
+  },
+  {
+    &quot;displayName&quot;: &quot;Modern Azure Customer BE&quot;,
+    &quot;id&quot;: &quot;/providers/Microsoft.Billing/billingAccounts/aff095f4-f26b-5334-db79-29704a77c0e5:8d5301c9-db55-4eb6-8611-9db0417d6cb2_2019-05-31/billingProfiles/ROHX-DYIN-BG7-AJ4D-SGB/invoiceSections/45XH-MP4W-PJA-AJ4D-SGB&quot;,
+    &quot;labels&quot;: null,
+    &quot;name&quot;: &quot;45XH-MP4W-PJA-AJ4D-SGB&quot;,
+    &quot;state&quot;: &quot;Active&quot;,
+    &quot;systemId&quot;: &quot;45XH-MP4W-PJA-AJ4D-SGB&quot;,
+    &quot;targetCloud&quot;: null,
+    &quot;type&quot;: &quot;Microsoft.Billing/billingAccounts/billingProfiles/invoiceSections&quot;
+  },
+  {
+    &quot;displayName&quot;: &quot;Humongous Insurance DE1&quot;,
+    &quot;id&quot;: &quot;/providers/Microsoft.Billing/billingAccounts/aff095f4-f26b-5334-db79-29704a77c0e5:8d5301c9-db55-4eb6-8611-9db0417d6cb2_2019-05-31/billingProfiles/ROHX-DYIN-BG7-AJ4D-SGB/invoiceSections/7S7S-YONO-PJA-AJ4D-SGB&quot;,
+    &quot;labels&quot;: null,
+    &quot;name&quot;: &quot;7S7S-YONO-PJA-AJ4D-SGB&quot;,
+    &quot;state&quot;: &quot;Active&quot;,
+    &quot;systemId&quot;: &quot;7S7S-YONO-PJA-AJ4D-SGB&quot;,
+    &quot;targetCloud&quot;: null,
+    &quot;type&quot;: &quot;Microsoft.Billing/billingAccounts/billingProfiles/invoiceSections&quot;
+  },
+  {
+    &quot;displayName&quot;: &quot;Modern Azure Customer DE&quot;,
+    &quot;id&quot;: &quot;/providers/Microsoft.Billing/billingAccounts/aff095f4-f26b-5334-db79-29704a77c0e5:8d5301c9-db55-4eb6-8611-9db0417d6cb2_2019-05-31/billingProfiles/ROHX-DYIN-BG7-AJ4D-SGB/invoiceSections/CSZH-A3KS-PJA-AJ4D-SGB&quot;,
+    &quot;labels&quot;: null,
+    &quot;name&quot;: &quot;CSZH-A3KS-PJA-AJ4D-SGB&quot;,
+    &quot;state&quot;: &quot;Active&quot;,
+    &quot;systemId&quot;: &quot;CSZH-A3KS-PJA-AJ4D-SGB&quot;,
+    &quot;targetCloud&quot;: null,
+    &quot;type&quot;: &quot;Microsoft.Billing/billingAccounts/billingProfiles/invoiceSections&quot;
+  },
+  {
+    &quot;displayName&quot;: &quot;Humongous Insurance DE2&quot;,
+    &quot;id&quot;: &quot;/providers/Microsoft.Billing/billingAccounts/aff095f4-f26b-5334-db79-29704a77c0e5:8d5301c9-db55-4eb6-8611-9db0417d6cb2_2019-05-31/billingProfiles/ROHX-DYIN-BG7-AJ4D-SGB/invoiceSections/VTHL-KNJG-PJA-AJ4D-SGB&quot;,
+    &quot;labels&quot;: null,
+    &quot;name&quot;: &quot;VTHL-KNJG-PJA-AJ4D-SGB&quot;,
+    &quot;state&quot;: &quot;Active&quot;,
+    &quot;systemId&quot;: &quot;VTHL-KNJG-PJA-AJ4D-SGB&quot;,
+    &quot;targetCloud&quot;: null,
+    &quot;type&quot;: &quot;Microsoft.Billing/billingAccounts/billingProfiles/invoiceSections&quot;
+  }
+]
+
+
+ERROR    azure.cli.testsdk:__init__.py:76 --------------------------------------
+ERROR    azure.cli.testsdk:__init__.py:77 step exception in step__invoicesections_get_invoicesection: Query &#x27;displayName&#x27; doesn&#x27;t yield expected value &#x27;invoiceSection1&#x27;, instead the actual value is &#x27;Humongous Insurance DE1&#x27;. Data: 
+{
+  &quot;displayName&quot;: &quot;Humongous Insurance DE1&quot;,
+  &quot;id&quot;: &quot;/providers/Microsoft.Billing/billingAccounts/aff095f4-f26b-5334-db79-29704a77c0e5:8d5301c9-db55-4eb6-8611-9db0417d6cb2_2019-05-31/billingProfiles/ROHX-DYIN-BG7-AJ4D-SGB/invoiceSections/7S7S-YONO-PJA-AJ4D-SGB&quot;,
+  &quot;labels&quot;: null,
+  &quot;name&quot;: &quot;7S7S-YONO-PJA-AJ4D-SGB&quot;,
+  &quot;state&quot;: &quot;Active&quot;,
+  &quot;systemId&quot;: &quot;7S7S-YONO-PJA-AJ4D-SGB&quot;,
+  &quot;targetCloud&quot;: null,
+  &quot;type&quot;: &quot;Microsoft.Billing/billingAccounts/billingProfiles/invoiceSections&quot;
+}<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/billing/tests/latest/test_billing_scenario_incrementalGenerated.py::BillingInvoiceSectionScenarioTest::test_billing_section_create</td>
+          <td class="col-duration">0.26</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Command group &#x27;billing invoice section&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;billing invoice section&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+--------------------------------------
+step exception in step__invoicesections_get: Query &#x27;length(@)&#x27; doesn&#x27;t yield expected value &#x27;1&#x27;, instead the actual value is &#x27;6&#x27;. Data: 
+[
+  {
+    &quot;displayName&quot;: &quot;Modern Ireland Customer&quot;,
+    &quot;id&quot;: &quot;/providers/Microsoft.Billing/billingAccounts/aff095f4-f26b-5334-db79-29704a77c0e5:8d5301c9-db55-4eb6-8611-9db0417d6cb2_2019-05-31/billingProfiles/ROHX-DYIN-BG7-AJ4D-SGB/invoiceSections/QTHC-PDIL-PJA-AJ4D-SGB&quot;,
+    &quot;labels&quot;: null,
+    &quot;name&quot;: &quot;QTHC-PDIL-PJA-AJ4D-SGB&quot;,
+    &quot;state&quot;: &quot;Active&quot;,
+    &quot;systemId&quot;: &quot;QTHC-PDIL-PJA-AJ4D-SGB&quot;,
+    &quot;targetCloud&quot;: null,
+    &quot;type&quot;: &quot;Microsoft.Billing/billingAccounts/billingProfiles/invoiceSections&quot;
+  },
+  {
+    &quot;displayName&quot;: &quot;Modern Azure Customer BE&quot;,
+    &quot;id&quot;: &quot;/providers/Microsoft.Billing/billingAccounts/aff095f4-f26b-5334-db79-29704a77c0e5:8d5301c9-db55-4eb6-8611-9db0417d6cb2_2019-05-31/billingProfiles/ROHX-DYIN-BG7-AJ4D-SGB/invoiceSections/45XH-MP4W-PJA-AJ4D-SGB&quot;,
+    &quot;labels&quot;: null,
+    &quot;name&quot;: &quot;45XH-MP4W-PJA-AJ4D-SGB&quot;,
+    &quot;state&quot;: &quot;Active&quot;,
+    &quot;systemId&quot;: &quot;45XH-MP4W-PJA-AJ4D-SGB&quot;,
+    &quot;targetCloud&quot;: null,
+    &quot;type&quot;: &quot;Microsoft.Billing/billingAccounts/billingProfiles/invoiceSections&quot;
+  },
+  {
+    &quot;displayName&quot;: &quot;Humongous Insurance DE1&quot;,
+    &quot;id&quot;: &quot;/providers/Microsoft.Billing/billingAccounts/aff095f4-f26b-5334-db79-29704a77c0e5:8d5301c9-db55-4eb6-8611-9db0417d6cb2_2019-05-31/billingProfiles/ROHX-DYIN-BG7-AJ4D-SGB/invoiceSections/7S7S-YONO-PJA-AJ4D-SGB&quot;,
+    &quot;labels&quot;: null,
+    &quot;name&quot;: &quot;7S7S-YONO-PJA-AJ4D-SGB&quot;,
+    &quot;state&quot;: &quot;Active&quot;,
+    &quot;systemId&quot;: &quot;7S7S-YONO-PJA-AJ4D-SGB&quot;,
+    &quot;targetCloud&quot;: null,
+    &quot;type&quot;: &quot;Microsoft.Billing/billingAccounts/billingProfiles/invoiceSections&quot;
+  },
+  {
+    &quot;displayName&quot;: &quot;Modern Azure Customer DE&quot;,
+    &quot;id&quot;: &quot;/providers/Microsoft.Billing/billingAccounts/aff095f4-f26b-5334-db79-29704a77c0e5:8d5301c9-db55-4eb6-8611-9db0417d6cb2_2019-05-31/billingProfiles/ROHX-DYIN-BG7-AJ4D-SGB/invoiceSections/CSZH-A3KS-PJA-AJ4D-SGB&quot;,
+    &quot;labels&quot;: null,
+    &quot;name&quot;: &quot;CSZH-A3KS-PJA-AJ4D-SGB&quot;,
+    &quot;state&quot;: &quot;Active&quot;,
+    &quot;systemId&quot;: &quot;CSZH-A3KS-PJA-AJ4D-SGB&quot;,
+    &quot;targetCloud&quot;: null,
+    &quot;type&quot;: &quot;Microsoft.Billing/billingAccounts/billingProfiles/invoiceSections&quot;
+  },
+  {
+    &quot;displayName&quot;: &quot;Humongous Insurance DE2&quot;,
+    &quot;id&quot;: &quot;/providers/Microsoft.Billing/billingAccounts/aff095f4-f26b-5334-db79-29704a77c0e5:8d5301c9-db55-4eb6-8611-9db0417d6cb2_2019-05-31/billingProfiles/ROHX-DYIN-BG7-AJ4D-SGB/invoiceSections/VTHL-KNJG-PJA-AJ4D-SGB&quot;,
+    &quot;labels&quot;: null,
+    &quot;name&quot;: &quot;VTHL-KNJG-PJA-AJ4D-SGB&quot;,
+    &quot;state&quot;: &quot;Active&quot;,
+    &quot;systemId&quot;: &quot;VTHL-KNJG-PJA-AJ4D-SGB&quot;,
+    &quot;targetCloud&quot;: null,
+    &quot;type&quot;: &quot;Microsoft.Billing/billingAccounts/billingProfiles/invoiceSections&quot;
+  },
+  {
+    &quot;displayName&quot;: &quot;invoiceSection1&quot;,
+    &quot;id&quot;: &quot;/providers/Microsoft.Billing/billingAccounts/aff095f4-f26b-5334-db79-29704a77c0e5:8d5301c9-db55-4eb6-8611-9db0417d6cb2_2019-05-31/billingProfiles/ROHX-DYIN-BG7-AJ4D-SGB/invoiceSections/7S7S-YONO-PJA-AJ4D-123&quot;,
+    &quot;labels&quot;: {
+      &quot;costCategory&quot;: &quot;Support&quot;,
+      &quot;pcCode&quot;: &quot;A123456&quot;
+    },
+    &quot;name&quot;: &quot;7S7S-YONO-PJA-AJ4D-123&quot;,
+    &quot;state&quot;: &quot;Active&quot;,
+    &quot;systemId&quot;: &quot;XBAI-A6MU-PJA-2YMV-SGB&quot;,
+    &quot;targetCloud&quot;: null,
+    &quot;type&quot;: &quot;Microsoft.Billing/billingAccounts/billingProfiles/invoiceSections&quot;
+  }
+]
+
+
+WARNING: Command group &#x27;billing invoice section&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/> -------------------------------Captured log call-------------------------------- <br/>ERROR    azure.cli.testsdk:__init__.py:76 --------------------------------------
+ERROR    azure.cli.testsdk:__init__.py:77 step exception in step__invoicesections_get: Query &#x27;length(@)&#x27; doesn&#x27;t yield expected value &#x27;1&#x27;, instead the actual value is &#x27;6&#x27;. Data: 
+[
+  {
+    &quot;displayName&quot;: &quot;Modern Ireland Customer&quot;,
+    &quot;id&quot;: &quot;/providers/Microsoft.Billing/billingAccounts/aff095f4-f26b-5334-db79-29704a77c0e5:8d5301c9-db55-4eb6-8611-9db0417d6cb2_2019-05-31/billingProfiles/ROHX-DYIN-BG7-AJ4D-SGB/invoiceSections/QTHC-PDIL-PJA-AJ4D-SGB&quot;,
+    &quot;labels&quot;: null,
+    &quot;name&quot;: &quot;QTHC-PDIL-PJA-AJ4D-SGB&quot;,
+    &quot;state&quot;: &quot;Active&quot;,
+    &quot;systemId&quot;: &quot;QTHC-PDIL-PJA-AJ4D-SGB&quot;,
+    &quot;targetCloud&quot;: null,
+    &quot;type&quot;: &quot;Microsoft.Billing/billingAccounts/billingProfiles/invoiceSections&quot;
+  },
+  {
+    &quot;displayName&quot;: &quot;Modern Azure Customer BE&quot;,
+    &quot;id&quot;: &quot;/providers/Microsoft.Billing/billingAccounts/aff095f4-f26b-5334-db79-29704a77c0e5:8d5301c9-db55-4eb6-8611-9db0417d6cb2_2019-05-31/billingProfiles/ROHX-DYIN-BG7-AJ4D-SGB/invoiceSections/45XH-MP4W-PJA-AJ4D-SGB&quot;,
+    &quot;labels&quot;: null,
+    &quot;name&quot;: &quot;45XH-MP4W-PJA-AJ4D-SGB&quot;,
+    &quot;state&quot;: &quot;Active&quot;,
+    &quot;systemId&quot;: &quot;45XH-MP4W-PJA-AJ4D-SGB&quot;,
+    &quot;targetCloud&quot;: null,
+    &quot;type&quot;: &quot;Microsoft.Billing/billingAccounts/billingProfiles/invoiceSections&quot;
+  },
+  {
+    &quot;displayName&quot;: &quot;Humongous Insurance DE1&quot;,
+    &quot;id&quot;: &quot;/providers/Microsoft.Billing/billingAccounts/aff095f4-f26b-5334-db79-29704a77c0e5:8d5301c9-db55-4eb6-8611-9db0417d6cb2_2019-05-31/billingProfiles/ROHX-DYIN-BG7-AJ4D-SGB/invoiceSections/7S7S-YONO-PJA-AJ4D-SGB&quot;,
+    &quot;labels&quot;: null,
+    &quot;name&quot;: &quot;7S7S-YONO-PJA-AJ4D-SGB&quot;,
+    &quot;state&quot;: &quot;Active&quot;,
+    &quot;systemId&quot;: &quot;7S7S-YONO-PJA-AJ4D-SGB&quot;,
+    &quot;targetCloud&quot;: null,
+    &quot;type&quot;: &quot;Microsoft.Billing/billingAccounts/billingProfiles/invoiceSections&quot;
+  },
+  {
+    &quot;displayName&quot;: &quot;Modern Azure Customer DE&quot;,
+    &quot;id&quot;: &quot;/providers/Microsoft.Billing/billingAccounts/aff095f4-f26b-5334-db79-29704a77c0e5:8d5301c9-db55-4eb6-8611-9db0417d6cb2_2019-05-31/billingProfiles/ROHX-DYIN-BG7-AJ4D-SGB/invoiceSections/CSZH-A3KS-PJA-AJ4D-SGB&quot;,
+    &quot;labels&quot;: null,
+    &quot;name&quot;: &quot;CSZH-A3KS-PJA-AJ4D-SGB&quot;,
+    &quot;state&quot;: &quot;Active&quot;,
+    &quot;systemId&quot;: &quot;CSZH-A3KS-PJA-AJ4D-SGB&quot;,
+    &quot;targetCloud&quot;: null,
+    &quot;type&quot;: &quot;Microsoft.Billing/billingAccounts/billingProfiles/invoiceSections&quot;
+  },
+  {
+    &quot;displayName&quot;: &quot;Humongous Insurance DE2&quot;,
+    &quot;id&quot;: &quot;/providers/Microsoft.Billing/billingAccounts/aff095f4-f26b-5334-db79-29704a77c0e5:8d5301c9-db55-4eb6-8611-9db0417d6cb2_2019-05-31/billingProfiles/ROHX-DYIN-BG7-AJ4D-SGB/invoiceSections/VTHL-KNJG-PJA-AJ4D-SGB&quot;,
+    &quot;labels&quot;: null,
+    &quot;name&quot;: &quot;VTHL-KNJG-PJA-AJ4D-SGB&quot;,
+    &quot;state&quot;: &quot;Active&quot;,
+    &quot;systemId&quot;: &quot;VTHL-KNJG-PJA-AJ4D-SGB&quot;,
+    &quot;targetCloud&quot;: null,
+    &quot;type&quot;: &quot;Microsoft.Billing/billingAccounts/billingProfiles/invoiceSections&quot;
+  },
+  {
+    &quot;displayName&quot;: &quot;invoiceSection1&quot;,
+    &quot;id&quot;: &quot;/providers/Microsoft.Billing/billingAccounts/aff095f4-f26b-5334-db79-29704a77c0e5:8d5301c9-db55-4eb6-8611-9db0417d6cb2_2019-05-31/billingProfiles/ROHX-DYIN-BG7-AJ4D-SGB/invoiceSections/7S7S-YONO-PJA-AJ4D-123&quot;,
+    &quot;labels&quot;: {
+      &quot;costCategory&quot;: &quot;Support&quot;,
+      &quot;pcCode&quot;: &quot;A123456&quot;
+    },
+    &quot;name&quot;: &quot;7S7S-YONO-PJA-AJ4D-123&quot;,
+    &quot;state&quot;: &quot;Active&quot;,
+    &quot;systemId&quot;: &quot;XBAI-A6MU-PJA-2YMV-SGB&quot;,
+    &quot;targetCloud&quot;: null,
+    &quot;type&quot;: &quot;Microsoft.Billing/billingAccounts/billingProfiles/invoiceSections&quot;
+  }
+]<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/billing/tests/latest/test_billing_scenario_incrementalGenerated.py::BillingAgreementScenarioTest::test_agreement_list_and_show</td>
+          <td class="col-duration">0.11</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Command group &#x27;billing agreement&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;billing agreement&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+--------------------------------------
+step exception in step__agreements_get_agreementbyname: 3
+<br/> -------------------------------Captured log call-------------------------------- <br/>ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 (NotFound) The resource or one of its dependencies could not be found.
+Code: NotFound
+Message: The resource or one of its dependencies could not be found.
+ERROR    az_command_data_logger:azlogging.py:213 (NotFound) The resource or one of its dependencies could not be found.
+Code: NotFound
+Message: The resource or one of its dependencies could not be found.
+ERROR    azure.cli.testsdk:__init__.py:76 --------------------------------------
+ERROR    azure.cli.testsdk:__init__.py:77 step exception in step__agreements_get_agreementbyname: 3<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/billing/tests/latest/test_billing_scenario_incrementalGenerated.py::BillingPermissionScenarioTest::test_permission_list</td>
+          <td class="col-duration">0.10</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Command group &#x27;billing permission&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;billing permission&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/billing/tests/latest/test_billing_scenario_incrementalGenerated.py::BillingRoleAssignmentScenarioTest::test_role_assignment_list_and_show</td>
+          <td class="col-duration">0.13</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Command group &#x27;billing role-assignment&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;billing role-assignment&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;billing role-assignment&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/billing/tests/latest/test_billing_scenario_incrementalGenerated.py::BillingRoleDefinitionScenarionTest::test_role_definition_list_and_show</td>
+          <td class="col-duration">0.27</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Command group &#x27;billing role-definition&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;billing role-definition&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;billing role-definition&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;billing role-definition&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;billing role-definition&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;billing role-definition&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/billing/tests/latest/test_billing_scenario_incrementalGenerated.py::BillingInstructionScenarioTest::test_instruction_create_and_update</td>
+          <td class="col-duration">0.16</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Command group &#x27;billing instruction&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+--------------------------------------
+step exception in step__instructions_put_putinstruction: Query &#x27;endDate&#x27; doesn&#x27;t yield expected value &#x27;2020-12-30T21:26:47.997Z&#x27;, instead the actual value is &#x27;2020-12-30T21:26:47.997000+00:00&#x27;. Data: 
+{
+  &quot;amount&quot;: 5000.0,
+  &quot;creationDate&quot;: &quot;0001-01-01T00:00:00+00:00&quot;,
+  &quot;endDate&quot;: &quot;2020-12-30T21:26:47.997000+00:00&quot;,
+  &quot;id&quot;: null,
+  &quot;name&quot;: &quot;inst-1&quot;,
+  &quot;startDate&quot;: &quot;2019-12-30T21:26:47.997000+00:00&quot;,
+  &quot;type&quot;: &quot;Microsoft.Billing/billingAccounts/billingProfiles/instructions&quot;
+}
+
+
+WARNING: Command group &#x27;billing instruction&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;billing instruction&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+<br/> -------------------------------Captured log call-------------------------------- <br/>ERROR    azure.cli.testsdk:__init__.py:76 --------------------------------------
+ERROR    azure.cli.testsdk:__init__.py:77 step exception in step__instructions_put_putinstruction: Query &#x27;endDate&#x27; doesn&#x27;t yield expected value &#x27;2020-12-30T21:26:47.997Z&#x27;, instead the actual value is &#x27;2020-12-30T21:26:47.997000+00:00&#x27;. Data: 
+{
+  &quot;amount&quot;: 5000.0,
+  &quot;creationDate&quot;: &quot;0001-01-01T00:00:00+00:00&quot;,
+  &quot;endDate&quot;: &quot;2020-12-30T21:26:47.997000+00:00&quot;,
+  &quot;id&quot;: null,
+  &quot;name&quot;: &quot;inst-1&quot;,
+  &quot;startDate&quot;: &quot;2019-12-30T21:26:47.997000+00:00&quot;,
+  &quot;type&quot;: &quot;Microsoft.Billing/billingAccounts/billingProfiles/instructions&quot;
+}<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">azure/cli/command_modules/billing/tests/latest/test_billing_scenario_incrementalGenerated.py::BillingInstructionScenarioTest::test_instruction_list_and_show</td>
+          <td class="col-duration">0.11</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stderr call------------------------------ <br/>WARNING: Command group &#x27;billing instruction&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+WARNING: Command group &#x27;billing instruction&#x27; is in preview and under development. Reference and support levels: https://aka.ms/CLI_refstatus
+--------------------------------------
+step exception in step__instructions_get_instruction: 3
+<br/> -------------------------------Captured log call-------------------------------- <br/>ERROR    cli.azure.cli.core.azclierror:azlogging.py:212 (NotFound) The resource or one of its dependencies could not be found.
+Code: NotFound
+Message: The resource or one of its dependencies could not be found.
+ERROR    az_command_data_logger:azlogging.py:213 (NotFound) The resource or one of its dependencies could not be found.
+Code: NotFound
+Message: The resource or one of its dependencies could not be found.
+ERROR    azure.cli.testsdk:__init__.py:76 --------------------------------------
+ERROR    azure.cli.testsdk:__init__.py:77 step exception in step__instructions_get_instruction: 3<br/></div></td></tr></tbody></table></body></html>
