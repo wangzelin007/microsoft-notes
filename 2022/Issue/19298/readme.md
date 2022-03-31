@@ -10,5 +10,3 @@ name: 24 -> 64
 init pr: https://github.com/Azure/azure-cli-extensions/pull/1741
 
 swagger pr: https://github.com/Azure/azure-rest-api-specs/pull/15155
-
-Breaking Change：

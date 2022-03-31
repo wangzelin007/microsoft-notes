@@ -98,6 +98,8 @@ def check_pull_request(title, body):
 
 def regex_line(line):
     error_flag = False
+    enclosed_begin = False
+    enclosed_end = True
     # Check Fix #number in title, just give a warning here, because it is not necessarily.
     if 'Fix' in line:
         sub_pattern = r'#\d'
@@ -143,18 +145,25 @@ def regex_line(line):
                 logger.error(' ' * index + '↑')
                 error_flag = True
         # --xxx parameters must be enclosed in `, e.g., `--size`
-        if i == '-' and line[idx + 1] == '-':
-            param = '--'
-            index = idx + 2
-            while index < len(line) and line[index] != ' ':
-                param += line[index]
-                index += 1
-            try:
-                assert line[idx - 1] == '`'
-            except:
-                logger.info('%s%s: missing ` around %s', line, yellow, param)
-                logger.error(' ' * idx + '↑' + ' ' * (index - idx - 2) + '↑')
-                error_flag = True
+        if line[idx] == '`' and not enclosed_begin:
+            enclosed_begin = True
+            enclosed_end = False
+        elif line[idx] == '`' and enclosed_begin:
+            enclosed_begin = False
+            enclosed_end = True
+        if i == '-' and (idx + 1) < len(line) and line[idx + 1] == '-':
+            if not enclosed_begin:
+                param = '--'
+                index = idx + 2
+                while index < len(line) and line[index] not in [' ', '/']:
+                    param += line[index]
+                    index += 1
+                try:
+                    assert line[idx - 1] == '`'
+                except:
+                    logger.info('%s%s: missing ` around %s', line, yellow, param)
+                    logger.error(' ' * idx + '↑' + ' ' * (index - idx - 2) + '↑')
+                    error_flag = True
         # verb check: only check the first word after ] or :
         if i in [']', ':']:
             word = ''
@@ -182,6 +191,11 @@ def regex_line(line):
     if line[-1] in ['.', ',', ' ']:
         logger.info('%s%s: please delete the last character', line, yellow)
         logger.error(' ' * idx + '↑')
+        error_flag = True
+
+    # check the ending ` character
+    if not enclosed_end:
+        logger.info('%s%s: unable to find the ending ` character', line, yellow)
         error_flag = True
 
     return error_flag
@@ -227,8 +241,20 @@ def test_fix_check_pr():
     body += ["[ServiceBus] `az servicebus topic subscription rule create`: Add filter_type parameter"]
     sys.exit(1) if check_pull_request(title, body) else sys.exit(0)
 
+def test_multiple_para():
+    title = '[Storage] Add `--blob-endpoint/--file-endpoint/--table-endpoint/--queue-endpoint` for data service commands to support customized service endpoint'
+    body = []
+    body += ['[Storage] Add `--blob-endpoint`/`--file-endpoint`/`--table-endpoint`/`--queue-endpoint` for data service commands to support customized service endpoint']
+    # body += ['[Storage] Add `--blob-endpoint`/`--file-endpoint/--table-endpoint`/`--queue-endpoint` for data service commands to support customized service endpoint']
+    # body += ['[Storage] Add `--blob-endpoint`/`--file-endpoint`/--table-endpoint/`--queue-endpoint` for data service commands to support customized service endpoint']
+    # body += ['[Storage] Add --blob-endpoint/--file-endpoint/--table-endpoint/--queue-endpoint for data service commands to support customized service endpoint']
+    # body += ['[Storage] Add `--blob-endpoint/--file-endpoint/--table-endpoint/--queue-endpoint for data service commands to support customized service endpoint']
+    # body += ['[Storage] Add `--blob-endpoint`/`--file-endpoint/--table-endpoint/--queue-endpoint for data service commands to support customized service endpoint']
+    body += ['[Storage] Add `--blob-endpoint`/`--file-endpoint/`--table-endpoint`/`--queue-endpoint` for data service commands to support customized service endpoint']
+    sys.exit(1) if check_pull_request(title, body) else sys.exit(0)
 
 if __name__ == '__main__':
     # test_pull_request_template()
     # test_check_pull_request()
-    test_fix_check_pr()
+    # test_fix_check_pr()
+    test_multiple_para()

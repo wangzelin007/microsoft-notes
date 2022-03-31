@@ -66,3 +66,6 @@ azdev style desktopvirtualization
 azdev linter desktopvirtualization
 python scripts/ci/test_index.py -q
 azdev linter --include-whl-extensions desktopvirtualization
+
+C:\Users\zelinwang\.azdev\env_config\Code\azure-cli\env\test_index\latest.json
+"test_desktopvirtualization_scenario": "c:\\code\\azure-cli-extensions\\src\\desktopvirtualization\\azext_desktopvirtualization\\tests\\latest\\test_desktopvirtualization_scenario.py"

@@ -25,6 +25,9 @@ Common:
   If we have multiple customer-facing changes, we need add them in the History Notes one by one, so we can automatically generate release note from History Notes instead of PR title.
 - The failure of CI is caused by the api-version of ResourceType.MGMT_CONTAINERREGISTRY upgraded from 2021-06-01-preview to 2021-08-01-preview and needed to re record these tests in live mode
 - type=str is the default setting, so we don't need an explicit declaration
+- Could we use `deprecate_info=c.deprecate(target='xxx', redirect='xxx', hide=True)` [deprecating-commands-and-arguments](https://github.com/Azure/azure-cli/blob/dev/doc/authoring_command_modules/authoring_commands.md#deprecating-commands-and-arguments) to hide these original commands and give users a few months to migrate their usage to new commands?
+  Otherwise, deleting these original commands now may cause a sudden breaking change to the users.
+
 
 Azure-cli-extensions:
 - (By the way) If you want to release the new extension version, please write the description of changes into HISTORY.rst and update setup.py.
@@ -98,4 +101,5 @@ azdev test test_vm_secret_e2e_test --live --profile 2019-03-01-hybrid
 [x] azdev test test_vm_secret_e2e_test --live --profile 2020-09-01-hybrid
 azdev test test_vm_secret_e2e_test --live --profile latest
 
-
+github filter:
+is:open is:pr review-requested:wangzelin007 draft:false -label:do-not-merge -label:"Do Not Merge" milestone:"Mar 2022 (2022-04-06)" created:>2022-01-01
