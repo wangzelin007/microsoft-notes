@@ -251,10 +251,22 @@ def test_multiple_para():
     # body += ['[Storage] Add `--blob-endpoint/--file-endpoint/--table-endpoint/--queue-endpoint for data service commands to support customized service endpoint']
     # body += ['[Storage] Add `--blob-endpoint`/`--file-endpoint/--table-endpoint/--queue-endpoint for data service commands to support customized service endpoint']
     body += ['[Storage] Add `--blob-endpoint`/`--file-endpoint/`--table-endpoint`/`--queue-endpoint` for data service commands to support customized service endpoint']
+    body += ['[Storage] `az Storage`: Add --blob-endpoint/--file-endpoint/--table-endpoint/--queue-endpoint']
+    sys.exit(1) if check_pull_request(title, body) else sys.exit(0)
+
+def test_tmp():
+    title = '[AMS] az ams account identity assign: Added ability to assign managed identity to media services account'
+    body = []
+    body += ['[AMS] az ams account identity assign: Added ability to assign managed identity to media services account']
+    body += ['[AMS] az ams account identity remove: Added ability to assign managed identity to media services account']
+    body += ['[AMS] az ams transform create: Added new parameter blur-type for FaceDetector presets']
+    body += ['[AMS] az ams account encryption set: Added new parameters system-assigned and user-assigned to allow users to set managed identities to their account encryption']
+    body += ['[AMS] az ams account storage set-authentication: Added new parameters system-assigned and user-assigned to allow users to set managed identities for their storage account attached to Media Services']
     sys.exit(1) if check_pull_request(title, body) else sys.exit(0)
 
 if __name__ == '__main__':
     # test_pull_request_template()
     # test_check_pull_request()
     # test_fix_check_pr()
-    test_multiple_para()
+    # test_multiple_para()
+    test_tmp()

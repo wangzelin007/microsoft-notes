@@ -103,3 +103,4 @@ azdev test test_vm_secret_e2e_test --live --profile latest
 
 github filter:
 is:open is:pr review-requested:wangzelin007 draft:false -label:do-not-merge -label:"Do Not Merge" milestone:"Mar 2022 (2022-04-06)" created:>2022-01-01
+is:open is:pr draft:false -label:do-not-merge -label:"Do Not Merge" milestone:"Mar 2022 (2022-04-06)" created:>2022-01-01 

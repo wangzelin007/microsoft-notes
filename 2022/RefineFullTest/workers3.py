@@ -89,17 +89,26 @@ def get_worker():
     return worker_num
 
 jobs = sorted(jobs.items(), key=lambda item:-item[1])
-# pprint(jobs)
+pprint(jobs)
 k = 4
+step = len(jobs) // 4
 
 works = []
+
+# 4 empty {}
 for i in range(k):
     worker = {}
     works.append(worker)
 
+idx = 0
+tmp = step
 for k, v in jobs:
-    idx = get_worker()
+    tmp -= 1
+    if tmp == -1:
+        idx += 1
+        tmp = step
     works[idx][k] = v
+
 for idx, work in enumerate(works):
     work['summary'] = sum(work.values())
     works[idx] = sorted(work.items(), key=lambda item:-item[1])

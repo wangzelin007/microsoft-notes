@@ -1,0 +1,21 @@
+doc:
+https://docs.microsoft.com/en-us/cli/azure/desktopvirtualization/hostpool?view=azure-cli-latest
+
+0.2.0
+az extension remove --name desktopvirtualization
+az extension show --name desktopvirtualization --query version
+az extension add --name desktopvirtualization --version 0.2.0
+az desktopvirtualization hostpool create --host-pool-type "Pooled" --load-balancer-type "BreadthFirst" --max-session-limit 999999 --personal-desktop-assignment-type "Automatic" --preferred-app-group-type "Desktop" --registration-info expiration-time="2022-04-15T14:01:54.9571247Z" registration-token-operation="Update" --name "zelin63-hp" --resource-group "zelin63"
+az desktopvirtualization hostpool create --host-pool-type Pooled  --load-balancer-type BreadthFirst --name zelin63-hp --preferred-app-group-type Desktop  --resource-group zelin63 --verbose --debug
+az desktopvirtualization hostpool show --name zelin63-hp
+az desktopvirtualization hostpool show --name zelin63-hp --resource-group zelin63
+az desktopvirtualization hostpool delete --name zelin63-hp --resource-group zelin63
+az desktopvirtualization hostpool retrieve-registration-token --name zelin63-hp --resource-group zelin63 --debug --verbose
+$token= $(az desktopvirtualization hostpool retrieve-registration-token --name zelin63-hp --resource-group zelin63 --query token -o tsv --debug)
+
+0.1.0
+az extension remove --name desktopvirtualization
+az extension show --name desktopvirtualization --query version
+az extension add --name desktopvirtualization --version 0.1.0
+az desktopvirtualization hostpool create --host-pool-type Pooled  --load-balancer-type BreadthFirst --name zelin63-hp  --resource-group zelin63 -l westus --personal-desktop-assignment-type Automatic --registration-info expiration-time="2022-04-15T14:01:54.9571247Z" registration-token-operation="Update" --debug
+$token= $(az desktopvirtualization hostpool show --name zelin63-hp --resource-group zelin63 --query registrationInfo.token -o tsv --debug)
