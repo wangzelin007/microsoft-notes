@@ -257,11 +257,7 @@ def test_multiple_para():
 def test_tmp():
     title = '[AMS] az ams account identity assign: Added ability to assign managed identity to media services account'
     body = []
-    body += ['[AMS] az ams account identity assign: Added ability to assign managed identity to media services account']
-    body += ['[AMS] az ams account identity remove: Added ability to assign managed identity to media services account']
-    body += ['[AMS] az ams transform create: Added new parameter blur-type for FaceDetector presets']
-    body += ['[AMS] az ams account encryption set: Added new parameters system-assigned and user-assigned to allow users to set managed identities to their account encryption']
-    body += ['[AMS] az ams account storage set-authentication: Added new parameters system-assigned and user-assigned to allow users to set managed identities for their storage account attached to Media Services']
+    body += ['[CDN] Fix #14012055: Fix feature flag import for missing description when using \'appconfig/kvset\' profile.']
     sys.exit(1) if check_pull_request(title, body) else sys.exit(0)
 
 if __name__ == '__main__':
