@@ -30,19 +30,19 @@ npm install -g autorest@latest
 
 
 main:
-autorest --version=3.0.6370 --az --use=@autorest/az@latest <path-to-the-swagger-readme.md> --sdk-no-flatten --azure-cli-extension-folder=<path-to-the-azure-cli-extension-repo>
+autorest --version=3.0.6370 --az <path-to-the-swagger-readme.md> --use=@autorest/az@latest --sdk-no-flatten --azure-cli-extension-folder=<path-to-the-azure-cli-extension-repo>
 
 
 extension:
-> autorest --version=3.0.6370 --az --use=@autorest/az@latest <path-to-the-swagger-readme.md> --sdk-no-flatten --azure-cli-extension-folder=<path-to-the-azure-cli-extension-repo>
+> autorest --version=3.0.6370 --az <path-to-the-swagger-readme.md> --use=@autorest/az@latest --sdk-no-flatten --azure-cli-extension-folder=<path-to-the-azure-cli-extension-repo>
 
-> autorest --version=3.0.6370 --az --azure-cli-extension-folder={azure_cli_ext_folder} {swagger_folder}/specification/{service_name}/resource-manager/readme.md --tag=package-2021-07
+> autorest --version=3.0.6370 --az {swagger_folder}/specification/{service_name}/resource-manager/readme.md --azure-cli-extension-folder={azure_cli_ext_folder} --tag=package-2021-07
 
-> autorest --version=3.0.6370 --az --use=@autorest/az@latest --azure-cli-extension-folder=C:\Code\azure-cli-extensions C:\Code\azure-rest-api-specs\specification\desktopvirtualization\resource-manager\readme.md --tag=package-2021-07
+> autorest --version=3.0.6370 --az C:\Code\azure-rest-api-specs\specification\desktopvirtualization\resource-manager\readme.md --use=@autorest/az@latest --azure-cli-extension-folder=C:\Code\azure-cli-extensions --tag=package-2021-07
 
-> autorest --version=3.0.6370 --az --use=@autorest/az@latest --azure-cli-extension-folder=C:\Code\azure-cli-extensions C:\Code\azure-rest-api-specs\specification\desktopvirtualization\resource-manager\readme.md --tag=package-preview-2021-09
+> autorest --version=3.0.6370 --az C:\Code\azure-rest-api-specs\specification\desktopvirtualization\resource-manager\readme.md --use=@autorest/az@latest --azure-cli-extension-folder=C:\Code\azure-cli-extensions --tag=package-preview-2021-09
 
-> autorest --version=3.0.6370 --az --use=@autorest/az@latest --azure-cli-extension-folder=C:\Code\azure-cli-extensions C:\Code\azure-rest-api-specs\specification\desktopvirtualization\resource-manager\readme.md --tag=package-preview-2022-02
+> autorest --version=3.0.6370 --az C:\Code\azure-rest-api-specs\specification\desktopvirtualization\resource-manager\readme.md --use=@autorest/az@latest --azure-cli-extension-folder=C:\Code\azure-cli-extensions --tag=package-preview-2022-02
 
 # run this in the folder with generated code: {azure_cli_ext_folder}/src/{service_name}
 > python setup.py sdist bdist_wheel
@@ -69,3 +69,8 @@ azdev linter --include-whl-extensions desktopvirtualization
 
 C:\Users\zelinwang\.azdev\env_config\Code\azure-cli\env\test_index\latest.json
 "test_desktopvirtualization_scenario": "c:\\code\\azure-cli-extensions\\src\\desktopvirtualization\\azext_desktopvirtualization\\tests\\latest\\test_desktopvirtualization_scenario.py"
+
+1. 熟悉 swagger 的话，其实也可以 在 json 文件里搜 "_Create"
+2. 用的是 Operation Swagger name 
+3. Yes, you can follow this [link](https://github.com/Azure/autorest.az/blob/master/doc/faq.md#how-to-hide-an-operation-operationgroup-parameter) to hide an operation, operationGroup, parameter.
+4. And you can follow this [PR](https://github.com/Azure/azure-rest-api-specs/pull/18669/files) to create your config file.
