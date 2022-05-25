@@ -58,3 +58,15 @@ ImportError: DLL load failed while importing _ctypes: 找不到指定的模块�
 ```
 
 **install venv in D:\code\azure-cli\venv TODO**
+
+```
+ubuntu
+sudo apt update
+sudo apt install python3-pip
+sudo apt install git
+git clone https://github.com/Azure/azure-cli.git 
+git clone https://github.com/FumingZhang/azure-cli-extensions.git
+git checkout -b fix-min-cli-core-0516 remotes/origin/fuming/fix-min-cli-core-0516
+```
+
+pip install --editable azure-cli/src/azure-cli to include tests directory.

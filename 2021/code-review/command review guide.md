@@ -40,6 +40,10 @@ Therefore, the exposure of SAS token will not cause security vulnerabilities. We
 - Sorry, because the comments were resolved a little late, and included upgrading api-version, this poses a risk to the quality of CLI and may blocking CLI release.
 Therefore, this PR cannot catch up with the release of this sprint. Next time, please try to get the PR ready on the code completion date. The release time of the next sprint is 2022-02-08 (this is also the milestone we set at the beginning for this PR)
 
+Please make sure to get this pr ready to merge before 2022/05/20.
+Otherwise, this PR cannot catch up with the release of this sprint.
+And the release time of the next sprint is 2022/07/05.
+
 Could you take it as high priority since currently Azure CLI release is blocked by this issue and we need to ship it tomorrow. Thanks a lot.
 
 Title:
@@ -102,5 +106,12 @@ azdev test test_vm_secret_e2e_test --live --profile 2019-03-01-hybrid
 azdev test test_vm_secret_e2e_test --live --profile latest
 
 github filter:
-is:open is:pr review-requested:wangzelin007 draft:false -label:do-not-merge -label:"Do Not Merge" milestone:"Apr 2022 (2022-04-26)" created:>2022-01-01
-is:open is:pr draft:false -label:do-not-merge -label:"Do Not Merge" milestone:"Apr 2022 (2022-04-26)" created:>2022-01-01 
+review-requested:wangzelin007
+CLI:
+is:open is:pr draft:false -label:do-not-merge -label:"Do Not Merge" milestone:"May 2022 (2022-05-24) - For Build" created:>2022-01-01
+Extensions:
+is:open is:pr draft:false -label:do-not-merge -label:"Do Not Merge" milestone:"May 2022 (2022-05-24)" created:>2022-01-01
+Xing:
+
+sprint:
+is:open is:pr draft:false -label:do-not-merge -label:"Do Not Merge" milestone:"May 2022 (2022-05-24) - For Build" created:>2022-01-01 
