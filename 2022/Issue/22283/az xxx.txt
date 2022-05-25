@@ -1,0 +1,1093 @@
+(azcli)  zelinwang   Scripts  test-pr-22283-20220517 ≢  +2 ~6 -1  +2    az sf cluster node add -g 'clitest.rgvluj55d5spjt6q6yyfug2khnftvainftcwwlatpka6lzaqkd3e4mi7zwcy4y6nbic' -c sfrp-cli-rf3gq5bhmzi753v --node-type nt1vm --number-of-nodes-to-add 2 --no-wait --debug
+cli.knack.cli: Command arguments: ['sf', 'cluster', 'node', 'add', '-g', 'clitest.rgvluj55d5spjt6q6yyfug2khnftvainftcwwlatpka6lzaqkd3e4mi7zwcy4y6nbic', '-c', 'sfrp-cli-rf3gq5bhmzi753v', '--node-type', 'nt1vm', '--number-of-nodes-to-add', '2', '--no-wait', '--debug']
+cli.knack.cli: __init__ debug log:
+Enable color in terminal.
+cli.knack.cli: Event: Cli.PreExecute []
+cli.knack.cli: Event: CommandParser.OnGlobalArgumentsCreate [<function CLILogging.on_global_arguments at 0x000001CAED6E7670>, <function OutputProducer.on_global_arguments at 0x000001CAEDA0CDC0>, <function CLIQuery.on_global_arguments at 0x000001CAEDA32280>]
+cli.knack.cli: Event: CommandInvoker.OnPreCommandTableCreate []
+cli.azure.cli.core: Modules found from index for 'sf': ['azure.cli.command_modules.servicefabric']
+cli.azure.cli.core: Loading command modules:
+cli.azure.cli.core: Name                  Load Time    Groups  Commands
+cli.azure.cli.core: servicefabric             0.007        26        76
+cli.azure.cli.core: Total (1)                 0.007        26        76
+cli.azure.cli.core: These extensions are not installed and will be skipped: ['azext_ai_examples', 'azext_next']
+cli.azure.cli.core: Loading extensions:
+cli.azure.cli.core: Name                  Load Time    Groups  Commands  Directory
+cli.azure.cli.core: Total (0)                 0.000         0         0
+cli.azure.cli.core: Loaded 26 groups, 76 commands.
+cli.azure.cli.core: Found a match in the command table.
+cli.azure.cli.core: Raw command  : sf cluster node add
+cli.azure.cli.core: Command table: sf cluster node add
+cli.knack.cli: Event: CommandInvoker.OnPreCommandTableTruncate [<function AzCliLogging.init_command_file_logging at 0x000001CAEFA374C0>]
+cli.azure.cli.core.azlogging: metadata file logging enabled - writing logs to 'C:\Users\zelinwang\.azure\commands\2022-05-18.17-31-50.sf_cluster_node_add.37976.log'.
+az_command_data_logger: command args: sf cluster node add -g {} -c {} --node-type {} --number-of-nodes-to-add {} --no-wait --debug
+cli.knack.cli: Event: CommandInvoker.OnPreArgumentLoad [<function register_global_subscription_argument.<locals>.add_subscription_parameter at 0x000001CAEFA6B9D0>]
+cli.knack.cli: Event: CommandInvoker.OnPostArgumentLoad []
+cli.knack.cli: Event: CommandInvoker.OnPostCommandTableCreate [<function register_ids_argument.<locals>.add_ids_arguments at 0x000001CAEFAE9310>, <function register_cache_arguments.<locals>.add_cache_arguments at 0x000001CAEFAE9430>]
+cli.knack.cli: Event: CommandInvoker.OnCommandTableLoaded []
+cli.knack.cli: Event: CommandInvoker.OnPreParseArgs []
+cli.knack.cli: Event: CommandInvoker.OnPostParseArgs [<function OutputProducer.handle_output_argument at 0x000001CAEDA0CE50>, <function CLIQuery.handle_query_parameter at 0x000001CAEDA32310>, <function register_ids_argument.<locals>.parse_ids_arguments at 0x000001CAEFAE93A0>]
+cli.azure.cli.core.commands.client_factory: Getting management service client client_type=ServiceFabricManagementClient
+cli.azure.cli.core.auth.persistence: build_persistence: location='C:\\Users\\zelinwang\\.azure\\msal_token_cache.bin', encrypt=True
+cli.azure.cli.core.auth.binary_cache: load: C:\Users\zelinwang\.azure\msal_http_cache.bin
+urllib3.util.retry: Converted retries value: 1 -> Retry(total=1, connect=None, read=None, redirect=None, status=None)
+msal.authority: openid_config = {'token_endpoint': 'https://login.microsoftonline.com/54826b22-38d6-4fb2-bad9-b7b93a3e9c5a/oauth2/v2.0/token', 'token_endpoint_auth_methods_supported': ['client_secret_post', 'private_key_jwt', 'client_secret_basic'], 'jwks_uri': 'https://login.microsoftonline.com/54826b22-38d6-4fb2-bad9-b7b93a3e9c5a/discovery/v2.0/keys', 'response_modes_supported': ['query', 'fragment', 'form_post'], 'subject_types_supported': ['pairwise'], 'id_token_signing_alg_values_supported': ['RS256'], 'response_types_supported': ['code', 'id_token', 'code id_token', 'id_token token'], 'scopes_supported': ['openid', 'profile', 'email', 'offline_access'], 'issuer': 'https://login.microsoftonline.com/54826b22-38d6-4fb2-bad9-b7b93a3e9c5a/v2.0', 'request_uri_parameter_supported': False, 'userinfo_endpoint': 'https://graph.microsoft.com/oidc/userinfo', 'authorization_endpoint': 'https://login.microsoftonline.com/54826b22-38d6-4fb2-bad9-b7b93a3e9c5a/oauth2/v2.0/authorize', 'device_authorization_endpoint': 'https://login.microsoftonline.com/54826b22-38d6-4fb2-bad9-b7b93a3e9c5a/oauth2/v2.0/devicecode', 'http_logout_supported': True, 'frontchannel_logout_supported': True, 'end_session_endpoint': 'https://login.microsoftonline.com/54826b22-38d6-4fb2-bad9-b7b93a3e9c5a/oauth2/v2.0/logout', 'claims_supported': ['sub', 'iss', 'cloud_instance_name', 'cloud_instance_host_name', 'cloud_graph_host_name', 'msgraph_host', 'aud', 'exp', 'iat', 'auth_time', 'acr', 'nonce', 'preferred_username', 'name', 'tid', 'ver', 'at_hash', 'c_hash', 'email'], 'kerberos_endpoint': 'https://login.microsoftonline.com/54826b22-38d6-4fb2-bad9-b7b93a3e9c5a/kerberos', 'tenant_region_scope': 'NA', 'cloud_instance_name': 'microsoftonline.com', 'cloud_graph_host_name': 'graph.windows.net', 'msgraph_host': 'graph.microsoft.com', 'rbac_url': 'https://pas.windows.net'}
+cli.azure.cli.core.commands.client_factory: Getting management service client client_type=ComputeManagementClient
+urllib3.util.retry: Converted retries value: 1 -> Retry(total=1, connect=None, read=None, redirect=None, status=None)
+msal.authority: openid_config = {'token_endpoint': 'https://login.microsoftonline.com/54826b22-38d6-4fb2-bad9-b7b93a3e9c5a/oauth2/v2.0/token', 'token_endpoint_auth_methods_supported': ['client_secret_post', 'private_key_jwt', 'client_secret_basic'], 'jwks_uri': 'https://login.microsoftonline.com/54826b22-38d6-4fb2-bad9-b7b93a3e9c5a/discovery/v2.0/keys', 'response_modes_supported': ['query', 'fragment', 'form_post'], 'subject_types_supported': ['pairwise'], 'id_token_signing_alg_values_supported': ['RS256'], 'response_types_supported': ['code', 'id_token', 'code id_token', 'id_token token'], 'scopes_supported': ['openid', 'profile', 'email', 'offline_access'], 'issuer': 'https://login.microsoftonline.com/54826b22-38d6-4fb2-bad9-b7b93a3e9c5a/v2.0', 'request_uri_parameter_supported': False, 'userinfo_endpoint': 'https://graph.microsoft.com/oidc/userinfo', 'authorization_endpoint': 'https://login.microsoftonline.com/54826b22-38d6-4fb2-bad9-b7b93a3e9c5a/oauth2/v2.0/authorize', 'device_authorization_endpoint': 'https://login.microsoftonline.com/54826b22-38d6-4fb2-bad9-b7b93a3e9c5a/oauth2/v2.0/devicecode', 'http_logout_supported': True, 'frontchannel_logout_supported': True, 'end_session_endpoint': 'https://login.microsoftonline.com/54826b22-38d6-4fb2-bad9-b7b93a3e9c5a/oauth2/v2.0/logout', 'claims_supported': ['sub', 'iss', 'cloud_instance_name', 'cloud_instance_host_name', 'cloud_graph_host_name', 'msgraph_host', 'aud', 'exp', 'iat', 'auth_time', 'acr', 'nonce', 'preferred_username', 'name', 'tid', 'ver', 'at_hash', 'c_hash', 'email'], 'kerberos_endpoint': 'https://login.microsoftonline.com/54826b22-38d6-4fb2-bad9-b7b93a3e9c5a/kerberos', 'tenant_region_scope': 'NA', 'cloud_instance_name': 'microsoftonline.com', 'cloud_graph_host_name': 'graph.windows.net', 'msgraph_host': 'graph.microsoft.com', 'rbac_url': 'https://pas.windows.net'}
+cli.azure.cli.core.auth.credential_adaptor: CredentialAdaptor.get_token: scopes=('https://management.core.windows.net//.default',), kwargs={}
+cli.azure.cli.core.auth.msal_authentication: UserCredential.get_token: scopes=('https://management.core.windows.net//.default',), kwargs={}
+msal.application: Cache hit an AT
+msal.telemetry: Generate or reuse correlation_id: 1c405bd0-8fb8-4b4c-8f60-13af131fe36a
+cli.azure.cli.core.sdk.policies: Request URL: 'https://management.azure.com/subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/resourceGroups/clitest.rgvluj55d5spjt6q6yyfug2khnftvainftcwwlatpka6lzaqkd3e4mi7zwcy4y6nbic/providers/Microsoft.ServiceFabric/clusters/sfrp-cli-rf3gq5bhmzi753v?api-version=2020-03-01'
+cli.azure.cli.core.sdk.policies: Request method: 'GET'
+cli.azure.cli.core.sdk.policies: Request headers:
+cli.azure.cli.core.sdk.policies:     'Accept': 'application/json'
+cli.azure.cli.core.sdk.policies:     'x-ms-client-request-id': '5886b10e-d68d-11ec-aa01-ac74b19db060'
+cli.azure.cli.core.sdk.policies:     'CommandName': 'sf cluster node add'
+cli.azure.cli.core.sdk.policies:     'ParameterSetName': '-g -c --node-type --number-of-nodes-to-add --no-wait --debug'
+cli.azure.cli.core.sdk.policies:     'User-Agent': 'AZURECLI/2.36.0 (PIP) azsdk-python-mgmt-servicefabric/1.0.0 Python/3.9.5 (Windows-10-10.0.19044-SP0)'
+cli.azure.cli.core.sdk.policies:     'Authorization': '*****'
+cli.azure.cli.core.sdk.policies: Request body:
+cli.azure.cli.core.sdk.policies: This request has no body
+urllib3.connectionpool: Starting new HTTPS connection (1): management.azure.com:443
+urllib3.connectionpool: https://management.azure.com:443 "GET /subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/resourceGroups/clitest.rgvluj55d5spjt6q6yyfug2khnftvainftcwwlatpka6lzaqkd3e4mi7zwcy4y6nbic/providers/Microsoft.ServiceFabric/clusters/sfrp-cli-rf3gq5bhmzi753v?api-version=2020-03-01 HTTP/1.1" 200 None
+cli.azure.cli.core.sdk.policies: Response status: 200
+cli.azure.cli.core.sdk.policies: Response headers:
+cli.azure.cli.core.sdk.policies:     'Cache-Control': 'no-cache'
+cli.azure.cli.core.sdk.policies:     'Pragma': 'no-cache'
+cli.azure.cli.core.sdk.policies:     'Transfer-Encoding': 'chunked'
+cli.azure.cli.core.sdk.policies:     'Content-Type': 'application/json'
+cli.azure.cli.core.sdk.policies:     'Content-Encoding': 'gzip'
+cli.azure.cli.core.sdk.policies:     'Expires': '-1'
+cli.azure.cli.core.sdk.policies:     'Vary': 'Accept-Encoding'
+cli.azure.cli.core.sdk.policies:     'Strict-Transport-Security': 'max-age=31536000; includeSubDomains'
+cli.azure.cli.core.sdk.policies:     'X-Content-Type-Options': 'nosniff'
+cli.azure.cli.core.sdk.policies:     'Server': 'Microsoft-HTTPAPI/2.0, Microsoft-HTTPAPI/2.0'
+cli.azure.cli.core.sdk.policies:     'x-ms-ratelimit-remaining-subscription-reads': '11994'
+cli.azure.cli.core.sdk.policies:     'x-ms-request-id': 'cce32cb9-5b6f-4dd0-9839-78da5504e534'
+cli.azure.cli.core.sdk.policies:     'x-ms-correlation-request-id': 'cce32cb9-5b6f-4dd0-9839-78da5504e534'
+cli.azure.cli.core.sdk.policies:     'x-ms-routing-request-id': 'SOUTHEASTASIA:20220518T093153Z:cce32cb9-5b6f-4dd0-9839-78da5504e534'
+cli.azure.cli.core.sdk.policies:     'Date': 'Wed, 18 May 2022 09:31:52 GMT'
+cli.azure.cli.core.sdk.policies: Response content:
+cli.azure.cli.core.sdk.policies: {
+  "type": "Microsoft.ServiceFabric/clusters",
+  "location": "southcentralus",
+  "id": "/subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/resourcegroups/clitest.rgvluj55d5spjt6q6yyfug2khnftvainftcwwlatpka6lzaqkd3e4mi7zwcy4y6nbic/providers/Microsoft.ServiceFabric/clusters/sfrp-cli-rf3gq5bhmzi753v",
+  "name": "sfrp-cli-rf3gq5bhmzi753v",
+  "tags": {
+    "resourceType": "Service Fabric",
+    "clusterName": "sfrp-cli-rf3gq5bhmzi753v"
+  },
+  "etag": "W/\"637884588530001278\"",
+  "systemData": {
+    "createdBy": "zelinwang@microsoft.com",
+    "createdByType": "User",
+    "createdAt": "2022-05-18T08:20:52.7507987+00:00",
+    "lastModifiedBy": "zelinwang@microsoft.com",
+    "lastModifiedByType": "User",
+    "lastModifiedAt": "2022-05-18T08:20:52.7507987+00:00"
+  },
+  "properties": {
+    "provisioningState": "Succeeded",
+    "clusterId": "8e2a63ba-dbb5-4520-acaf-71b37430dfde",
+    "clusterCodeVersion": "9.0.1017.9590",
+    "clusterState": "Ready",
+    "managementEndpoint": "https://sfrp-cli-rf3gq5bhmzi753v.southcentralus.cloudapp.azure.com:19080",
+    "clusterEndpoint": "https://southcentralus.servicefabric.azure.com/runtime/clusters/8e2a63ba-dbb5-4520-acaf-71b37430dfde",
+    "certificate": {
+      "thumbprint": "7ADE209BBCB28402BB48ECA93E538E629D3A40B4",
+      "x509StoreName": "My"
+    },
+    "clientCertificateThumbprints": [],
+    "clientCertificateCommonNames": [],
+    "fabricSettings": [
+      {
+        "name": "Security",
+        "parameters": [
+          {
+            "name": "ClusterProtectionLevel",
+            "value": "EncryptAndSign"
+          }
+        ]
+      }
+    ],
+    "vmImage": "Windows",
+    "reliabilityLevel": "Silver",
+    "nodeTypes": [
+      {
+        "name": "nt1vm",
+        "vmInstanceCount": 5,
+        "clientConnectionEndpointPort": 19000,
+        "httpGatewayEndpointPort": 19080,
+        "applicationPorts": {
+          "startPort": 20000,
+          "endPort": 30000
+        },
+        "ephemeralPorts": {
+          "startPort": 49152,
+          "endPort": 65534
+        },
+        "isPrimary": true,
+        "durabilityLevel": "Bronze"
+      }
+    ],
+    "diagnosticsStorageAccountConfig": {
+      "storageAccountName": "sflogs5kcqdmvlprsca2",
+      "primaryAccessKey": "",
+      "secondaryAccessKey": "",
+      "protectedAccountKeyName": "StorageAccountKey1",
+      "blobEndpoint": "https://sflogs5kcqdmvlprsca2.blob.core.windows.net/",
+      "queueEndpoint": "https://sflogs5kcqdmvlprsca2.queue.core.windows.net/",
+      "tableEndpoint": "https://sflogs5kcqdmvlprsca2.table.core.windows.net/",
+      "protectedAccountKeyName2": ""
+    },
+    "upgradeMode": "Automatic",
+    "addonFeatures": [
+      "DnsService"
+    ],
+    "availableClusterVersions": [
+      {
+        "codeVersion": "9.0.1017.9590",
+        "supportExpiryUtc": "9999-12-31T23:59:59.9999999",
+        "environment": "Windows"
+      }
+    ]
+  }
+}
+cli.azure.cli.core.auth.credential_adaptor: CredentialAdaptor.get_token: scopes=('https://management.core.windows.net//.default',), kwargs={}
+cli.azure.cli.core.auth.msal_authentication: UserCredential.get_token: scopes=('https://management.core.windows.net//.default',), kwargs={}
+msal.application: Cache hit an AT
+msal.telemetry: Generate or reuse correlation_id: 362e2d56-00ba-4101-acb7-00ed8e962637
+cli.azure.cli.core.sdk.policies: Request URL: 'https://management.azure.com/subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/resourceGroups/clitest.rgvluj55d5spjt6q6yyfug2khnftvainftcwwlatpka6lzaqkd3e4mi7zwcy4y6nbic/providers/Microsoft.Compute/virtualMachineScaleSets?api-version=2021-11-01'
+cli.azure.cli.core.sdk.policies: Request method: 'GET'
+cli.azure.cli.core.sdk.policies: Request headers:
+cli.azure.cli.core.sdk.policies:     'Accept': 'application/json'
+cli.azure.cli.core.sdk.policies:     'x-ms-client-request-id': '5886b10e-d68d-11ec-aa01-ac74b19db060'
+cli.azure.cli.core.sdk.policies:     'CommandName': 'sf cluster node add'
+cli.azure.cli.core.sdk.policies:     'ParameterSetName': '-g -c --node-type --number-of-nodes-to-add --no-wait --debug'
+cli.azure.cli.core.sdk.policies:     'User-Agent': 'AZURECLI/2.36.0 (PIP) azsdk-python-azure-mgmt-compute/26.1.0 Python/3.9.5 (Windows-10-10.0.19044-SP0)'
+cli.azure.cli.core.sdk.policies:     'Authorization': '*****'
+cli.azure.cli.core.sdk.policies: Request body:
+cli.azure.cli.core.sdk.policies: This request has no body
+urllib3.connectionpool: Starting new HTTPS connection (1): management.azure.com:443
+urllib3.connectionpool: https://management.azure.com:443 "GET /subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/resourceGroups/clitest.rgvluj55d5spjt6q6yyfug2khnftvainftcwwlatpka6lzaqkd3e4mi7zwcy4y6nbic/providers/Microsoft.Compute/virtualMachineScaleSets?api-version=2021-11-01 HTTP/1.1" 200 None
+cli.azure.cli.core.sdk.policies: Response status: 200
+cli.azure.cli.core.sdk.policies: Response headers:
+cli.azure.cli.core.sdk.policies:     'Cache-Control': 'no-cache'
+cli.azure.cli.core.sdk.policies:     'Pragma': 'no-cache'
+cli.azure.cli.core.sdk.policies:     'Transfer-Encoding': 'chunked'
+cli.azure.cli.core.sdk.policies:     'Content-Type': 'application/json; charset=utf-8'
+cli.azure.cli.core.sdk.policies:     'Content-Encoding': 'gzip'
+cli.azure.cli.core.sdk.policies:     'Expires': '-1'
+cli.azure.cli.core.sdk.policies:     'Vary': 'Accept-Encoding'
+cli.azure.cli.core.sdk.policies:     'x-ms-ratelimit-remaining-resource': 'Microsoft.Compute/HighCostGetVMScaleSet3Min;179,Microsoft.Compute/HighCostGetVMScaleSet30Min;899'
+cli.azure.cli.core.sdk.policies:     'Strict-Transport-Security': 'max-age=31536000; includeSubDomains'
+cli.azure.cli.core.sdk.policies:     'x-ms-request-id': '8c4aa983-9a0e-48c4-934e-171e44576090'
+cli.azure.cli.core.sdk.policies:     'Server': 'Microsoft-HTTPAPI/2.0, Microsoft-HTTPAPI/2.0'
+cli.azure.cli.core.sdk.policies:     'x-ms-ratelimit-remaining-subscription-reads': '11999'
+cli.azure.cli.core.sdk.policies:     'x-ms-correlation-request-id': '8731ea29-43ba-4250-b867-90cee25d352d'
+cli.azure.cli.core.sdk.policies:     'x-ms-routing-request-id': 'SOUTHEASTASIA:20220518T093154Z:8731ea29-43ba-4250-b867-90cee25d352d'
+cli.azure.cli.core.sdk.policies:     'X-Content-Type-Options': 'nosniff'
+cli.azure.cli.core.sdk.policies:     'Date': 'Wed, 18 May 2022 09:31:54 GMT'
+cli.azure.cli.core.sdk.policies: Response content:
+cli.azure.cli.core.sdk.policies: {
+  "value": [
+    {
+      "name": "nt1vm",
+      "id": "/subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/resourceGroups/clitest.rgvluj55d5spjt6q6yyfug2khnftvainftcwwlatpka6lzaqkd3e4mi7zwcy4y6nbic/providers/Microsoft.Compute/virtualMachineScaleSets/nt1vm",
+      "type": "Microsoft.Compute/virtualMachineScaleSets",
+      "location": "southcentralus",
+      "tags": {
+        "resourceType": "Service Fabric",
+        "clusterName": "sfrp-cli-rf3gq5bhmzi753v"
+      },
+      "sku": {
+        "name": "Standard_D2_V2",
+        "tier": "Standard",
+        "capacity": 5
+      },
+      "properties": {
+        "singlePlacementGroup": true,
+        "upgradePolicy": {
+          "mode": "Automatic"
+        },
+        "virtualMachineProfile": {
+          "osProfile": {
+            "computerNamePrefix": "nt1vm",
+            "adminUsername": "adminuser",
+            "windowsConfiguration": {
+              "provisionVMAgent": true,
+              "enableAutomaticUpdates": true,
+              "enableVMAgentPlatformUpdates": false
+            },
+            "secrets": [
+              {
+                "sourceVault": {
+                  "id": "/subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/resourceGroups/clitest.rgvluj55d5spjt6q6yyfug2khnftvainftcwwlatpka6lzaqkd3e4mi7zwcy4y6nbic/providers/Microsoft.KeyVault/vaults/clitestrgvluj55d5spjt"
+                },
+                "vaultCertificates": [
+                  {
+                    "certificateUrl": "https://clitestrgvluj55d5spjt.vault.azure.net/secrets/sfrp-cli-rf3gq5bhmzi753v/9d0726062c7f489ab54aea2f23eeda65",
+                    "certificateStore": "My"
+                  }
+                ]
+              }
+            ]
+          },
+          "storageProfile": {
+            "osDisk": {
+              "osType": "Windows",
+              "createOption": "FromImage",
+              "caching": "ReadOnly",
+              "managedDisk": {
+                "storageAccountType": "Standard_LRS"
+              },
+              "diskSizeGB": 127
+            },
+            "imageReference": {
+              "publisher": "MicrosoftWindowsServer",
+              "offer": "WindowsServer",
+              "sku": "2016-Datacenter",
+              "version": "latest"
+            }
+          },
+          "networkProfile": {"networkInterfaceConfigurations":[{"name":"NIC-0","properties":{"primary":true,"enableAcceleratedNetworking":false,"dnsSettings":{"dnsServers":[]},"ipConfigurations":[{"name":"NIC-0","properties":{"subnet":{"id":"/subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/resourceGroups/clitest.rgvluj55d5spjt6q6yyfug2khnftvainftcwwlatpka6lzaqkd3e4mi7zwcy4y6nbic/providers/Microsoft.Network/virtualNetworks/VNet/subnets/Subnet-0"},"privateIPAddressVersion":"IPv4","loadBalancerBackendAddressPools":[{"id":"/subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/resourceGroups/clitest.rgvluj55d5spjt6q6yyfug2khnftvainftcwwlatpka6lzaqkd3e4mi7zwcy4y6nbic/providers/Microsoft.Network/loadBalancers/LB-sfrp-cli-rf3gq5bhmzi753v-nt1vm/backendAddressPools/LoadBalancerBEAddressPool"}],"loadBalancerInboundNatPools":[{"id":"/subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/resourceGroups/clitest.rgvluj55d5spjt6q6yyfug2khnftvainftcwwlatpka6lzaqkd3e4mi7zwcy4y6nbic/providers/Microsoft.Network/loadBalancers/LB-sfrp-cli-rf3gq5bhmzi753v-nt1vm/inboundNatPools/LoadBalancerBEAddressNatPool"}]}}]}}]},
+          "extensionProfile": {
+            "extensions": [
+              {
+                "name": "ServiceFabricNodeVmExt_vmNodeType0Name",
+                "properties": {
+                  "autoUpgradeMinorVersion": false,
+                  "publisher": "Microsoft.Azure.ServiceFabric",
+                  "type": "ServiceFabricNode",
+                  "typeHandlerVersion": "1.1",
+                  "settings": {"clusterEndpoint":"https://southcentralus.servicefabric.azure.com/runtime/clusters/8e2a63ba-dbb5-4520-acaf-71b37430dfde","nodeTypeRef":"nt1vm","dataPath":"D:\\\\SvcFab","durabilityLevel":"Bronze","nicPrefixOverride":"10.0.0.0/24","certificate":{"thumbprint":"7ADE209BBCB28402BB48ECA93E538E629D3A40B4","x509StoreName":"My"}}
+                }
+              },
+              {
+                "name": "VMDiagnosticsVmExt_vmNodeType0Name",
+                "properties": {
+                  "autoUpgradeMinorVersion": true,
+                  "publisher": "Microsoft.Azure.Diagnostics",
+                  "type": "IaaSDiagnostics",
+                  "typeHandlerVersion": "1.5",
+                  "settings": {"WadCfg":{"DiagnosticMonitorConfiguration":{"overallQuotaInMB":"50000","EtwProviders":{"EtwEventSourceProviderConfiguration":[{"provider":"Microsoft-ServiceFabric-Actors","scheduledTransferKeywordFilter":"1","scheduledTransferPeriod":"PT5M","DefaultEvents":{"eventDestination":"ServiceFabricReliableActorEventTable"}},{"provider":"Microsoft-ServiceFabric-Services","scheduledTransferPeriod":"PT5M","DefaultEvents":{"eventDestination":"ServiceFabricReliableServiceEventTable"}}],"EtwManifestProviderConfiguration":[{"provider":"cbd93bc2-71e5-4566-b3a7-595d8eeca6e8","scheduledTransferLogLevelFilter":"Information","scheduledTransferKeywordFilter":"4611686018427387904","scheduledTransferPeriod":"PT5M","DefaultEvents":{"eventDestination":"ServiceFabricSystemEventTable"}}]}}},"StorageAccount":"5kcqdmvlprsca3"}
+                }
+              }
+            ]
+          }
+        },
+        "provisioningState": "Succeeded",
+        "overprovision": false,
+        "doNotRunExtensionsOnOverprovisionedVMs": false,
+        "uniqueId": "e41c9ff6-3e8b-454b-9acb-b5e271a19a30",
+        "timeCreated": "2022-05-18T08:21:02.6531697+00:00"
+      }
+    }
+  ]
+}
+cli.azure.cli.core.sdk.policies: Request URL: 'https://management.azure.com/subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/resourceGroups/clitest.rgvluj55d5spjt6q6yyfug2khnftvainftcwwlatpka6lzaqkd3e4mi7zwcy4y6nbic/providers/Microsoft.Compute/virtualMachineScaleSets/nt1vm?api-version=2021-11-01'
+cli.azure.cli.core.sdk.policies: Request method: 'PUT'
+cli.azure.cli.core.sdk.policies: Request headers:
+cli.azure.cli.core.sdk.policies:     'Content-Type': 'application/json'
+cli.azure.cli.core.sdk.policies:     'Content-Length': '4046'
+cli.azure.cli.core.sdk.policies:     'Accept': 'application/json'
+cli.azure.cli.core.sdk.policies:     'x-ms-client-request-id': '5886b10e-d68d-11ec-aa01-ac74b19db060'
+cli.azure.cli.core.sdk.policies:     'CommandName': 'sf cluster node add'
+cli.azure.cli.core.sdk.policies:     'ParameterSetName': '-g -c --node-type --number-of-nodes-to-add --no-wait --debug'
+cli.azure.cli.core.sdk.policies:     'User-Agent': 'AZURECLI/2.36.0 (PIP) azsdk-python-azure-mgmt-compute/26.1.0 Python/3.9.5 (Windows-10-10.0.19044-SP0)'
+cli.azure.cli.core.sdk.policies:     'Authorization': '*****'
+cli.azure.cli.core.sdk.policies: Request body:
+cli.azure.cli.core.sdk.policies: {"location": "southcentralus", "tags": {"resourceType": "Service Fabric", "clusterName": "sfrp-cli-rf3gq5bhmzi753v"}, "sku": {"name": "Standard_D2_V2", "tier": "Standard", "capacity": 7}, "properties": {"upgradePolicy": {"mode": "Automatic"}, "virtualMachineProfile": {"osProfile": {"computerNamePrefix": "nt1vm", "adminUsername": "adminuser", "windowsConfiguration": {"provisionVMAgent": true, "enableAutomaticUpdates": true}, "secrets": [{"sourceVault": {"id": "/subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/resourceGroups/clitest.rgvluj55d5spjt6q6yyfug2khnftvainftcwwlatpka6lzaqkd3e4mi7zwcy4y6nbic/providers/Microsoft.KeyVault/vaults/clitestrgvluj55d5spjt"}, "vaultCertificates": [{"certificateUrl": "https://clitestrgvluj55d5spjt.vault.azure.net/secrets/sfrp-cli-rf3gq5bhmzi753v/9d0726062c7f489ab54aea2f23eeda65", "certificateStore": "My"}]}]}, "storageProfile": {"imageReference": {"publisher": "MicrosoftWindowsServer", "offer": "WindowsServer", "sku": "2016-Datacenter", "version": "latest"}, "osDisk": {"caching": "ReadOnly", "createOption": "FromImage", "diskSizeGB": 127, "osType": "Windows", "managedDisk": {"storageAccountType": "Standard_LRS"}}}, "networkProfile": {"networkInterfaceConfigurations": [{"name": "NIC-0", "properties": {"primary": true, "enableAcceleratedNetworking": false, "dnsSettings": {"dnsServers": []}, "ipConfigurations": [{"name": "NIC-0", "properties": {"subnet": {"id": "/subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/resourceGroups/clitest.rgvluj55d5spjt6q6yyfug2khnftvainftcwwlatpka6lzaqkd3e4mi7zwcy4y6nbic/providers/Microsoft.Network/virtualNetworks/VNet/subnets/Subnet-0"}, "privateIPAddressVersion": "IPv4", "loadBalancerBackendAddressPools": [{"id": "/subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/resourceGroups/clitest.rgvluj55d5spjt6q6yyfug2khnftvainftcwwlatpka6lzaqkd3e4mi7zwcy4y6nbic/providers/Microsoft.Network/loadBalancers/LB-sfrp-cli-rf3gq5bhmzi753v-nt1vm/backendAddressPools/LoadBalancerBEAddressPool"}], "loadBalancerInboundNatPools": [{"id": "/subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/resourceGroups/clitest.rgvluj55d5spjt6q6yyfug2khnftvainftcwwlatpka6lzaqkd3e4mi7zwcy4y6nbic/providers/Microsoft.Network/loadBalancers/LB-sfrp-cli-rf3gq5bhmzi753v-nt1vm/inboundNatPools/LoadBalancerBEAddressNatPool"}]}}]}}]}, "extensionProfile": {"extensions": [{"name": "ServiceFabricNodeVmExt_vmNodeType0Name", "properties": {"publisher": "Microsoft.Azure.ServiceFabric", "type": "ServiceFabricNode", "typeHandlerVersion": "1.1", "autoUpgradeMinorVersion": false, "settings": {"clusterEndpoint": "https://southcentralus.servicefabric.azure.com/runtime/clusters/8e2a63ba-dbb5-4520-acaf-71b37430dfde", "nodeTypeRef": "nt1vm", "dataPath": "D:\\\\SvcFab", "durabilityLevel": "Bronze", "nicPrefixOverride": "10.0.0.0/24", "certificate": {"thumbprint": "7ADE209BBCB28402BB48ECA93E538E629D3A40B4", "x509StoreName": "My"}}}}, {"name": "VMDiagnosticsVmExt_vmNodeType0Name", "properties": {"publisher": "Microsoft.Azure.Diagnostics", "type": "IaaSDiagnostics", "typeHandlerVersion": "1.5", "autoUpgradeMinorVersion": true, "settings": {"WadCfg": {"DiagnosticMonitorConfiguration": {"overallQuotaInMB": "50000", "EtwProviders": {"EtwEventSourceProviderConfiguration": [{"provider": "Microsoft-ServiceFabric-Actors", "scheduledTransferKeywordFilter": "1", "scheduledTransferPeriod": "PT5M", "DefaultEvents": {"eventDestination": "ServiceFabricReliableActorEventTable"}}, {"provider": "Microsoft-ServiceFabric-Services", "scheduledTransferPeriod": "PT5M", "DefaultEvents": {"eventDestination": "ServiceFabricReliableServiceEventTable"}}], "EtwManifestProviderConfiguration": [{"provider": "cbd93bc2-71e5-4566-b3a7-595d8eeca6e8", "scheduledTransferLogLevelFilter": "Information", "scheduledTransferKeywordFilter": "4611686018427387904", "scheduledTransferPeriod": "PT5M", "DefaultEvents": {"eventDestination": "ServiceFabricSystemEventTable"}}]}}}, "StorageAccount": "5kcqdmvlprsca3"}}}]}}, "overprovision": false, "doNotRunExtensionsOnOverprovisionedVMs": false, "singlePlacementGroup": true}}
+urllib3.connectionpool: https://management.azure.com:443 "PUT /subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/resourceGroups/clitest.rgvluj55d5spjt6q6yyfug2khnftvainftcwwlatpka6lzaqkd3e4mi7zwcy4y6nbic/providers/Microsoft.Compute/virtualMachineScaleSets/nt1vm?api-version=2021-11-01 HTTP/1.1" 200 None
+cli.azure.cli.core.sdk.policies: Response status: 200
+cli.azure.cli.core.sdk.policies: Response headers:
+cli.azure.cli.core.sdk.policies:     'Cache-Control': 'no-cache'
+cli.azure.cli.core.sdk.policies:     'Pragma': 'no-cache'
+cli.azure.cli.core.sdk.policies:     'Transfer-Encoding': 'chunked'
+cli.azure.cli.core.sdk.policies:     'Content-Type': 'application/json; charset=utf-8'
+cli.azure.cli.core.sdk.policies:     'Content-Encoding': 'gzip'
+cli.azure.cli.core.sdk.policies:     'Expires': '-1'
+cli.azure.cli.core.sdk.policies:     'Retry-After': '10'
+cli.azure.cli.core.sdk.policies:     'Vary': 'Accept-Encoding'
+cli.azure.cli.core.sdk.policies:     'Azure-AsyncOperation': 'https://management.azure.com/subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/providers/Microsoft.Compute/locations/southcentralus/operations/b45aec5d-4121-42ee-826b-329abfc105ea?p=d0e8ea9a-296d-4a42-b0c4-00ed1becd3d2&api-version=2021-11-01'
+cli.azure.cli.core.sdk.policies:     'Azure-AsyncNotification': 'Enabled'
+cli.azure.cli.core.sdk.policies:     'x-ms-ratelimit-remaining-resource': 'Microsoft.Compute/CreateVMScaleSet3Min;167,Microsoft.Compute/CreateVMScaleSet30Min;842,Microsoft.Compute/VMScaleSetBatchedVMRequests5Min;3365,Microsoft.Compute/VmssQueuedVMOperations;0'
+cli.azure.cli.core.sdk.policies:     'x-ms-request-charge': '7'
+cli.azure.cli.core.sdk.policies:     'Strict-Transport-Security': 'max-age=31536000; includeSubDomains'
+cli.azure.cli.core.sdk.policies:     'x-ms-request-id': 'b45aec5d-4121-42ee-826b-329abfc105ea'
+cli.azure.cli.core.sdk.policies:     'Server': 'Microsoft-HTTPAPI/2.0, Microsoft-HTTPAPI/2.0'
+cli.azure.cli.core.sdk.policies:     'x-ms-ratelimit-remaining-subscription-writes': '1199'
+cli.azure.cli.core.sdk.policies:     'x-ms-correlation-request-id': '336f274d-45f7-4895-a938-d4e9d7d45e46'
+cli.azure.cli.core.sdk.policies:     'x-ms-routing-request-id': 'SOUTHEASTASIA:20220518T093203Z:336f274d-45f7-4895-a938-d4e9d7d45e46'
+cli.azure.cli.core.sdk.policies:     'X-Content-Type-Options': 'nosniff'
+cli.azure.cli.core.sdk.policies:     'Date': 'Wed, 18 May 2022 09:32:03 GMT'
+cli.azure.cli.core.sdk.policies: Response content:
+cli.azure.cli.core.sdk.policies: {
+  "name": "nt1vm",
+  "id": "/subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/resourceGroups/clitest.rgvluj55d5spjt6q6yyfug2khnftvainftcwwlatpka6lzaqkd3e4mi7zwcy4y6nbic/providers/Microsoft.Compute/virtualMachineScaleSets/nt1vm",
+  "type": "Microsoft.Compute/virtualMachineScaleSets",
+  "location": "southcentralus",
+  "tags": {
+    "resourceType": "Service Fabric",
+    "clusterName": "sfrp-cli-rf3gq5bhmzi753v"
+  },
+  "sku": {
+    "name": "Standard_D2_V2",
+    "tier": "Standard",
+    "capacity": 7
+  },
+  "properties": {
+    "singlePlacementGroup": true,
+    "upgradePolicy": {
+      "mode": "Automatic"
+    },
+    "virtualMachineProfile": {
+      "osProfile": {
+        "computerNamePrefix": "nt1vm",
+        "adminUsername": "adminuser",
+        "windowsConfiguration": {
+          "provisionVMAgent": true,
+          "enableAutomaticUpdates": true,
+          "enableVMAgentPlatformUpdates": false
+        },
+        "secrets": [
+          {
+            "sourceVault": {
+              "id": "/subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/resourceGroups/clitest.rgvluj55d5spjt6q6yyfug2khnftvainftcwwlatpka6lzaqkd3e4mi7zwcy4y6nbic/providers/Microsoft.KeyVault/vaults/clitestrgvluj55d5spjt"
+            },
+            "vaultCertificates": [
+              {
+                "certificateUrl": "https://clitestrgvluj55d5spjt.vault.azure.net/secrets/sfrp-cli-rf3gq5bhmzi753v/9d0726062c7f489ab54aea2f23eeda65",
+                "certificateStore": "My"
+              }
+            ]
+          }
+        ]
+      },
+      "storageProfile": {
+        "osDisk": {
+          "osType": "Windows",
+          "createOption": "FromImage",
+          "caching": "ReadOnly",
+          "managedDisk": {
+            "storageAccountType": "Standard_LRS"
+          },
+          "diskSizeGB": 127
+        },
+        "imageReference": {
+          "publisher": "MicrosoftWindowsServer",
+          "offer": "WindowsServer",
+          "sku": "2016-Datacenter",
+          "version": "latest"
+        }
+      },
+      "networkProfile": {"networkInterfaceConfigurations":[{"name":"NIC-0","properties":{"primary":true,"enableAcceleratedNetworking":false,"dnsSettings":{"dnsServers":[]},"enableIPForwarding":false,"ipConfigurations":[{"name":"NIC-0","properties":{"subnet":{"id":"/subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/resourceGroups/clitest.rgvluj55d5spjt6q6yyfug2khnftvainftcwwlatpka6lzaqkd3e4mi7zwcy4y6nbic/providers/Microsoft.Network/virtualNetworks/VNet/subnets/Subnet-0"},"privateIPAddressVersion":"IPv4","loadBalancerBackendAddressPools":[{"id":"/subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/resourceGroups/clitest.rgvluj55d5spjt6q6yyfug2khnftvainftcwwlatpka6lzaqkd3e4mi7zwcy4y6nbic/providers/Microsoft.Network/loadBalancers/LB-sfrp-cli-rf3gq5bhmzi753v-nt1vm/backendAddressPools/LoadBalancerBEAddressPool"}],"loadBalancerInboundNatPools":[{"id":"/subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/resourceGroups/clitest.rgvluj55d5spjt6q6yyfug2khnftvainftcwwlatpka6lzaqkd3e4mi7zwcy4y6nbic/providers/Microsoft.Network/loadBalancers/LB-sfrp-cli-rf3gq5bhmzi753v-nt1vm/inboundNatPools/LoadBalancerBEAddressNatPool"}]}}]}}]},
+      "extensionProfile": {
+        "extensions": [
+          {
+            "name": "ServiceFabricNodeVmExt_vmNodeType0Name",
+            "properties": {
+              "autoUpgradeMinorVersion": false,
+              "publisher": "Microsoft.Azure.ServiceFabric",
+              "type": "ServiceFabricNode",
+              "typeHandlerVersion": "1.1",
+              "settings": {"clusterEndpoint":"https://southcentralus.servicefabric.azure.com/runtime/clusters/8e2a63ba-dbb5-4520-acaf-71b37430dfde","nodeTypeRef":"nt1vm","dataPath":"D:\\\\SvcFab","durabilityLevel":"Bronze","nicPrefixOverride":"10.0.0.0/24","certificate":{"thumbprint":"7ADE209BBCB28402BB48ECA93E538E629D3A40B4","x509StoreName":"My"}}
+            }
+          },
+          {
+            "name": "VMDiagnosticsVmExt_vmNodeType0Name",
+            "properties": {
+              "autoUpgradeMinorVersion": true,
+              "publisher": "Microsoft.Azure.Diagnostics",
+              "type": "IaaSDiagnostics",
+              "typeHandlerVersion": "1.5",
+              "settings": {"WadCfg":{"DiagnosticMonitorConfiguration":{"overallQuotaInMB":"50000","EtwProviders":{"EtwEventSourceProviderConfiguration":[{"provider":"Microsoft-ServiceFabric-Actors","scheduledTransferKeywordFilter":"1","scheduledTransferPeriod":"PT5M","DefaultEvents":{"eventDestination":"ServiceFabricReliableActorEventTable"}},{"provider":"Microsoft-ServiceFabric-Services","scheduledTransferPeriod":"PT5M","DefaultEvents":{"eventDestination":"ServiceFabricReliableServiceEventTable"}}],"EtwManifestProviderConfiguration":[{"provider":"cbd93bc2-71e5-4566-b3a7-595d8eeca6e8","scheduledTransferLogLevelFilter":"Information","scheduledTransferKeywordFilter":"4611686018427387904","scheduledTransferPeriod":"PT5M","DefaultEvents":{"eventDestination":"ServiceFabricSystemEventTable"}}]}}},"StorageAccount":"5kcqdmvlprsca3"}
+            }
+          }
+        ]
+      }
+    },
+    "provisioningState": "Updating",
+    "overprovision": false,
+    "doNotRunExtensionsOnOverprovisionedVMs": false,
+    "uniqueId": "e41c9ff6-3e8b-454b-9acb-b5e271a19a30",
+    "timeCreated": "2022-05-18T08:21:02.6531697+00:00"
+  }
+}
+cli.azure.cli.core.sdk.policies: Request URL: 'https://management.azure.com/subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/providers/Microsoft.Compute/locations/southcentralus/operations/b45aec5d-4121-42ee-826b-329abfc105ea?p=d0e8ea9a-296d-4a42-b0c4-00ed1becd3d2&api-version=2021-11-01'
+cli.azure.cli.core.sdk.policies: Request method: 'GET'
+cli.azure.cli.core.sdk.policies: Request headers:
+cli.azure.cli.core.sdk.policies:     'x-ms-client-request-id': '5886b10e-d68d-11ec-aa01-ac74b19db060'
+cli.azure.cli.core.sdk.policies:     'CommandName': 'sf cluster node add'
+cli.azure.cli.core.sdk.policies:     'ParameterSetName': '-g -c --node-type --number-of-nodes-to-add --no-wait --debug'
+cli.azure.cli.core.sdk.policies:     'User-Agent': 'AZURECLI/2.36.0 (PIP) azsdk-python-azure-mgmt-compute/26.1.0 Python/3.9.5 (Windows-10-10.0.19044-SP0)'
+cli.azure.cli.core.sdk.policies:     'Authorization': '*****'
+cli.azure.cli.core.sdk.policies: Request body:
+cli.azure.cli.core.sdk.policies: This request has no body
+urllib3.connectionpool: https://management.azure.com:443 "GET /subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/providers/Microsoft.Compute/locations/southcentralus/operations/b45aec5d-4121-42ee-826b-329abfc105ea?p=d0e8ea9a-296d-4a42-b0c4-00ed1becd3d2&api-version=2021-11-01 HTTP/1.1" 200 None
+cli.azure.cli.core.sdk.policies: Response status: 200
+cli.azure.cli.core.sdk.policies: Response headers:
+cli.azure.cli.core.sdk.policies:     'Cache-Control': 'no-cache'
+cli.azure.cli.core.sdk.policies:     'Pragma': 'no-cache'
+cli.azure.cli.core.sdk.policies:     'Transfer-Encoding': 'chunked'
+cli.azure.cli.core.sdk.policies:     'Content-Type': 'application/json; charset=utf-8'
+cli.azure.cli.core.sdk.policies:     'Content-Encoding': 'gzip'
+cli.azure.cli.core.sdk.policies:     'Expires': '-1'
+cli.azure.cli.core.sdk.policies:     'Retry-After': '51'
+cli.azure.cli.core.sdk.policies:     'Vary': 'Accept-Encoding'
+cli.azure.cli.core.sdk.policies:     'x-ms-ratelimit-remaining-resource': 'Microsoft.Compute/GetOperation3Min;14999,Microsoft.Compute/GetOperation30Min;29999'
+cli.azure.cli.core.sdk.policies:     'Strict-Transport-Security': 'max-age=31536000; includeSubDomains'
+cli.azure.cli.core.sdk.policies:     'x-ms-request-id': '5767c5b2-f8aa-4977-9c23-fd3df3855ba4'
+cli.azure.cli.core.sdk.policies:     'Server': 'Microsoft-HTTPAPI/2.0, Microsoft-HTTPAPI/2.0'
+cli.azure.cli.core.sdk.policies:     'x-ms-ratelimit-remaining-subscription-reads': '11998'
+cli.azure.cli.core.sdk.policies:     'x-ms-correlation-request-id': '2f4f81b7-c216-4e02-baeb-9676a036ad03'
+cli.azure.cli.core.sdk.policies:     'x-ms-routing-request-id': 'SOUTHEASTASIA:20220518T093213Z:2f4f81b7-c216-4e02-baeb-9676a036ad03'
+cli.azure.cli.core.sdk.policies:     'X-Content-Type-Options': 'nosniff'
+cli.azure.cli.core.sdk.policies:     'Date': 'Wed, 18 May 2022 09:32:13 GMT'
+cli.azure.cli.core.sdk.policies: Response content:
+cli.azure.cli.core.sdk.policies: {
+  "startTime": "2022-05-18T09:31:59.7020828+00:00",
+  "status": "InProgress",
+  "name": "b45aec5d-4121-42ee-826b-329abfc105ea"
+}
+cli.azure.cli.core.sdk.policies: Request URL: 'https://management.azure.com/subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/providers/Microsoft.Compute/locations/southcentralus/operations/b45aec5d-4121-42ee-826b-329abfc105ea?p=d0e8ea9a-296d-4a42-b0c4-00ed1becd3d2&api-version=2021-11-01'
+cli.azure.cli.core.sdk.policies: Request method: 'GET'
+cli.azure.cli.core.sdk.policies: Request headers:
+cli.azure.cli.core.sdk.policies:     'x-ms-client-request-id': '5886b10e-d68d-11ec-aa01-ac74b19db060'
+cli.azure.cli.core.sdk.policies:     'CommandName': 'sf cluster node add'
+cli.azure.cli.core.sdk.policies:     'ParameterSetName': '-g -c --node-type --number-of-nodes-to-add --no-wait --debug'
+cli.azure.cli.core.sdk.policies:     'User-Agent': 'AZURECLI/2.36.0 (PIP) azsdk-python-azure-mgmt-compute/26.1.0 Python/3.9.5 (Windows-10-10.0.19044-SP0)'
+cli.azure.cli.core.sdk.policies:     'Authorization': '*****'
+cli.azure.cli.core.sdk.policies: Request body:
+cli.azure.cli.core.sdk.policies: This request has no body
+urllib3.connectionpool: https://management.azure.com:443 "GET /subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/providers/Microsoft.Compute/locations/southcentralus/operations/b45aec5d-4121-42ee-826b-329abfc105ea?p=d0e8ea9a-296d-4a42-b0c4-00ed1becd3d2&api-version=2021-11-01 HTTP/1.1" 200 None
+cli.azure.cli.core.sdk.policies: Response status: 200
+cli.azure.cli.core.sdk.policies: Response headers:
+cli.azure.cli.core.sdk.policies:     'Cache-Control': 'no-cache'
+cli.azure.cli.core.sdk.policies:     'Pragma': 'no-cache'
+cli.azure.cli.core.sdk.policies:     'Transfer-Encoding': 'chunked'
+cli.azure.cli.core.sdk.policies:     'Content-Type': 'application/json; charset=utf-8'
+cli.azure.cli.core.sdk.policies:     'Content-Encoding': 'gzip'
+cli.azure.cli.core.sdk.policies:     'Expires': '-1'
+cli.azure.cli.core.sdk.policies:     'Vary': 'Accept-Encoding'
+cli.azure.cli.core.sdk.policies:     'x-ms-ratelimit-remaining-resource': 'Microsoft.Compute/GetOperation3Min;14998,Microsoft.Compute/GetOperation30Min;29998'
+cli.azure.cli.core.sdk.policies:     'Strict-Transport-Security': 'max-age=31536000; includeSubDomains'
+cli.azure.cli.core.sdk.policies:     'x-ms-request-id': 'b9b9d7d3-ad7d-4bcd-a96c-d819f9d6760a'
+cli.azure.cli.core.sdk.policies:     'Server': 'Microsoft-HTTPAPI/2.0, Microsoft-HTTPAPI/2.0'
+cli.azure.cli.core.sdk.policies:     'x-ms-ratelimit-remaining-subscription-reads': '11997'
+cli.azure.cli.core.sdk.policies:     'x-ms-correlation-request-id': '0588e643-d8fb-4a7f-a085-9a95072edd17'
+cli.azure.cli.core.sdk.policies:     'x-ms-routing-request-id': 'SOUTHEASTASIA:20220518T093305Z:0588e643-d8fb-4a7f-a085-9a95072edd17'
+cli.azure.cli.core.sdk.policies:     'X-Content-Type-Options': 'nosniff'
+cli.azure.cli.core.sdk.policies:     'Date': 'Wed, 18 May 2022 09:33:04 GMT'
+cli.azure.cli.core.sdk.policies: Response content:
+cli.azure.cli.core.sdk.policies: {
+  "startTime": "2022-05-18T09:31:59.7020828+00:00",
+  "status": "InProgress",
+  "name": "b45aec5d-4121-42ee-826b-329abfc105ea"
+}
+cli.azure.cli.core.sdk.policies: Request URL: 'https://management.azure.com/subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/providers/Microsoft.Compute/locations/southcentralus/operations/b45aec5d-4121-42ee-826b-329abfc105ea?p=d0e8ea9a-296d-4a42-b0c4-00ed1becd3d2&api-version=2021-11-01'
+cli.azure.cli.core.sdk.policies: Request method: 'GET'
+cli.azure.cli.core.sdk.policies: Request headers:
+cli.azure.cli.core.sdk.policies:     'x-ms-client-request-id': '5886b10e-d68d-11ec-aa01-ac74b19db060'
+cli.azure.cli.core.sdk.policies:     'CommandName': 'sf cluster node add'
+cli.azure.cli.core.sdk.policies:     'ParameterSetName': '-g -c --node-type --number-of-nodes-to-add --no-wait --debug'
+cli.azure.cli.core.sdk.policies:     'User-Agent': 'AZURECLI/2.36.0 (PIP) azsdk-python-azure-mgmt-compute/26.1.0 Python/3.9.5 (Windows-10-10.0.19044-SP0)'
+cli.azure.cli.core.sdk.policies:     'Authorization': '*****'
+cli.azure.cli.core.sdk.policies: Request body:
+cli.azure.cli.core.sdk.policies: This request has no body
+urllib3.connectionpool: https://management.azure.com:443 "GET /subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/providers/Microsoft.Compute/locations/southcentralus/operations/b45aec5d-4121-42ee-826b-329abfc105ea?p=d0e8ea9a-296d-4a42-b0c4-00ed1becd3d2&api-version=2021-11-01 HTTP/1.1" 200 None
+cli.azure.cli.core.sdk.policies: Response status: 200
+cli.azure.cli.core.sdk.policies: Response headers:
+cli.azure.cli.core.sdk.policies:     'Cache-Control': 'no-cache'
+cli.azure.cli.core.sdk.policies:     'Pragma': 'no-cache'
+cli.azure.cli.core.sdk.policies:     'Transfer-Encoding': 'chunked'
+cli.azure.cli.core.sdk.policies:     'Content-Type': 'application/json; charset=utf-8'
+cli.azure.cli.core.sdk.policies:     'Content-Encoding': 'gzip'
+cli.azure.cli.core.sdk.policies:     'Expires': '-1'
+cli.azure.cli.core.sdk.policies:     'Vary': 'Accept-Encoding'
+cli.azure.cli.core.sdk.policies:     'x-ms-ratelimit-remaining-resource': 'Microsoft.Compute/GetOperation3Min;14997,Microsoft.Compute/GetOperation30Min;29997'
+cli.azure.cli.core.sdk.policies:     'Strict-Transport-Security': 'max-age=31536000; includeSubDomains'
+cli.azure.cli.core.sdk.policies:     'x-ms-request-id': 'cb594241-797a-4772-8b1a-12ad6be3cb75'
+cli.azure.cli.core.sdk.policies:     'Server': 'Microsoft-HTTPAPI/2.0, Microsoft-HTTPAPI/2.0'
+cli.azure.cli.core.sdk.policies:     'x-ms-ratelimit-remaining-subscription-reads': '11996'
+cli.azure.cli.core.sdk.policies:     'x-ms-correlation-request-id': '8493aa81-1a73-4982-b4e4-fac14f720227'
+cli.azure.cli.core.sdk.policies:     'x-ms-routing-request-id': 'SOUTHEASTASIA:20220518T093335Z:8493aa81-1a73-4982-b4e4-fac14f720227'
+cli.azure.cli.core.sdk.policies:     'X-Content-Type-Options': 'nosniff'
+cli.azure.cli.core.sdk.policies:     'Date': 'Wed, 18 May 2022 09:33:35 GMT'
+cli.azure.cli.core.sdk.policies: Response content:
+cli.azure.cli.core.sdk.policies: {
+  "startTime": "2022-05-18T09:31:59.7020828+00:00",
+  "status": "InProgress",
+  "name": "b45aec5d-4121-42ee-826b-329abfc105ea"
+}
+cli.azure.cli.core.sdk.policies: Request URL: 'https://management.azure.com/subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/providers/Microsoft.Compute/locations/southcentralus/operations/b45aec5d-4121-42ee-826b-329abfc105ea?p=d0e8ea9a-296d-4a42-b0c4-00ed1becd3d2&api-version=2021-11-01'
+cli.azure.cli.core.sdk.policies: Request method: 'GET'
+cli.azure.cli.core.sdk.policies: Request headers:
+cli.azure.cli.core.sdk.policies:     'x-ms-client-request-id': '5886b10e-d68d-11ec-aa01-ac74b19db060'
+cli.azure.cli.core.sdk.policies:     'CommandName': 'sf cluster node add'
+cli.azure.cli.core.sdk.policies:     'ParameterSetName': '-g -c --node-type --number-of-nodes-to-add --no-wait --debug'
+cli.azure.cli.core.sdk.policies:     'User-Agent': 'AZURECLI/2.36.0 (PIP) azsdk-python-azure-mgmt-compute/26.1.0 Python/3.9.5 (Windows-10-10.0.19044-SP0)'
+cli.azure.cli.core.sdk.policies:     'Authorization': '*****'
+cli.azure.cli.core.sdk.policies: Request body:
+cli.azure.cli.core.sdk.policies: This request has no body
+urllib3.connectionpool: https://management.azure.com:443 "GET /subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/providers/Microsoft.Compute/locations/southcentralus/operations/b45aec5d-4121-42ee-826b-329abfc105ea?p=d0e8ea9a-296d-4a42-b0c4-00ed1becd3d2&api-version=2021-11-01 HTTP/1.1" 200 None
+cli.azure.cli.core.sdk.policies: Response status: 200
+cli.azure.cli.core.sdk.policies: Response headers:
+cli.azure.cli.core.sdk.policies:     'Cache-Control': 'no-cache'
+cli.azure.cli.core.sdk.policies:     'Pragma': 'no-cache'
+cli.azure.cli.core.sdk.policies:     'Transfer-Encoding': 'chunked'
+cli.azure.cli.core.sdk.policies:     'Content-Type': 'application/json; charset=utf-8'
+cli.azure.cli.core.sdk.policies:     'Content-Encoding': 'gzip'
+cli.azure.cli.core.sdk.policies:     'Expires': '-1'
+cli.azure.cli.core.sdk.policies:     'Vary': 'Accept-Encoding'
+cli.azure.cli.core.sdk.policies:     'x-ms-ratelimit-remaining-resource': 'Microsoft.Compute/GetOperation3Min;14995,Microsoft.Compute/GetOperation30Min;29995'
+cli.azure.cli.core.sdk.policies:     'Strict-Transport-Security': 'max-age=31536000; includeSubDomains'
+cli.azure.cli.core.sdk.policies:     'x-ms-request-id': 'bfa7adfe-6f15-473e-a5ec-ef886cc33320'
+cli.azure.cli.core.sdk.policies:     'Server': 'Microsoft-HTTPAPI/2.0, Microsoft-HTTPAPI/2.0'
+cli.azure.cli.core.sdk.policies:     'x-ms-ratelimit-remaining-subscription-reads': '11995'
+cli.azure.cli.core.sdk.policies:     'x-ms-correlation-request-id': '9a289e3e-9e41-4414-9f0a-b02d1bd35018'
+cli.azure.cli.core.sdk.policies:     'x-ms-routing-request-id': 'SOUTHEASTASIA:20220518T093405Z:9a289e3e-9e41-4414-9f0a-b02d1bd35018'
+cli.azure.cli.core.sdk.policies:     'X-Content-Type-Options': 'nosniff'
+cli.azure.cli.core.sdk.policies:     'Date': 'Wed, 18 May 2022 09:34:04 GMT'
+cli.azure.cli.core.sdk.policies: Response content:
+cli.azure.cli.core.sdk.policies: {
+  "startTime": "2022-05-18T09:31:59.7020828+00:00",
+  "status": "InProgress",
+  "name": "b45aec5d-4121-42ee-826b-329abfc105ea"
+}
+cli.azure.cli.core.sdk.policies: Request URL: 'https://management.azure.com/subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/providers/Microsoft.Compute/locations/southcentralus/operations/b45aec5d-4121-42ee-826b-329abfc105ea?p=d0e8ea9a-296d-4a42-b0c4-00ed1becd3d2&api-version=2021-11-01'
+cli.azure.cli.core.sdk.policies: Request method: 'GET'
+cli.azure.cli.core.sdk.policies: Request headers:
+cli.azure.cli.core.sdk.policies:     'x-ms-client-request-id': '5886b10e-d68d-11ec-aa01-ac74b19db060'
+cli.azure.cli.core.sdk.policies:     'CommandName': 'sf cluster node add'
+cli.azure.cli.core.sdk.policies:     'ParameterSetName': '-g -c --node-type --number-of-nodes-to-add --no-wait --debug'
+cli.azure.cli.core.sdk.policies:     'User-Agent': 'AZURECLI/2.36.0 (PIP) azsdk-python-azure-mgmt-compute/26.1.0 Python/3.9.5 (Windows-10-10.0.19044-SP0)'
+cli.azure.cli.core.sdk.policies:     'Authorization': '*****'
+cli.azure.cli.core.sdk.policies: Request body:
+cli.azure.cli.core.sdk.policies: This request has no body
+urllib3.connectionpool: https://management.azure.com:443 "GET /subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/providers/Microsoft.Compute/locations/southcentralus/operations/b45aec5d-4121-42ee-826b-329abfc105ea?p=d0e8ea9a-296d-4a42-b0c4-00ed1becd3d2&api-version=2021-11-01 HTTP/1.1" 200 None
+cli.azure.cli.core.sdk.policies: Response status: 200
+cli.azure.cli.core.sdk.policies: Response headers:
+cli.azure.cli.core.sdk.policies:     'Cache-Control': 'no-cache'
+cli.azure.cli.core.sdk.policies:     'Pragma': 'no-cache'
+cli.azure.cli.core.sdk.policies:     'Transfer-Encoding': 'chunked'
+cli.azure.cli.core.sdk.policies:     'Content-Type': 'application/json; charset=utf-8'
+cli.azure.cli.core.sdk.policies:     'Content-Encoding': 'gzip'
+cli.azure.cli.core.sdk.policies:     'Expires': '-1'
+cli.azure.cli.core.sdk.policies:     'Vary': 'Accept-Encoding'
+cli.azure.cli.core.sdk.policies:     'x-ms-ratelimit-remaining-resource': 'Microsoft.Compute/GetOperation3Min;14994,Microsoft.Compute/GetOperation30Min;29994'
+cli.azure.cli.core.sdk.policies:     'Strict-Transport-Security': 'max-age=31536000; includeSubDomains'
+cli.azure.cli.core.sdk.policies:     'x-ms-request-id': 'e9f941a6-2de7-404b-ab85-fbd9542f2460'
+cli.azure.cli.core.sdk.policies:     'Server': 'Microsoft-HTTPAPI/2.0, Microsoft-HTTPAPI/2.0'
+cli.azure.cli.core.sdk.policies:     'x-ms-ratelimit-remaining-subscription-reads': '11994'
+cli.azure.cli.core.sdk.policies:     'x-ms-correlation-request-id': 'c9d48a53-7dca-4c52-8d27-5c3a16a19ec9'
+cli.azure.cli.core.sdk.policies:     'x-ms-routing-request-id': 'SOUTHEASTASIA:20220518T093436Z:c9d48a53-7dca-4c52-8d27-5c3a16a19ec9'
+cli.azure.cli.core.sdk.policies:     'X-Content-Type-Options': 'nosniff'
+cli.azure.cli.core.sdk.policies:     'Date': 'Wed, 18 May 2022 09:34:35 GMT'
+cli.azure.cli.core.sdk.policies: Response content:
+cli.azure.cli.core.sdk.policies: {
+  "startTime": "2022-05-18T09:31:59.7020828+00:00",
+  "status": "InProgress",
+  "name": "b45aec5d-4121-42ee-826b-329abfc105ea"
+}
+cli.azure.cli.core.sdk.policies: Request URL: 'https://management.azure.com/subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/providers/Microsoft.Compute/locations/southcentralus/operations/b45aec5d-4121-42ee-826b-329abfc105ea?p=d0e8ea9a-296d-4a42-b0c4-00ed1becd3d2&api-version=2021-11-01'
+cli.azure.cli.core.sdk.policies: Request method: 'GET'
+cli.azure.cli.core.sdk.policies: Request headers:
+cli.azure.cli.core.sdk.policies:     'x-ms-client-request-id': '5886b10e-d68d-11ec-aa01-ac74b19db060'
+cli.azure.cli.core.sdk.policies:     'CommandName': 'sf cluster node add'
+cli.azure.cli.core.sdk.policies:     'ParameterSetName': '-g -c --node-type --number-of-nodes-to-add --no-wait --debug'
+cli.azure.cli.core.sdk.policies:     'User-Agent': 'AZURECLI/2.36.0 (PIP) azsdk-python-azure-mgmt-compute/26.1.0 Python/3.9.5 (Windows-10-10.0.19044-SP0)'
+cli.azure.cli.core.sdk.policies:     'Authorization': '*****'
+cli.azure.cli.core.sdk.policies: Request body:
+cli.azure.cli.core.sdk.policies: This request has no body
+urllib3.connectionpool: https://management.azure.com:443 "GET /subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/providers/Microsoft.Compute/locations/southcentralus/operations/b45aec5d-4121-42ee-826b-329abfc105ea?p=d0e8ea9a-296d-4a42-b0c4-00ed1becd3d2&api-version=2021-11-01 HTTP/1.1" 200 None
+cli.azure.cli.core.sdk.policies: Response status: 200
+cli.azure.cli.core.sdk.policies: Response headers:
+cli.azure.cli.core.sdk.policies:     'Cache-Control': 'no-cache'
+cli.azure.cli.core.sdk.policies:     'Pragma': 'no-cache'
+cli.azure.cli.core.sdk.policies:     'Transfer-Encoding': 'chunked'
+cli.azure.cli.core.sdk.policies:     'Content-Type': 'application/json; charset=utf-8'
+cli.azure.cli.core.sdk.policies:     'Content-Encoding': 'gzip'
+cli.azure.cli.core.sdk.policies:     'Expires': '-1'
+cli.azure.cli.core.sdk.policies:     'Vary': 'Accept-Encoding'
+cli.azure.cli.core.sdk.policies:     'x-ms-ratelimit-remaining-resource': 'Microsoft.Compute/GetOperation3Min;14994,Microsoft.Compute/GetOperation30Min;29993'
+cli.azure.cli.core.sdk.policies:     'Strict-Transport-Security': 'max-age=31536000; includeSubDomains'
+cli.azure.cli.core.sdk.policies:     'x-ms-request-id': 'f1c1b5d0-936f-4d63-9e88-ba6d83e0e89a'
+cli.azure.cli.core.sdk.policies:     'Server': 'Microsoft-HTTPAPI/2.0, Microsoft-HTTPAPI/2.0'
+cli.azure.cli.core.sdk.policies:     'x-ms-ratelimit-remaining-subscription-reads': '11993'
+cli.azure.cli.core.sdk.policies:     'x-ms-correlation-request-id': '7faf6528-801d-42dc-a3f7-914142b5ab8e'
+cli.azure.cli.core.sdk.policies:     'x-ms-routing-request-id': 'SOUTHEASTASIA:20220518T093507Z:7faf6528-801d-42dc-a3f7-914142b5ab8e'
+cli.azure.cli.core.sdk.policies:     'X-Content-Type-Options': 'nosniff'
+cli.azure.cli.core.sdk.policies:     'Date': 'Wed, 18 May 2022 09:35:06 GMT'
+cli.azure.cli.core.sdk.policies: Response content:
+cli.azure.cli.core.sdk.policies: {
+  "startTime": "2022-05-18T09:31:59.7020828+00:00",
+  "status": "InProgress",
+  "name": "b45aec5d-4121-42ee-826b-329abfc105ea"
+}
+cli.azure.cli.core.sdk.policies: Request URL: 'https://management.azure.com/subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/providers/Microsoft.Compute/locations/southcentralus/operations/b45aec5d-4121-42ee-826b-329abfc105ea?p=d0e8ea9a-296d-4a42-b0c4-00ed1becd3d2&api-version=2021-11-01'
+cli.azure.cli.core.sdk.policies: Request method: 'GET'
+cli.azure.cli.core.sdk.policies: Request headers:
+cli.azure.cli.core.sdk.policies:     'x-ms-client-request-id': '5886b10e-d68d-11ec-aa01-ac74b19db060'
+cli.azure.cli.core.sdk.policies:     'CommandName': 'sf cluster node add'
+cli.azure.cli.core.sdk.policies:     'ParameterSetName': '-g -c --node-type --number-of-nodes-to-add --no-wait --debug'
+cli.azure.cli.core.sdk.policies:     'User-Agent': 'AZURECLI/2.36.0 (PIP) azsdk-python-azure-mgmt-compute/26.1.0 Python/3.9.5 (Windows-10-10.0.19044-SP0)'
+cli.azure.cli.core.sdk.policies:     'Authorization': '*****'
+cli.azure.cli.core.sdk.policies: Request body:
+cli.azure.cli.core.sdk.policies: This request has no body
+urllib3.connectionpool: https://management.azure.com:443 "GET /subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/providers/Microsoft.Compute/locations/southcentralus/operations/b45aec5d-4121-42ee-826b-329abfc105ea?p=d0e8ea9a-296d-4a42-b0c4-00ed1becd3d2&api-version=2021-11-01 HTTP/1.1" 200 None
+cli.azure.cli.core.sdk.policies: Response status: 200
+cli.azure.cli.core.sdk.policies: Response headers:
+cli.azure.cli.core.sdk.policies:     'Cache-Control': 'no-cache'
+cli.azure.cli.core.sdk.policies:     'Pragma': 'no-cache'
+cli.azure.cli.core.sdk.policies:     'Transfer-Encoding': 'chunked'
+cli.azure.cli.core.sdk.policies:     'Content-Type': 'application/json; charset=utf-8'
+cli.azure.cli.core.sdk.policies:     'Content-Encoding': 'gzip'
+cli.azure.cli.core.sdk.policies:     'Expires': '-1'
+cli.azure.cli.core.sdk.policies:     'Vary': 'Accept-Encoding'
+cli.azure.cli.core.sdk.policies:     'x-ms-ratelimit-remaining-resource': 'Microsoft.Compute/GetOperation3Min;14993,Microsoft.Compute/GetOperation30Min;29992'
+cli.azure.cli.core.sdk.policies:     'Strict-Transport-Security': 'max-age=31536000; includeSubDomains'
+cli.azure.cli.core.sdk.policies:     'x-ms-request-id': 'da1d09dc-428d-45f7-8059-bc93b0339fad'
+cli.azure.cli.core.sdk.policies:     'Server': 'Microsoft-HTTPAPI/2.0, Microsoft-HTTPAPI/2.0'
+cli.azure.cli.core.sdk.policies:     'x-ms-ratelimit-remaining-subscription-reads': '11992'
+cli.azure.cli.core.sdk.policies:     'x-ms-correlation-request-id': '5e089ae9-0a17-4b5a-a6fb-6967995e0649'
+cli.azure.cli.core.sdk.policies:     'x-ms-routing-request-id': 'SOUTHEASTASIA:20220518T093537Z:5e089ae9-0a17-4b5a-a6fb-6967995e0649'
+cli.azure.cli.core.sdk.policies:     'X-Content-Type-Options': 'nosniff'
+cli.azure.cli.core.sdk.policies:     'Date': 'Wed, 18 May 2022 09:35:37 GMT'
+cli.azure.cli.core.sdk.policies: Response content:
+cli.azure.cli.core.sdk.policies: {
+  "startTime": "2022-05-18T09:31:59.7020828+00:00",
+  "status": "InProgress",
+  "name": "b45aec5d-4121-42ee-826b-329abfc105ea"
+}
+cli.azure.cli.core.sdk.policies: Request URL: 'https://management.azure.com/subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/providers/Microsoft.Compute/locations/southcentralus/operations/b45aec5d-4121-42ee-826b-329abfc105ea?p=d0e8ea9a-296d-4a42-b0c4-00ed1becd3d2&api-version=2021-11-01'
+cli.azure.cli.core.sdk.policies: Request method: 'GET'
+cli.azure.cli.core.sdk.policies: Request headers:
+cli.azure.cli.core.sdk.policies:     'x-ms-client-request-id': '5886b10e-d68d-11ec-aa01-ac74b19db060'
+cli.azure.cli.core.sdk.policies:     'CommandName': 'sf cluster node add'
+cli.azure.cli.core.sdk.policies:     'ParameterSetName': '-g -c --node-type --number-of-nodes-to-add --no-wait --debug'
+cli.azure.cli.core.sdk.policies:     'User-Agent': 'AZURECLI/2.36.0 (PIP) azsdk-python-azure-mgmt-compute/26.1.0 Python/3.9.5 (Windows-10-10.0.19044-SP0)'
+cli.azure.cli.core.sdk.policies:     'Authorization': '*****'
+cli.azure.cli.core.sdk.policies: Request body:
+cli.azure.cli.core.sdk.policies: This request has no body
+urllib3.connectionpool: https://management.azure.com:443 "GET /subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/providers/Microsoft.Compute/locations/southcentralus/operations/b45aec5d-4121-42ee-826b-329abfc105ea?p=d0e8ea9a-296d-4a42-b0c4-00ed1becd3d2&api-version=2021-11-01 HTTP/1.1" 200 None
+cli.azure.cli.core.sdk.policies: Response status: 200
+cli.azure.cli.core.sdk.policies: Response headers:
+cli.azure.cli.core.sdk.policies:     'Cache-Control': 'no-cache'
+cli.azure.cli.core.sdk.policies:     'Pragma': 'no-cache'
+cli.azure.cli.core.sdk.policies:     'Transfer-Encoding': 'chunked'
+cli.azure.cli.core.sdk.policies:     'Content-Type': 'application/json; charset=utf-8'
+cli.azure.cli.core.sdk.policies:     'Content-Encoding': 'gzip'
+cli.azure.cli.core.sdk.policies:     'Expires': '-1'
+cli.azure.cli.core.sdk.policies:     'Vary': 'Accept-Encoding'
+cli.azure.cli.core.sdk.policies:     'x-ms-ratelimit-remaining-resource': 'Microsoft.Compute/GetOperation3Min;14992,Microsoft.Compute/GetOperation30Min;29990'
+cli.azure.cli.core.sdk.policies:     'Strict-Transport-Security': 'max-age=31536000; includeSubDomains'
+cli.azure.cli.core.sdk.policies:     'x-ms-request-id': 'ab495dfa-b8fb-4acb-9f03-a15d666c3160'
+cli.azure.cli.core.sdk.policies:     'Server': 'Microsoft-HTTPAPI/2.0, Microsoft-HTTPAPI/2.0'
+cli.azure.cli.core.sdk.policies:     'x-ms-ratelimit-remaining-subscription-reads': '11991'
+cli.azure.cli.core.sdk.policies:     'x-ms-correlation-request-id': '4538d71f-651e-43ae-8bd2-e1dff995cdc6'
+cli.azure.cli.core.sdk.policies:     'x-ms-routing-request-id': 'SOUTHEASTASIA:20220518T093608Z:4538d71f-651e-43ae-8bd2-e1dff995cdc6'
+cli.azure.cli.core.sdk.policies:     'X-Content-Type-Options': 'nosniff'
+cli.azure.cli.core.sdk.policies:     'Date': 'Wed, 18 May 2022 09:36:07 GMT'
+cli.azure.cli.core.sdk.policies: Response content:
+cli.azure.cli.core.sdk.policies: {
+  "startTime": "2022-05-18T09:31:59.7020828+00:00",
+  "status": "InProgress",
+  "name": "b45aec5d-4121-42ee-826b-329abfc105ea"
+}
+cli.azure.cli.core.sdk.policies: Request URL: 'https://management.azure.com/subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/providers/Microsoft.Compute/locations/southcentralus/operations/b45aec5d-4121-42ee-826b-329abfc105ea?p=d0e8ea9a-296d-4a42-b0c4-00ed1becd3d2&api-version=2021-11-01'
+cli.azure.cli.core.sdk.policies: Request method: 'GET'
+cli.azure.cli.core.sdk.policies: Request headers:
+cli.azure.cli.core.sdk.policies:     'x-ms-client-request-id': '5886b10e-d68d-11ec-aa01-ac74b19db060'
+cli.azure.cli.core.sdk.policies:     'CommandName': 'sf cluster node add'
+cli.azure.cli.core.sdk.policies:     'ParameterSetName': '-g -c --node-type --number-of-nodes-to-add --no-wait --debug'
+cli.azure.cli.core.sdk.policies:     'User-Agent': 'AZURECLI/2.36.0 (PIP) azsdk-python-azure-mgmt-compute/26.1.0 Python/3.9.5 (Windows-10-10.0.19044-SP0)'
+cli.azure.cli.core.sdk.policies:     'Authorization': '*****'
+cli.azure.cli.core.sdk.policies: Request body:
+cli.azure.cli.core.sdk.policies: This request has no body
+urllib3.connectionpool: https://management.azure.com:443 "GET /subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/providers/Microsoft.Compute/locations/southcentralus/operations/b45aec5d-4121-42ee-826b-329abfc105ea?p=d0e8ea9a-296d-4a42-b0c4-00ed1becd3d2&api-version=2021-11-01 HTTP/1.1" 200 None
+cli.azure.cli.core.sdk.policies: Response status: 200
+cli.azure.cli.core.sdk.policies: Response headers:
+cli.azure.cli.core.sdk.policies:     'Cache-Control': 'no-cache'
+cli.azure.cli.core.sdk.policies:     'Pragma': 'no-cache'
+cli.azure.cli.core.sdk.policies:     'Transfer-Encoding': 'chunked'
+cli.azure.cli.core.sdk.policies:     'Content-Type': 'application/json; charset=utf-8'
+cli.azure.cli.core.sdk.policies:     'Content-Encoding': 'gzip'
+cli.azure.cli.core.sdk.policies:     'Expires': '-1'
+cli.azure.cli.core.sdk.policies:     'Vary': 'Accept-Encoding'
+cli.azure.cli.core.sdk.policies:     'x-ms-ratelimit-remaining-resource': 'Microsoft.Compute/GetOperation3Min;14992,Microsoft.Compute/GetOperation30Min;29989'
+cli.azure.cli.core.sdk.policies:     'Strict-Transport-Security': 'max-age=31536000; includeSubDomains'
+cli.azure.cli.core.sdk.policies:     'x-ms-request-id': '9d893aed-01f6-465f-a934-72ad32062378'
+cli.azure.cli.core.sdk.policies:     'Server': 'Microsoft-HTTPAPI/2.0, Microsoft-HTTPAPI/2.0'
+cli.azure.cli.core.sdk.policies:     'x-ms-ratelimit-remaining-subscription-reads': '11990'
+cli.azure.cli.core.sdk.policies:     'x-ms-correlation-request-id': 'be66d262-d272-45c4-97a8-4f34fdbf2eac'
+cli.azure.cli.core.sdk.policies:     'x-ms-routing-request-id': 'SOUTHEASTASIA:20220518T093638Z:be66d262-d272-45c4-97a8-4f34fdbf2eac'
+cli.azure.cli.core.sdk.policies:     'X-Content-Type-Options': 'nosniff'
+cli.azure.cli.core.sdk.policies:     'Date': 'Wed, 18 May 2022 09:36:38 GMT'
+cli.azure.cli.core.sdk.policies: Response content:
+cli.azure.cli.core.sdk.policies: {
+  "startTime": "2022-05-18T09:31:59.7020828+00:00",
+  "status": "InProgress",
+  "name": "b45aec5d-4121-42ee-826b-329abfc105ea"
+}
+cli.azure.cli.core.sdk.policies: Request URL: 'https://management.azure.com/subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/providers/Microsoft.Compute/locations/southcentralus/operations/b45aec5d-4121-42ee-826b-329abfc105ea?p=d0e8ea9a-296d-4a42-b0c4-00ed1becd3d2&api-version=2021-11-01'
+cli.azure.cli.core.sdk.policies: Request method: 'GET'
+cli.azure.cli.core.sdk.policies: Request headers:
+cli.azure.cli.core.sdk.policies:     'x-ms-client-request-id': '5886b10e-d68d-11ec-aa01-ac74b19db060'
+cli.azure.cli.core.sdk.policies:     'CommandName': 'sf cluster node add'
+cli.azure.cli.core.sdk.policies:     'ParameterSetName': '-g -c --node-type --number-of-nodes-to-add --no-wait --debug'
+cli.azure.cli.core.sdk.policies:     'User-Agent': 'AZURECLI/2.36.0 (PIP) azsdk-python-azure-mgmt-compute/26.1.0 Python/3.9.5 (Windows-10-10.0.19044-SP0)'
+cli.azure.cli.core.sdk.policies:     'Authorization': '*****'
+cli.azure.cli.core.sdk.policies: Request body:
+cli.azure.cli.core.sdk.policies: This request has no body
+urllib3.connectionpool: https://management.azure.com:443 "GET /subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/providers/Microsoft.Compute/locations/southcentralus/operations/b45aec5d-4121-42ee-826b-329abfc105ea?p=d0e8ea9a-296d-4a42-b0c4-00ed1becd3d2&api-version=2021-11-01 HTTP/1.1" 200 None
+cli.azure.cli.core.sdk.policies: Response status: 200
+cli.azure.cli.core.sdk.policies: Response headers:
+cli.azure.cli.core.sdk.policies:     'Cache-Control': 'no-cache'
+cli.azure.cli.core.sdk.policies:     'Pragma': 'no-cache'
+cli.azure.cli.core.sdk.policies:     'Transfer-Encoding': 'chunked'
+cli.azure.cli.core.sdk.policies:     'Content-Type': 'application/json; charset=utf-8'
+cli.azure.cli.core.sdk.policies:     'Content-Encoding': 'gzip'
+cli.azure.cli.core.sdk.policies:     'Expires': '-1'
+cli.azure.cli.core.sdk.policies:     'Vary': 'Accept-Encoding'
+cli.azure.cli.core.sdk.policies:     'x-ms-ratelimit-remaining-resource': 'Microsoft.Compute/GetOperation3Min;14993,Microsoft.Compute/GetOperation30Min;29988'
+cli.azure.cli.core.sdk.policies:     'Strict-Transport-Security': 'max-age=31536000; includeSubDomains'
+cli.azure.cli.core.sdk.policies:     'x-ms-request-id': 'c996862c-7409-4773-a2be-c5b0fab4e7b6'
+cli.azure.cli.core.sdk.policies:     'Server': 'Microsoft-HTTPAPI/2.0, Microsoft-HTTPAPI/2.0'
+cli.azure.cli.core.sdk.policies:     'x-ms-ratelimit-remaining-subscription-reads': '11989'
+cli.azure.cli.core.sdk.policies:     'x-ms-correlation-request-id': 'fc797c17-8cc8-4bf2-87ce-fe1056a844d1'
+cli.azure.cli.core.sdk.policies:     'x-ms-routing-request-id': 'SOUTHEASTASIA:20220518T093709Z:fc797c17-8cc8-4bf2-87ce-fe1056a844d1'
+cli.azure.cli.core.sdk.policies:     'X-Content-Type-Options': 'nosniff'
+cli.azure.cli.core.sdk.policies:     'Date': 'Wed, 18 May 2022 09:37:08 GMT'
+cli.azure.cli.core.sdk.policies: Response content:
+cli.azure.cli.core.sdk.policies: {
+  "startTime": "2022-05-18T09:31:59.7020828+00:00",
+  "status": "InProgress",
+  "name": "b45aec5d-4121-42ee-826b-329abfc105ea"
+}
+cli.azure.cli.core.sdk.policies: Request URL: 'https://management.azure.com/subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/providers/Microsoft.Compute/locations/southcentralus/operations/b45aec5d-4121-42ee-826b-329abfc105ea?p=d0e8ea9a-296d-4a42-b0c4-00ed1becd3d2&api-version=2021-11-01'
+cli.azure.cli.core.sdk.policies: Request method: 'GET'
+cli.azure.cli.core.sdk.policies: Request headers:
+cli.azure.cli.core.sdk.policies:     'x-ms-client-request-id': '5886b10e-d68d-11ec-aa01-ac74b19db060'
+cli.azure.cli.core.sdk.policies:     'CommandName': 'sf cluster node add'
+cli.azure.cli.core.sdk.policies:     'ParameterSetName': '-g -c --node-type --number-of-nodes-to-add --no-wait --debug'
+cli.azure.cli.core.sdk.policies:     'User-Agent': 'AZURECLI/2.36.0 (PIP) azsdk-python-azure-mgmt-compute/26.1.0 Python/3.9.5 (Windows-10-10.0.19044-SP0)'
+cli.azure.cli.core.sdk.policies:     'Authorization': '*****'
+cli.azure.cli.core.sdk.policies: Request body:
+cli.azure.cli.core.sdk.policies: This request has no body
+urllib3.connectionpool: https://management.azure.com:443 "GET /subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/providers/Microsoft.Compute/locations/southcentralus/operations/b45aec5d-4121-42ee-826b-329abfc105ea?p=d0e8ea9a-296d-4a42-b0c4-00ed1becd3d2&api-version=2021-11-01 HTTP/1.1" 200 None
+cli.azure.cli.core.sdk.policies: Response status: 200
+cli.azure.cli.core.sdk.policies: Response headers:
+cli.azure.cli.core.sdk.policies:     'Cache-Control': 'no-cache'
+cli.azure.cli.core.sdk.policies:     'Pragma': 'no-cache'
+cli.azure.cli.core.sdk.policies:     'Transfer-Encoding': 'chunked'
+cli.azure.cli.core.sdk.policies:     'Content-Type': 'application/json; charset=utf-8'
+cli.azure.cli.core.sdk.policies:     'Content-Encoding': 'gzip'
+cli.azure.cli.core.sdk.policies:     'Expires': '-1'
+cli.azure.cli.core.sdk.policies:     'Vary': 'Accept-Encoding'
+cli.azure.cli.core.sdk.policies:     'x-ms-ratelimit-remaining-resource': 'Microsoft.Compute/GetOperation3Min;14993,Microsoft.Compute/GetOperation30Min;29987'
+cli.azure.cli.core.sdk.policies:     'Strict-Transport-Security': 'max-age=31536000; includeSubDomains'
+cli.azure.cli.core.sdk.policies:     'x-ms-request-id': '3c5fac41-c542-40f5-8090-a0ac3722bfcd'
+cli.azure.cli.core.sdk.policies:     'Server': 'Microsoft-HTTPAPI/2.0, Microsoft-HTTPAPI/2.0'
+cli.azure.cli.core.sdk.policies:     'x-ms-ratelimit-remaining-subscription-reads': '11988'
+cli.azure.cli.core.sdk.policies:     'x-ms-correlation-request-id': 'cb68d4ee-64d0-4f00-8786-d98e2e8b2ef1'
+cli.azure.cli.core.sdk.policies:     'x-ms-routing-request-id': 'SOUTHEASTASIA:20220518T093739Z:cb68d4ee-64d0-4f00-8786-d98e2e8b2ef1'
+cli.azure.cli.core.sdk.policies:     'X-Content-Type-Options': 'nosniff'
+cli.azure.cli.core.sdk.policies:     'Date': 'Wed, 18 May 2022 09:37:38 GMT'
+cli.azure.cli.core.sdk.policies: Response content:
+cli.azure.cli.core.sdk.policies: {
+  "startTime": "2022-05-18T09:31:59.7020828+00:00",
+  "status": "InProgress",
+  "name": "b45aec5d-4121-42ee-826b-329abfc105ea"
+}
+cli.azure.cli.core.sdk.policies: Request URL: 'https://management.azure.com/subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/providers/Microsoft.Compute/locations/southcentralus/operations/b45aec5d-4121-42ee-826b-329abfc105ea?p=d0e8ea9a-296d-4a42-b0c4-00ed1becd3d2&api-version=2021-11-01'
+cli.azure.cli.core.sdk.policies: Request method: 'GET'
+cli.azure.cli.core.sdk.policies: Request headers:
+cli.azure.cli.core.sdk.policies:     'x-ms-client-request-id': '5886b10e-d68d-11ec-aa01-ac74b19db060'
+cli.azure.cli.core.sdk.policies:     'CommandName': 'sf cluster node add'
+cli.azure.cli.core.sdk.policies:     'ParameterSetName': '-g -c --node-type --number-of-nodes-to-add --no-wait --debug'
+cli.azure.cli.core.sdk.policies:     'User-Agent': 'AZURECLI/2.36.0 (PIP) azsdk-python-azure-mgmt-compute/26.1.0 Python/3.9.5 (Windows-10-10.0.19044-SP0)'
+cli.azure.cli.core.sdk.policies:     'Authorization': '*****'
+cli.azure.cli.core.sdk.policies: Request body:
+cli.azure.cli.core.sdk.policies: This request has no body
+urllib3.connectionpool: https://management.azure.com:443 "GET /subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/providers/Microsoft.Compute/locations/southcentralus/operations/b45aec5d-4121-42ee-826b-329abfc105ea?p=d0e8ea9a-296d-4a42-b0c4-00ed1becd3d2&api-version=2021-11-01 HTTP/1.1" 200 None
+cli.azure.cli.core.sdk.policies: Response status: 200
+cli.azure.cli.core.sdk.policies: Response headers:
+cli.azure.cli.core.sdk.policies:     'Cache-Control': 'no-cache'
+cli.azure.cli.core.sdk.policies:     'Pragma': 'no-cache'
+cli.azure.cli.core.sdk.policies:     'Transfer-Encoding': 'chunked'
+cli.azure.cli.core.sdk.policies:     'Content-Type': 'application/json; charset=utf-8'
+cli.azure.cli.core.sdk.policies:     'Content-Encoding': 'gzip'
+cli.azure.cli.core.sdk.policies:     'Expires': '-1'
+cli.azure.cli.core.sdk.policies:     'Vary': 'Accept-Encoding'
+cli.azure.cli.core.sdk.policies:     'x-ms-ratelimit-remaining-resource': 'Microsoft.Compute/GetOperation3Min;14992,Microsoft.Compute/GetOperation30Min;29985'
+cli.azure.cli.core.sdk.policies:     'Strict-Transport-Security': 'max-age=31536000; includeSubDomains'
+cli.azure.cli.core.sdk.policies:     'x-ms-request-id': 'f807a48c-81c6-40df-830c-8f2f6bb8c40d'
+cli.azure.cli.core.sdk.policies:     'Server': 'Microsoft-HTTPAPI/2.0, Microsoft-HTTPAPI/2.0'
+cli.azure.cli.core.sdk.policies:     'x-ms-ratelimit-remaining-subscription-reads': '11987'
+cli.azure.cli.core.sdk.policies:     'x-ms-correlation-request-id': '035787a0-51c1-4687-a25e-64790c4b7bdd'
+cli.azure.cli.core.sdk.policies:     'x-ms-routing-request-id': 'SOUTHEASTASIA:20220518T093809Z:035787a0-51c1-4687-a25e-64790c4b7bdd'
+cli.azure.cli.core.sdk.policies:     'X-Content-Type-Options': 'nosniff'
+cli.azure.cli.core.sdk.policies:     'Date': 'Wed, 18 May 2022 09:38:09 GMT'
+cli.azure.cli.core.sdk.policies: Response content:
+cli.azure.cli.core.sdk.policies: {
+  "startTime": "2022-05-18T09:31:59.7020828+00:00",
+  "endTime": "2022-05-18T09:37:47.335832+00:00",
+  "status": "Succeeded",
+  "name": "b45aec5d-4121-42ee-826b-329abfc105ea"
+}
+cli.azure.cli.core.sdk.policies: Request URL: 'https://management.azure.com/subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/resourceGroups/clitest.rgvluj55d5spjt6q6yyfug2khnftvainftcwwlatpka6lzaqkd3e4mi7zwcy4y6nbic/providers/Microsoft.Compute/virtualMachineScaleSets/nt1vm?api-version=2021-11-01'
+cli.azure.cli.core.sdk.policies: Request method: 'GET'
+cli.azure.cli.core.sdk.policies: Request headers:
+cli.azure.cli.core.sdk.policies:     'x-ms-client-request-id': '5886b10e-d68d-11ec-aa01-ac74b19db060'
+cli.azure.cli.core.sdk.policies:     'CommandName': 'sf cluster node add'
+cli.azure.cli.core.sdk.policies:     'ParameterSetName': '-g -c --node-type --number-of-nodes-to-add --no-wait --debug'
+cli.azure.cli.core.sdk.policies:     'User-Agent': 'AZURECLI/2.36.0 (PIP) azsdk-python-azure-mgmt-compute/26.1.0 Python/3.9.5 (Windows-10-10.0.19044-SP0)'
+cli.azure.cli.core.sdk.policies:     'Authorization': '*****'
+cli.azure.cli.core.sdk.policies: Request body:
+cli.azure.cli.core.sdk.policies: This request has no body
+urllib3.connectionpool: https://management.azure.com:443 "GET /subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/resourceGroups/clitest.rgvluj55d5spjt6q6yyfug2khnftvainftcwwlatpka6lzaqkd3e4mi7zwcy4y6nbic/providers/Microsoft.Compute/virtualMachineScaleSets/nt1vm?api-version=2021-11-01 HTTP/1.1" 200 None
+cli.azure.cli.core.sdk.policies: Response status: 200
+cli.azure.cli.core.sdk.policies: Response headers:
+cli.azure.cli.core.sdk.policies:     'Cache-Control': 'no-cache'
+cli.azure.cli.core.sdk.policies:     'Pragma': 'no-cache'
+cli.azure.cli.core.sdk.policies:     'Transfer-Encoding': 'chunked'
+cli.azure.cli.core.sdk.policies:     'Content-Type': 'application/json; charset=utf-8'
+cli.azure.cli.core.sdk.policies:     'Content-Encoding': 'gzip'
+cli.azure.cli.core.sdk.policies:     'Expires': '-1'
+cli.azure.cli.core.sdk.policies:     'Vary': 'Accept-Encoding'
+cli.azure.cli.core.sdk.policies:     'x-ms-ratelimit-remaining-resource': 'Microsoft.Compute/GetVMScaleSet3Min;392,Microsoft.Compute/GetVMScaleSet30Min;2542'
+cli.azure.cli.core.sdk.policies:     'Strict-Transport-Security': 'max-age=31536000; includeSubDomains'
+cli.azure.cli.core.sdk.policies:     'x-ms-request-id': 'cd28b10e-4554-46f3-8982-111d83cb54e4'
+cli.azure.cli.core.sdk.policies:     'Server': 'Microsoft-HTTPAPI/2.0, Microsoft-HTTPAPI/2.0'
+cli.azure.cli.core.sdk.policies:     'x-ms-ratelimit-remaining-subscription-reads': '11986'
+cli.azure.cli.core.sdk.policies:     'x-ms-correlation-request-id': '188b8a77-96d7-43d1-94a0-ddcaade9de5f'
+cli.azure.cli.core.sdk.policies:     'x-ms-routing-request-id': 'SOUTHEASTASIA:20220518T093810Z:188b8a77-96d7-43d1-94a0-ddcaade9de5f'
+cli.azure.cli.core.sdk.policies:     'X-Content-Type-Options': 'nosniff'
+cli.azure.cli.core.sdk.policies:     'Date': 'Wed, 18 May 2022 09:38:09 GMT'
+cli.azure.cli.core.sdk.policies: Response content:
+cli.azure.cli.core.sdk.policies: {
+  "name": "nt1vm",
+  "id": "/subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/resourceGroups/clitest.rgvluj55d5spjt6q6yyfug2khnftvainftcwwlatpka6lzaqkd3e4mi7zwcy4y6nbic/providers/Microsoft.Compute/virtualMachineScaleSets/nt1vm",
+  "type": "Microsoft.Compute/virtualMachineScaleSets",
+  "location": "southcentralus",
+  "tags": {
+    "resourceType": "Service Fabric",
+    "clusterName": "sfrp-cli-rf3gq5bhmzi753v"
+  },
+  "sku": {
+    "name": "Standard_D2_V2",
+    "tier": "Standard",
+    "capacity": 7
+  },
+  "properties": {
+    "singlePlacementGroup": true,
+    "upgradePolicy": {
+      "mode": "Automatic"
+    },
+    "virtualMachineProfile": {
+      "osProfile": {
+        "computerNamePrefix": "nt1vm",
+        "adminUsername": "adminuser",
+        "windowsConfiguration": {
+          "provisionVMAgent": true,
+          "enableAutomaticUpdates": true,
+          "enableVMAgentPlatformUpdates": false
+        },
+        "secrets": [
+          {
+            "sourceVault": {
+              "id": "/subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/resourceGroups/clitest.rgvluj55d5spjt6q6yyfug2khnftvainftcwwlatpka6lzaqkd3e4mi7zwcy4y6nbic/providers/Microsoft.KeyVault/vaults/clitestrgvluj55d5spjt"
+            },
+            "vaultCertificates": [
+              {
+                "certificateUrl": "https://clitestrgvluj55d5spjt.vault.azure.net/secrets/sfrp-cli-rf3gq5bhmzi753v/9d0726062c7f489ab54aea2f23eeda65",
+                "certificateStore": "My"
+              }
+            ]
+          }
+        ]
+      },
+      "storageProfile": {
+        "osDisk": {
+          "osType": "Windows",
+          "createOption": "FromImage",
+          "caching": "ReadOnly",
+          "managedDisk": {
+            "storageAccountType": "Standard_LRS"
+          },
+          "diskSizeGB": 127
+        },
+        "imageReference": {
+          "publisher": "MicrosoftWindowsServer",
+          "offer": "WindowsServer",
+          "sku": "2016-Datacenter",
+          "version": "latest"
+        }
+      },
+      "networkProfile": {"networkInterfaceConfigurations":[{"name":"NIC-0","properties":{"primary":true,"enableAcceleratedNetworking":false,"dnsSettings":{"dnsServers":[]},"enableIPForwarding":false,"ipConfigurations":[{"name":"NIC-0","properties":{"subnet":{"id":"/subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/resourceGroups/clitest.rgvluj55d5spjt6q6yyfug2khnftvainftcwwlatpka6lzaqkd3e4mi7zwcy4y6nbic/providers/Microsoft.Network/virtualNetworks/VNet/subnets/Subnet-0"},"privateIPAddressVersion":"IPv4","loadBalancerBackendAddressPools":[{"id":"/subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/resourceGroups/clitest.rgvluj55d5spjt6q6yyfug2khnftvainftcwwlatpka6lzaqkd3e4mi7zwcy4y6nbic/providers/Microsoft.Network/loadBalancers/LB-sfrp-cli-rf3gq5bhmzi753v-nt1vm/backendAddressPools/LoadBalancerBEAddressPool"}],"loadBalancerInboundNatPools":[{"id":"/subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/resourceGroups/clitest.rgvluj55d5spjt6q6yyfug2khnftvainftcwwlatpka6lzaqkd3e4mi7zwcy4y6nbic/providers/Microsoft.Network/loadBalancers/LB-sfrp-cli-rf3gq5bhmzi753v-nt1vm/inboundNatPools/LoadBalancerBEAddressNatPool"}]}}]}}]},
+      "extensionProfile": {
+        "extensions": [
+          {
+            "name": "ServiceFabricNodeVmExt_vmNodeType0Name",
+            "properties": {
+              "autoUpgradeMinorVersion": false,
+              "publisher": "Microsoft.Azure.ServiceFabric",
+              "type": "ServiceFabricNode",
+              "typeHandlerVersion": "1.1",
+              "settings": {"clusterEndpoint":"https://southcentralus.servicefabric.azure.com/runtime/clusters/8e2a63ba-dbb5-4520-acaf-71b37430dfde","nodeTypeRef":"nt1vm","dataPath":"D:\\\\SvcFab","durabilityLevel":"Bronze","nicPrefixOverride":"10.0.0.0/24","certificate":{"thumbprint":"7ADE209BBCB28402BB48ECA93E538E629D3A40B4","x509StoreName":"My"}}
+            }
+          },
+          {
+            "name": "VMDiagnosticsVmExt_vmNodeType0Name",
+            "properties": {
+              "autoUpgradeMinorVersion": true,
+              "publisher": "Microsoft.Azure.Diagnostics",
+              "type": "IaaSDiagnostics",
+              "typeHandlerVersion": "1.5",
+              "settings": {"WadCfg":{"DiagnosticMonitorConfiguration":{"overallQuotaInMB":"50000","EtwProviders":{"EtwEventSourceProviderConfiguration":[{"provider":"Microsoft-ServiceFabric-Actors","scheduledTransferKeywordFilter":"1","scheduledTransferPeriod":"PT5M","DefaultEvents":{"eventDestination":"ServiceFabricReliableActorEventTable"}},{"provider":"Microsoft-ServiceFabric-Services","scheduledTransferPeriod":"PT5M","DefaultEvents":{"eventDestination":"ServiceFabricReliableServiceEventTable"}}],"EtwManifestProviderConfiguration":[{"provider":"cbd93bc2-71e5-4566-b3a7-595d8eeca6e8","scheduledTransferLogLevelFilter":"Information","scheduledTransferKeywordFilter":"4611686018427387904","scheduledTransferPeriod":"PT5M","DefaultEvents":{"eventDestination":"ServiceFabricSystemEventTable"}}]}}},"StorageAccount":"5kcqdmvlprsca3"}
+            }
+          }
+        ]
+      }
+    },
+    "provisioningState": "Succeeded",
+    "overprovision": false,
+    "doNotRunExtensionsOnOverprovisionedVMs": false,
+    "uniqueId": "e41c9ff6-3e8b-454b-9acb-b5e271a19a30",
+    "timeCreated": "2022-05-18T08:21:02.6531697+00:00"
+  }
+}
+cli.azure.cli.core.sdk.policies: Request URL: 'https://management.azure.com/subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/resourceGroups/clitest.rgvluj55d5spjt6q6yyfug2khnftvainftcwwlatpka6lzaqkd3e4mi7zwcy4y6nbic/providers/Microsoft.ServiceFabric/clusters/sfrp-cli-rf3gq5bhmzi753v?api-version=2020-03-01'
+cli.azure.cli.core.sdk.policies: Request method: 'PATCH'
+cli.azure.cli.core.sdk.policies: Request headers:
+cli.azure.cli.core.sdk.policies:     'Content-Type': 'application/json'
+cli.azure.cli.core.sdk.policies:     'Accept': 'application/json'
+cli.azure.cli.core.sdk.policies:     'Content-Length': '311'
+cli.azure.cli.core.sdk.policies:     'x-ms-client-request-id': '5886b10e-d68d-11ec-aa01-ac74b19db060'
+cli.azure.cli.core.sdk.policies:     'CommandName': 'sf cluster node add'
+cli.azure.cli.core.sdk.policies:     'ParameterSetName': '-g -c --node-type --number-of-nodes-to-add --no-wait --debug'
+cli.azure.cli.core.sdk.policies:     'User-Agent': 'AZURECLI/2.36.0 (PIP) azsdk-python-mgmt-servicefabric/1.0.0 Python/3.9.5 (Windows-10-10.0.19044-SP0)'
+cli.azure.cli.core.sdk.policies:     'Authorization': '*****'
+cli.azure.cli.core.sdk.policies: Request body:
+cli.azure.cli.core.sdk.policies: {"properties": {"nodeTypes": [{"name": "nt1vm", "clientConnectionEndpointPort": 19000, "httpGatewayEndpointPort": 19080, "durabilityLevel": "Bronze", "applicationPorts": {"startPort": 20000, "endPort": 30000}, "ephemeralPorts": {"startPort": 49152, "endPort": 65534}, "isPrimary": true, "vmInstanceCount": 7}]}}
+urllib3.connectionpool: Resetting dropped connection: management.azure.com
+urllib3.connectionpool: https://management.azure.com:443 "PATCH /subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/resourceGroups/clitest.rgvluj55d5spjt6q6yyfug2khnftvainftcwwlatpka6lzaqkd3e4mi7zwcy4y6nbic/providers/Microsoft.ServiceFabric/clusters/sfrp-cli-rf3gq5bhmzi753v?api-version=2020-03-01 HTTP/1.1" 202 2970
+cli.azure.cli.core.sdk.policies: Response status: 202
+cli.azure.cli.core.sdk.policies: Response headers:
+cli.azure.cli.core.sdk.policies:     'Cache-Control': 'no-cache'
+cli.azure.cli.core.sdk.policies:     'Pragma': 'no-cache'
+cli.azure.cli.core.sdk.policies:     'Content-Length': '2970'
+cli.azure.cli.core.sdk.policies:     'Content-Type': 'application/json'
+cli.azure.cli.core.sdk.policies:     'Expires': '-1'
+cli.azure.cli.core.sdk.policies:     'Location': 'https://management.azure.com/subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/providers/Microsoft.ServiceFabric/locations/southcentralus/operationResults/557cefcd-e3ea-405c-841a-5ef7e637090a?api-version=2020-03-01'
+cli.azure.cli.core.sdk.policies:     'Retry-After': '60'
+cli.azure.cli.core.sdk.policies:     'Azure-AsyncOperation': 'https://management.azure.com/subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/providers/Microsoft.ServiceFabric/locations/southcentralus/operations/557cefcd-e3ea-405c-841a-5ef7e637090a?api-version=2020-03-01'
+cli.azure.cli.core.sdk.policies:     'Strict-Transport-Security': 'max-age=31536000; includeSubDomains'
+cli.azure.cli.core.sdk.policies:     'X-Content-Type-Options': 'nosniff'
+cli.azure.cli.core.sdk.policies:     'Server': 'Microsoft-HTTPAPI/2.0,Microsoft-HTTPAPI/2.0 Microsoft-HTTPAPI/2.0'
+cli.azure.cli.core.sdk.policies:     'x-ms-ratelimit-remaining-subscription-writes': '1193'
+cli.azure.cli.core.sdk.policies:     'x-ms-request-id': '8c32e336-7855-4b1b-9aee-60921a8c8d44'
+cli.azure.cli.core.sdk.policies:     'x-ms-correlation-request-id': '8c32e336-7855-4b1b-9aee-60921a8c8d44'
+cli.azure.cli.core.sdk.policies:     'x-ms-routing-request-id': 'SOUTHEASTASIA:20220518T093812Z:8c32e336-7855-4b1b-9aee-60921a8c8d44'
+cli.azure.cli.core.sdk.policies:     'Date': 'Wed, 18 May 2022 09:38:11 GMT'
+cli.azure.cli.core.sdk.policies: Response content:
+cli.azure.cli.core.sdk.policies: {
+  "type": "Microsoft.ServiceFabric/clusters",
+  "location": "southcentralus",
+  "id": "/subscriptions/0b1f6471-1bf0-4dda-aec3-cb9272f09590/resourcegroups/clitest.rgvluj55d5spjt6q6yyfug2khnftvainftcwwlatpka6lzaqkd3e4mi7zwcy4y6nbic/providers/Microsoft.ServiceFabric/clusters/sfrp-cli-rf3gq5bhmzi753v",
+  "name": "sfrp-cli-rf3gq5bhmzi753v",
+  "tags": {
+    "resourceType": "Service Fabric",
+    "clusterName": "sfrp-cli-rf3gq5bhmzi753v"
+  },
+  "etag": "W/\"637884588530001279\"",
+  "systemData": {
+    "createdBy": "zelinwang@microsoft.com",
+    "createdByType": "User",
+    "createdAt": "2022-05-18T08:20:52.7507987+00:00",
+    "lastModifiedBy": "zelinwang@microsoft.com",
+    "lastModifiedByType": "User",
+    "lastModifiedAt": "2022-05-18T09:38:10.9585116+00:00"
+  },
+  "properties": {
+    "provisioningState": "Updating",
+    "clusterId": "8e2a63ba-dbb5-4520-acaf-71b37430dfde",
+    "clusterCodeVersion": "9.0.1017.9590",
+    "clusterState": "UpdatingUserConfiguration",
+    "managementEndpoint": "https://sfrp-cli-rf3gq5bhmzi753v.southcentralus.cloudapp.azure.com:19080",
+    "clusterEndpoint": "https://southcentralus.servicefabric.azure.com/runtime/clusters/8e2a63ba-dbb5-4520-acaf-71b37430dfde",
+    "certificate": {
+      "thumbprint": "7ADE209BBCB28402BB48ECA93E538E629D3A40B4",
+      "x509StoreName": "My"
+    },
+    "clientCertificateThumbprints": [],
+    "clientCertificateCommonNames": [],
+    "fabricSettings": [
+      {
+        "name": "Security",
+        "parameters": [
+          {
+            "name": "ClusterProtectionLevel",
+            "value": "EncryptAndSign"
+          }
+        ]
+      }
+    ],
+    "vmImage": "Windows",
+    "reliabilityLevel": "Silver",
+    "nodeTypes": [
+      {
+        "name": "nt1vm",
+        "vmInstanceCount": 5,
+        "clientConnectionEndpointPort": 19000,
+        "httpGatewayEndpointPort": 19080,
+        "applicationPorts": {
+          "startPort": 20000,
+          "endPort": 30000
+        },
+        "ephemeralPorts": {
+          "startPort": 49152,
+          "endPort": 65534
+        },
+        "isPrimary": true,
+        "durabilityLevel": "Bronze"
+      }
+    ],
+    "diagnosticsStorageAccountConfig": {
+      "storageAccountName": "sflogs5kcqdmvlprsca2",
+      "primaryAccessKey": "",
+      "secondaryAccessKey": "",
+      "protectedAccountKeyName": "StorageAccountKey1",
+      "blobEndpoint": "https://sflogs5kcqdmvlprsca2.blob.core.windows.net/",
+      "queueEndpoint": "https://sflogs5kcqdmvlprsca2.queue.core.windows.net/",
+      "tableEndpoint": "https://sflogs5kcqdmvlprsca2.table.core.windows.net/",
+      "protectedAccountKeyName2": ""
+    },
+    "upgradeMode": "Automatic",
+    "addonFeatures": [
+      "DnsService"
+    ],
+    "availableClusterVersions": [
+      {
+        "codeVersion": "9.0.1017.9590",
+        "supportExpiryUtc": "9999-12-31T23:59:59.9999999",
+        "environment": "Windows"
+      }
+    ]
+  }
+}
+cli.knack.cli: Event: CommandInvoker.OnTransformResult [<function _resource_group_transform at 0x000001CAEFAAD670>, <function _x509_from_base64_to_hex_transform at 0x000001CAEFAAD700>]
+cli.knack.cli: Event: CommandInvoker.OnFilterResult []
+cli.knack.cli: Event: Cli.SuccessfulExecute []
+cli.knack.cli: Event: Cli.PostExecute [<function AzCliLogging.deinit_cmd_metadata_logging at 0x000001CAEFA37700>]
+az_command_data_logger: exit code: 0
+cli.__main__: Command ran in 382.510 seconds (init: 0.486, invoke: 382.025)
+telemetry.save: Save telemetry record of length 3057 in cache
+telemetry.check: Returns Positive.
+telemetry.main: Begin creating telemetry upload process.
+telemetry.process: Creating upload process: "C:\Code\azure-cli\env\Scripts\python.exe C:\Code\azure-cli\src\azure-cli-telemetry\azure\cli\telemetry\__init__.py C:\Users\zelinwang\.azure"
+telemetry.process: Return from creating process
+telemetry.main: Finish creating telemetry upload process.

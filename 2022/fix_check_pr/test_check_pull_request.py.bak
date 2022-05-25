@@ -76,10 +76,10 @@ logger.addHandler(ch)
 
 def check_pull_request(title, body):
     if title.startswith('[') or title.startswith('{'):
-        error_flag = False
-        # only check title which start with `[`
         if title.startswith('['):
-            error_flag = check_line(title)
+            error_flag = regex_line(title)
+        else:
+            error_flag = False
         is_edit_history_note = False
         history_note_error_flag = False
         for line in body:
@@ -88,9 +88,8 @@ def check_pull_request(title, body):
                 ref = re.findall(r'[\[](.*?)[\]]', line)
                 if ref and ref[0] not in ['Component Name 1', 'Component Name 2']:
                     is_edit_history_note = True
-                    history_note_error_flag = check_line(line) or history_note_error_flag
-        # If the `History Notes` is edited:
-        # Use the history notes check result (history_note_error_flag), ignore the title check result (error_flag).
+                    history_note_error_flag = regex_line(line) or history_note_error_flag
+		# If edit history notes, ignore title check result
         error_flag = error_flag if not is_edit_history_note else history_note_error_flag
     else:
         logger.error('Pull Request title should start with [ or { , Please follow https://aka.ms/submitAzPR')
@@ -98,9 +97,10 @@ def check_pull_request(title, body):
     return error_flag
 
 
-def check_line(line):
-    # check every line
+def regex_line(line):
     error_flag = False
+    enclosed_begin = False
+    enclosed_end = True
     # Check Fix #number in title, just give a warning here, because it is not necessarily.
     if 'Fix' in line:
         sub_pattern = r'#\d'
@@ -113,6 +113,13 @@ def check_line(line):
             try:
                 assert line[idx + 1] == ' '
             except:
+                # markdown [xxx](xxx)
+                if i == ']' and (idx + 1) < len(line) and line[idx+1] == '(':
+                    continue
+                # http:// and https://
+                if i == ':' and idx - 5 > 0:
+                    if line[idx-5:idx] == 'https' or line[idx-4:idx] == 'http':
+                        continue
                 logger.info('%s%s: missing space after %s', line, yellow, i)
                 logger.error(' ' * idx + '↑')
                 error_flag = True
@@ -146,18 +153,25 @@ def check_line(line):
                 logger.error(' ' * index + '↑')
                 error_flag = True
         # --xxx parameters must be enclosed in `, e.g., `--size`
-        if i == '-' and line[idx + 1] == '-':
-            param = '--'
-            index = idx + 2
-            while index < len(line) and line[index] != ' ':
-                param += line[index]
-                index += 1
-            try:
-                assert line[idx - 1] == '`'
-            except:
-                logger.info('%s%s: missing ` around %s', line, yellow, param)
-                logger.error(' ' * idx + '↑' + ' ' * (index - idx - 2) + '↑')
-                error_flag = True
+        if line[idx] == '`' and not enclosed_begin:
+            enclosed_begin = True
+            enclosed_end = False
+        elif line[idx] == '`' and enclosed_begin:
+            enclosed_begin = False
+            enclosed_end = True
+        if i == '-' and (idx + 1) < len(line) and line[idx + 1] == '-':
+            if not enclosed_begin:
+                param = '--'
+                index = idx + 2
+                while index < len(line) and line[index] not in [' ', '/']:
+                    param += line[index]
+                    index += 1
+                try:
+                    assert line[idx - 1] == '`'
+                except:
+                    logger.info('%s%s: missing ` around %s', line, yellow, param)
+                    logger.error(' ' * idx + '↑' + ' ' * (index - idx - 2) + '↑')
+                    error_flag = True
         # verb check: only check the first word after ] or :
         if i in [']', ':']:
             word = ''
@@ -185,6 +199,11 @@ def check_line(line):
     if line[-1] in ['.', ',', ' ']:
         logger.info('%s%s: please delete the last character', line, yellow)
         logger.error(' ' * idx + '↑')
+        error_flag = True
+
+    # check the ending ` character
+    if not enclosed_end:
+        logger.info('%s%s: unable to find the ending ` character', line, yellow)
         error_flag = True
 
     return error_flag
@@ -248,8 +267,8 @@ def test_tmp():
     title = '{ServiceBus} `az servicebus namespace`: Add new commands private-endpoint-connection and private-link-resource commands to manage private endpoint connection and private link resources'
     body = []
     body += ['[CDN] Fix #14012055: Fix feature flag import for missing description when using \'appconfig/kvset\' profile']
-    # body += ['[Role] BREAKING CHANGE: `az az/role`: Migrate the underlying API of `az ad` and `az role` from AD Graph API to Microsoft Graph API. For more details, see [Microsoft Graph migration](https://docs.microsoft.com/en-us/cli/azure/microsoft-graph-migration)']
-    # body += ['[Role] BREAKING CHANGE: `az az/role`: Migrate the underlying API of `az ad` and `az role` from AD Graph API to Microsoft Graph API. For more details, see [Microsoft Graph migration](http://docs.microsoft.com/en-us/cli/azure/microsoft-graph-migration)']
+    body += ['[Role] BREAKING CHANGE: `az az/role`: Migrate the underlying API of `az ad` and `az role` from AD Graph API to Microsoft Graph API. For more details, see [Microsoft Graph migration](https://docs.microsoft.com/en-us/cli/azure/microsoft-graph-migration)']
+    body += ['[Role] BREAKING CHANGE: `az az/role`: Migrate the underlying API of `az ad` and `az role` from AD Graph API to Microsoft Graph API. For more details, see [Microsoft Graph migration](http://docs.microsoft.com/en-us/cli/azure/microsoft-graph-migration)']
     body += ['[ServiceBus] `az servicebus namespace create/update`: Add `--disable-local-auth` to enable or disable SAS authentication']
     body += ['[ServiceBus] `az servicebus namespace private-endpoint-connection/private-link-resource`: New command groups']
     body += ['[Monitor] BREAKING CHANGE: `az monitor alert`: deprecate whole command group, please use `monitor metrics alert`']
