@@ -1,0 +1,1 @@
+multi api: https://github.com/Azure/azure-cli-extensions/pull/4570
