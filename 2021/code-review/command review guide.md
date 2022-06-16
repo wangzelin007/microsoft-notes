@@ -114,4 +114,4 @@ is:open is:pr draft:false -label:do-not-merge -label:"Do Not Merge" milestone:"M
 Xing:
 
 sprint:
-is:open is:pr draft:false -label:do-not-merge -label:"Do Not Merge" milestone:"May 2022 (2022-05-24) - For Build" created:>2022-01-01 
+is:open is:pr draft:false -label:do-not-merge -label:"Do Not Merge" milestone:"Jun 2022 (2022-07-05)" created:>2022-01-01 

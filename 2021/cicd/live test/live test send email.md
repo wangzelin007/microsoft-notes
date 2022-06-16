@@ -28,6 +28,8 @@ D:\code\azure-cli\scripts\live_test\CLITest.yml
 **如何查看变量的值**
 
 **邮件平台**
+Email Communication Service
+Twilio SendGrid
 [sendgrid](https://github.com/sendgrid/sendgrid-python)
 [api key申请](https://portal.azure.com/#blade/HubsExtension/BrowseResource/resourceType/Sendgrid.Email%2Faccounts)
 SendGrid Accounts
@@ -51,7 +53,7 @@ def send_email():
         subject='Sending with Twilio SendGrid is Fun',
         html_content='<strong>and easy to do anywhere, even with Python</strong>')
     try:
-        sg = SendGridAPIClient('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')
+        sg = SendGridAPIClient('$SendGridKey')
         response = sg.send(message)
         print(response.status_code)
         print(response.body)

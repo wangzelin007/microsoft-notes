@@ -1,2 +1,3 @@
 *.idea
 *.docx
+2021/cicd/live test/node_modules/*
